@@ -8,7 +8,7 @@ use config::ConfigError;
 use config::File;
 use config::Value;
 
-use unamed_agent::config::AgentConfig;
+use replicante_agent::config::AgentConfig;
 
 
 /// Stores all settings for the MongoDB agent.
@@ -23,8 +23,8 @@ impl MongoDBAgentSettings {
     /// # Examples
     ///
     /// ```
-    /// extern crate unamed_agent_mongodb;
-    /// use unamed_agent_mongodb::settings::MongoDBAgentSettings;
+    /// extern crate replicnate_agent_mongodb;
+    /// use replicante_agent_mongodb::settings::MongoDBAgentSettings;
     ///
     /// fn main() {
     ///     let conf = MongoDBAgentSettings::default();
@@ -98,10 +98,10 @@ impl From<MongoDBSettings> for Value {
     ///
     /// ```
     /// extern crate config;
-    /// extern crate unamed_agent_mongodb;
+    /// extern crate replicante_agent_mongodb;
     ///
     /// use config::Config;
-    /// use unamed_agent_mongodb::settings::MongoDBSettings;
+    /// use replicante_agent_mongodb::settings::MongoDBSettings;
     ///
     /// fn main() {
     ///     let default = MongoDBSettings::default();

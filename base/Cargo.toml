@@ -1,16 +1,31 @@
 [package]
-name = "unamed_agent"
+name = "replicante_agent"
 version = "0.1.0"
 authors = ["Stefano Pogliani <stefano@spogliani.net>"]
 build = "build.rs"
 
+description = "Replicante agent framework"
+documentation = "https://docs.rs/replicante_agent"
+homepage = "https://www.replicante.io/"
+repository = "https://github.com/replicante-io/replicante-agents"
+readme = "Readme.md"
+keywords = ["automation", "datastore", "operations"]
+license = "MIT"
+
+
 [[bin]]
-name = "unamed-agent-test"
+name = "replicante-agent-test"
 path = "src/bin/test-agent.rs"
 
+
 [lib]
-name = "unamed_agent"
+name = "replicante_agent"
 path = "src/lib.rs"
+
+
+[badges]
+maintenance = { status = "actively-developed" }
+
 
 [dependencies]
 config = "^0.7.0"
@@ -21,8 +36,10 @@ serde = "^1.0.25"
 serde_derive = "^1.0.25"
 serde_json = "^1.0.8"
 
+
 [build-dependencies]
 git2 = "^0.6.10"
+
 
 [dev-dependencies]
 iron-test = "^0.6.0"

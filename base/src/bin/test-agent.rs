@@ -1,15 +1,15 @@
-extern crate unamed_agent;
+extern crate replicante_agent;
 
-use unamed_agent::Agent;
-use unamed_agent::AgentResult;
-use unamed_agent::AgentRunner;
+use replicante_agent::Agent;
+use replicante_agent::AgentResult;
+use replicante_agent::AgentRunner;
 
-use unamed_agent::config::AgentConfig;
+use replicante_agent::config::AgentConfig;
 
-use unamed_agent::models::AgentVersion;
-use unamed_agent::models::DatastoreVersion;
-use unamed_agent::models::Shard;
-use unamed_agent::models::ShardRole;
+use replicante_agent::models::AgentVersion;
+use replicante_agent::models::DatastoreVersion;
+use replicante_agent::models::Shard;
+use replicante_agent::models::ShardRole;
 
 
 pub struct TestAgent {}

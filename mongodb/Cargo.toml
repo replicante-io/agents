@@ -1,22 +1,32 @@
 [package]
-name = "unamed_agent_mongodb"
+name = "replicante_agent_mongodb"
 version = "0.1.0"
 authors = ["Stefano Pogliani <stefano@spogliani.net>"]
 build = "../base/build.rs"
 
+description = "Replicante agent for MongoDB"
+documentation = "https://docs.rs/replicante_agent_mongodb"
+homepage = "https://www.replicante.io/"
+repository = "https://github.com/replicante-io/replicante-agents"
+readme = "Readme.md"
+keywords = ["automation", "datastore", "operations", "mongodb"]
+license = "MIT"
+
+
 [[bin]]
-name = "unamed-agent-mongodb-rs"
+name = "replicante-agent-mongodb-rs"
 path = "src/bin/mongodb/rs/agent.rs"
 
+
 [dependencies]
-unamed_agent = { path = "../base" }
+replicante_agent = { path = "../base" }
 
 bson = "^0.10.0"
 config = "^0.7.0"
 mongodb = "^0.3.7"
-#mongodb = {path = "../../../../bugs/mongo-rust-driver-prototype"}
 serde = "^1.0.25"
 serde_derive = "^1.0.25"
+
 
 [build-dependencies]
 git2 = "^0.6.10"

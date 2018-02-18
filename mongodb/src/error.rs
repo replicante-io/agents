@@ -1,6 +1,6 @@
 use mongodb;
 
-use unamed_agent::AgentError;
+use replicante_agent::AgentError;
 
 
 pub fn to_agent(error: mongodb::error::Error) -> AgentError {
@@ -13,7 +13,7 @@ pub fn to_agent(error: mongodb::error::Error) -> AgentError {
 #[cfg(test)]
 mod tests {
     use mongodb::error::Error;
-    use unamed_agent::AgentError;
+    use replicante_agent::AgentError;
     use super::to_agent;
 
     #[test]

@@ -16,8 +16,8 @@ use config_crate::Value;
 /// # Examples
 ///
 /// ```
-/// extern crate unamed_agent;
-/// use unamed_agent::config::AgentConfig;
+/// extern crate replicante_agent;
+/// use replicante_agent::config::AgentConfig;
 ///
 /// fn main() {
 ///     let mut agent = AgentConfig::default();
@@ -45,10 +45,10 @@ impl AgentConfig {
     ///
     /// ```
     /// extern crate config as config_crate;
-    /// extern crate unamed_agent;
+    /// extern crate replicante_agent;
     ///
     /// use config_crate::Config;
-    /// use unamed_agent::config::AgentConfig;
+    /// use replicante_agent::config::AgentConfig;
     ///
     /// fn main() {
     ///     let mut default = AgentConfig::default();
@@ -79,10 +79,10 @@ impl From<AgentConfig> for Value {
     ///
     /// ```
     /// extern crate config as config_crate;
-    /// extern crate unamed_agent;
+    /// extern crate replicante_agent;
     ///
     /// use config_crate::Config;
-    /// use unamed_agent::config::AgentConfig;
+    /// use replicante_agent::config::AgentConfig;
     ///
     /// fn main() {
     ///     let mut default = AgentConfig::default();

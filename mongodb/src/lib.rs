@@ -7,7 +7,7 @@ extern crate serde;
 #[macro_use]
 extern crate serde_derive;
 
-extern crate unamed_agent;
+extern crate replicante_agent;
 
 use bson::Bson;
 use mongodb::Client;
@@ -15,13 +15,13 @@ use mongodb::CommandType;
 use mongodb::ThreadedClient;
 use mongodb::db::ThreadedDatabase;
 
-use unamed_agent::Agent;
-use unamed_agent::AgentError;
-use unamed_agent::AgentResult;
+use replicante_agent::Agent;
+use replicante_agent::AgentError;
+use replicante_agent::AgentResult;
 
-use unamed_agent::models::DatastoreVersion;
-use unamed_agent::models::Shard;
-use unamed_agent::models::ShardRole;
+use replicante_agent::models::DatastoreVersion;
+use replicante_agent::models::Shard;
+use replicante_agent::models::ShardRole;
 
 pub mod settings;
 mod error;

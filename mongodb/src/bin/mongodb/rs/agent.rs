@@ -1,11 +1,11 @@
-extern crate unamed_agent;
-extern crate unamed_agent_mongodb;
+extern crate replicante_agent;
+extern crate replicante_agent_mongodb;
 
-use unamed_agent::AgentRunner;
-use unamed_agent::models::AgentVersion;
+use replicante_agent::AgentRunner;
+use replicante_agent::models::AgentVersion;
 
-use unamed_agent_mongodb::MongoDBAgent;
-use unamed_agent_mongodb::settings::MongoDBAgentSettings;
+use replicante_agent_mongodb::MongoDBAgent;
+use replicante_agent_mongodb::settings::MongoDBAgentSettings;
 
 
 fn main() {

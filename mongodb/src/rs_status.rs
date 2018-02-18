@@ -1,9 +1,9 @@
 use bson::Bson;
 use bson::Document;
 
-use unamed_agent::AgentError;
-use unamed_agent::AgentResult;
-use unamed_agent::models::ShardRole;
+use replicante_agent::AgentError;
+use replicante_agent::AgentResult;
+use replicante_agent::models::ShardRole;
 
 
 /// Extracts the lag (in seconds) from the primary.
@@ -179,7 +179,7 @@ mod tests {
 
     mod test_extract_timestamp {
         use bson::Bson;
-        use unamed_agent::AgentError;
+        use replicante_agent::AgentError;
         use super::super::extract_timestamp;
 
         #[test]
@@ -257,7 +257,7 @@ mod tests {
     mod test_first_member {
         use super::make_rs;
         use super::super::first_member;
-        use unamed_agent::AgentError;
+        use replicante_agent::AgentError;
 
         #[test]
         fn members_not_an_array() {
@@ -308,7 +308,7 @@ mod tests {
         mod test_find_primary {
             use super::super::make_rs;
             use super::super::super::find_primary;
-            use unamed_agent::AgentError;
+            use replicante_agent::AgentError;
 
             #[test]
             fn found() {
@@ -335,7 +335,7 @@ mod tests {
         mod test_find_self {
             use super::super::make_rs;
             use super::super::super::find_self;
-            use unamed_agent::AgentError;
+            use replicante_agent::AgentError;
 
             #[test]
             fn found() {
@@ -361,7 +361,7 @@ mod tests {
     }
 
     mod test_name {
-        use unamed_agent::AgentError;
+        use replicante_agent::AgentError;
         use super::make_rs;
         use super::super::name;
 
@@ -400,8 +400,8 @@ mod tests {
     }
 
     mod test_role {
-        use unamed_agent::AgentError;
-        use unamed_agent::models::ShardRole;
+        use replicante_agent::AgentError;
+        use replicante_agent::models::ShardRole;
         use super::super::role;
 
         #[test]
