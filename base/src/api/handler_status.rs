@@ -89,6 +89,6 @@ mod tests {
     #[test]
     fn status_retruns_shards() {
         let result = request_get(Box::new(TestAgent {})).unwrap();
-        assert_eq!(result, r#"{"shards":[{"id":"test-shard","lag":1,"last_op":2,"role":"Primary"}]}"#);
+        assert_eq!(result, r#"{"shards":[{"id":"test-shard","role":"Primary","lag":1,"last_op":2}]}"#);
     }
 }

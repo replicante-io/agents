@@ -23,7 +23,7 @@ impl MongoDBAgentSettings {
     /// # Examples
     ///
     /// ```
-    /// extern crate replicnate_agent_mongodb;
+    /// extern crate replicante_agent_mongodb;
     /// use replicante_agent_mongodb::settings::MongoDBAgentSettings;
     ///
     /// fn main() {
