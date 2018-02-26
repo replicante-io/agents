@@ -5,6 +5,8 @@ use iron::status;
 use iron_json_response::JsonResponse;
 use iron_json_response::JsonResponseMiddleware;
 
+use opentracingrust::utils::FailSpan;
+
 use super::super::AgentContainer;
 use super::super::models::Shard;
 
@@ -25,8 +27,9 @@ impl StatusHandler {
 
 impl Handler for StatusHandler {
     fn handle(&self, _: &mut Request) -> IronResult<Response> {
+        let mut span = self.agent.tracer().span("status").auto_finish();
         let shards = StatusRespone {
-            shards: self.agent.shards()?
+            shards: self.agent.shards(&mut span).fail_span(&mut span)?
         };
         let mut response = Response::new();
         response.set_mut(JsonResponse::json(&shards)).set_mut(status::Ok);
@@ -51,6 +54,10 @@ mod tests {
     use iron_test::request;
     use iron_test::response;
 
+    use opentracingrust::Span;
+    use opentracingrust::Tracer;
+    use opentracingrust::tracers::NoopTracer;
+
     use super::StatusHandler;
     use super::super::super::Agent;
     use super::super::super::AgentError;
@@ -60,21 +67,27 @@ mod tests {
     use super::super::super::models::Shard;
     use super::super::super::models::ShardRole;
 
-    struct TestAgent {}
+    struct TestAgent {
+        tracer: Tracer,
+    }
 
     impl Agent for TestAgent {
-        fn datastore_version(&self) -> AgentResult<DatastoreVersion> {
+        fn datastore_version(&self, _: &mut Span) -> AgentResult<DatastoreVersion> {
             Err(AgentError::GenericError(String::from("Not Needed")))
         }
 
-        fn shards(&self) -> AgentResult<Vec<Shard>> {
+        fn tracer(&self) -> &Tracer {
+            &self.tracer
+        }
+
+        fn shards(&self, _: &mut Span) -> AgentResult<Vec<Shard>> {
             Ok(vec![
                Shard::new("test-shard", ShardRole::Primary, 1, 2)
             ])
         }
     }
 
-    fn request_get(agent: Box<Agent + Send + Sync>) -> Result<String, IronError> {
+    fn request_get(agent: Box<Agent>) -> Result<String, IronError> {
         let handler = StatusHandler::new(Arc::new(agent));
         request::get(
             "http://localhost:3000/api/v1/status",
@@ -88,7 +101,8 @@ mod tests {
 
     #[test]
     fn status_retruns_shards() {
-        let result = request_get(Box::new(TestAgent {})).unwrap();
+        let (tracer, _receiver) = NoopTracer::new();
+        let result = request_get(Box::new(TestAgent { tracer })).unwrap();
         assert_eq!(result, r#"{"shards":[{"id":"test-shard","role":"Primary","lag":1,"last_op":2}]}"#);
     }
 }

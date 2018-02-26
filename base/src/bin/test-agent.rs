@@ -1,4 +1,12 @@
+extern crate opentracingrust;
 extern crate replicante_agent;
+
+use std::time::Duration;
+
+use opentracingrust::Span;
+use opentracingrust::Tracer;
+use opentracingrust::tracers::NoopTracer;
+use opentracingrust::utils::ReporterThread;
 
 use replicante_agent::Agent;
 use replicante_agent::AgentResult;
@@ -12,20 +20,26 @@ use replicante_agent::models::Shard;
 use replicante_agent::models::ShardRole;
 
 
-pub struct TestAgent {}
+pub struct TestAgent {
+    tracer: Tracer,
+}
 
 impl TestAgent {
-    pub fn new() -> TestAgent {
-        TestAgent {}
+    pub fn new(tracer: Tracer) -> TestAgent {
+        TestAgent { tracer }
     }
 }
 
 impl Agent for TestAgent {
-    fn datastore_version(&self) -> AgentResult<DatastoreVersion> {
+    fn datastore_version(&self, _: &mut Span) -> AgentResult<DatastoreVersion> {
         Ok(DatastoreVersion::new("Test DB", "1.2.3"))
     }
 
-    fn shards(&self) -> AgentResult<Vec<Shard>> {
+    fn tracer(&self) -> &Tracer {
+        &self.tracer
+    }
+
+    fn shards(&self, _: &mut Span) -> AgentResult<Vec<Shard>> {
         Ok(vec![
             Shard::new("test-shard", ShardRole::Primary, 1, 2)
         ])
@@ -34,8 +48,16 @@ impl Agent for TestAgent {
 
 
 fn main() {
+    // Setup and run the tracer.
+    let (tracer, receiver) = NoopTracer::new();
+    let mut reporter = ReporterThread::new(receiver, |span| {
+        NoopTracer::report(span);
+    });
+    reporter.stop_delay(Duration::from_secs(2));
+
+    // Setup and run the agent.
     let runner = AgentRunner::new(
-        Box::new(TestAgent::new()),
+        Box::new(TestAgent::new(tracer)),
         AgentConfig::default(),
         AgentVersion::new(
             env!("GIT_BUILD_HASH"), env!("CARGO_PKG_VERSION"),

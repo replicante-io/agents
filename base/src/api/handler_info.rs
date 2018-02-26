@@ -5,6 +5,8 @@ use iron::status;
 use iron_json_response::JsonResponse;
 use iron_json_response::JsonResponseMiddleware;
 
+use opentracingrust::utils::FailSpan;
+
 use super::super::AgentContainer;
 use super::super::models::AgentVersion;
 use super::super::models::DatastoreVersion;
@@ -27,7 +29,8 @@ impl InfoHandler {
 
 impl Handler for InfoHandler {
     fn handle(&self, _: &mut Request) -> IronResult<Response> {
-        let datastore = self.agent.datastore_version()?;
+        let mut span = self.agent.tracer().span("info").auto_finish();
+        let datastore = self.agent.datastore_version(&mut span).fail_span(&mut span)?;
         let version = VersionInfo {
             datastore: datastore,
             version: self.version.clone()
@@ -56,6 +59,10 @@ mod tests {
     use iron_test::request;
     use iron_test::response;
 
+    use opentracingrust::Span;
+    use opentracingrust::Tracer;
+    use opentracingrust::tracers::NoopTracer;
+
     use super::InfoHandler;
     use super::super::super::Agent;
     use super::super::super::AgentError;
@@ -66,11 +73,12 @@ mod tests {
     use super::super::super::models::Shard;
 
     struct TestAgent {
-        success_version: bool
+        success_version: bool,
+        tracer: Tracer,
     }
 
     impl Agent for TestAgent {
-        fn datastore_version(&self) -> AgentResult<DatastoreVersion> {
+        fn datastore_version(&self, _: &mut Span) -> AgentResult<DatastoreVersion> {
             if self.success_version {
                 Ok(DatastoreVersion::new("DB", "1.2.3"))
             } else {
@@ -78,7 +86,11 @@ mod tests {
             }
         }
 
-        fn shards(&self) -> AgentResult<Vec<Shard>> {
+        fn tracer(&self) -> &Tracer {
+            &self.tracer
+        }
+
+        fn shards(&self, _:&mut Span) -> AgentResult<Vec<Shard>> {
             Ok(vec![])
         }
     }
@@ -100,8 +112,10 @@ mod tests {
 
     #[test]
     fn info_handler_returns_error() {
+        let (tracer, _receiver) = NoopTracer::new();
         let result = request_get(Box::new(TestAgent {
-            success_version: false
+            success_version: false,
+            tracer,
         }));
         assert!(result.is_err());
         if let Some(result) = result.err() {
@@ -113,8 +127,10 @@ mod tests {
 
     #[test]
     fn info_handler_returns_version() {
+        let (tracer, _receiver) = NoopTracer::new();
         let result = request_get(Box::new(TestAgent {
-            success_version: true
+            success_version: true,
+            tracer,
         })).unwrap();
         let expected = r#"{"datastore":{"name":"DB","version":"1.2.3"},"version":{"checkout":"dcd","number":"1.2.3","taint":"tainted"}}"#;
         assert_eq!(result, expected);

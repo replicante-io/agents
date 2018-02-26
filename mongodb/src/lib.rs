@@ -2,6 +2,7 @@
 extern crate bson;
 extern crate config;
 extern crate mongodb;
+extern crate opentracingrust;
 
 extern crate serde;
 #[macro_use]
@@ -14,6 +15,9 @@ use mongodb::Client;
 use mongodb::CommandType;
 use mongodb::ThreadedClient;
 use mongodb::db::ThreadedDatabase;
+
+use opentracingrust::Tracer;
+use opentracingrust::Span;
 
 use replicante_agent::Agent;
 use replicante_agent::AgentError;
@@ -37,12 +41,14 @@ pub struct MongoDBAgent {
     // filled just after the agent is created while in the factory.
     client: Option<Client>,
     settings: MongoDBSettings,
+    tracer: Tracer,
 }
 
 impl MongoDBAgent {
-    pub fn new(settings: MongoDBSettings) -> AgentResult<MongoDBAgent> {
+    pub fn new(settings: MongoDBSettings, tracer: Tracer) -> AgentResult<MongoDBAgent> {
         let mut agent = MongoDBAgent {
             client: None,
+            tracer,
             settings: settings,
         };
         agent.init_client()?;
@@ -68,7 +74,7 @@ impl MongoDBAgent {
 }
 
 impl Agent for MongoDBAgent {
-    fn datastore_version(&self) -> AgentResult<DatastoreVersion> {
+    fn datastore_version(&self, _: &mut Span) -> AgentResult<DatastoreVersion> {
         let mongo = self.client();
         let info = mongo.db("test").command(
             doc! {"buildInfo" => 1},
@@ -87,7 +93,11 @@ impl Agent for MongoDBAgent {
         }
     }
 
-    fn shards(&self) -> AgentResult<Vec<Shard>> {
+    fn tracer(&self) -> &Tracer {
+        &self.tracer
+    }
+
+    fn shards(&self, _: &mut Span) -> AgentResult<Vec<Shard>> {
         let mongo = self.client();
         let status = mongo.db("admin").command(
             doc! {"replSetGetStatus" => 1},
