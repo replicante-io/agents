@@ -63,6 +63,7 @@ mod tests {
     use super::super::super::AgentError;
     use super::super::super::AgentResult;
 
+    use super::super::super::models::AgentVersion;
     use super::super::super::models::DatastoreVersion;
     use super::super::super::models::Shard;
     use super::super::super::models::ShardRole;
@@ -72,6 +73,10 @@ mod tests {
     }
 
     impl Agent for TestAgent {
+        fn agent_version(&self, _: &mut Span) -> AgentResult<AgentVersion> {
+            Ok(AgentVersion::new("dcd", "1.2.3", "tainted"))
+        }
+
         fn datastore_version(&self, _: &mut Span) -> AgentResult<DatastoreVersion> {
             Err(AgentError::GenericError(String::from("Not Needed")))
         }

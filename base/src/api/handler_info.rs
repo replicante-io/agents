@@ -15,12 +15,11 @@ use super::super::models::DatastoreVersion;
 /// Handler implementing the /api/v1/info endpoint.
 pub struct InfoHandler {
     agent: AgentContainer,
-    version: AgentVersion
 }
 
 impl InfoHandler {
-    pub fn new(agent: AgentContainer, version: AgentVersion) -> Chain {
-        let handler = InfoHandler { agent, version };
+    pub fn new(agent: AgentContainer) -> Chain {
+        let handler = InfoHandler { agent };
         let mut chain = Chain::new(handler);
         chain.link_after(JsonResponseMiddleware::new());
         chain
@@ -30,10 +29,11 @@ impl InfoHandler {
 impl Handler for InfoHandler {
     fn handle(&self, _: &mut Request) -> IronResult<Response> {
         let mut span = self.agent.tracer().span("info").auto_finish();
+        let agent = self.agent.agent_version(&mut span).fail_span(&mut span)?;
         let datastore = self.agent.datastore_version(&mut span).fail_span(&mut span)?;
         let version = VersionInfo {
             datastore: datastore,
-            version: self.version.clone()
+            version: agent
         };
         let mut response = Response::new();
         response.set_mut(JsonResponse::json(version)).set_mut(status::Ok);
@@ -78,6 +78,10 @@ mod tests {
     }
 
     impl Agent for TestAgent {
+        fn agent_version(&self, _: &mut Span) -> AgentResult<AgentVersion> {
+            Ok(AgentVersion::new("dcd", "1.2.3", "tainted"))
+        }
+
         fn datastore_version(&self, _: &mut Span) -> AgentResult<DatastoreVersion> {
             if self.success_version {
                 Ok(DatastoreVersion::new("DB", "1.2.3"))
@@ -95,11 +99,8 @@ mod tests {
         }
     }
 
-    fn request_get(agent: Box<Agent + Send + Sync>) -> Result<String, IronError> {
-        let handler = InfoHandler::new(
-            Arc::new(agent),
-            AgentVersion::new("dcd", "1.2.3", "tainted")
-        );
+    fn request_get(agent: Box<Agent>) -> Result<String, IronError> {
+        let handler = InfoHandler::new(Arc::new(agent));
         request::get(
             "http://localhost:3000/api/v1/index",
             Headers::new(), &handler

@@ -38,6 +38,13 @@
 //! }
 //! 
 //! impl Agent for TestAgent {
+//!     fn agent_version(&self, _: &mut Span) -> AgentResult<AgentVersion> {
+//!         Ok(AgentVersion::new(
+//!             env!("GIT_BUILD_HASH"), env!("CARGO_PKG_VERSION"),
+//!             env!("GIT_BUILD_TAINT")
+//!         ))
+//!     }
+//!
 //!     fn datastore_version(&self, _: &mut Span) -> AgentResult<DatastoreVersion> {
 //!         Ok(DatastoreVersion::new("Test DB", "1.2.3"))
 //!     }
@@ -57,10 +64,6 @@
 //!     let runner = AgentRunner::new(
 //!         Box::new(TestAgent::new(tracer)),
 //!         AgentConfig::default(),
-//!         AgentVersion::new(
-//!             env!("GIT_BUILD_HASH"), env!("CARGO_PKG_VERSION"),
-//!             env!("GIT_BUILD_TAINT")
-//!         )
 //!     );
 //!     // This will block the process serving requests.
 //!     //runner.run();
@@ -99,6 +102,7 @@ pub mod models;
 pub use self::error::AgentError;
 pub use self::error::AgentResult;
 
+use self::models::AgentVersion;
 use self::models::DatastoreVersion;
 use self::models::Shard;
 
@@ -107,6 +111,9 @@ use self::models::Shard;
 ///
 /// Agents should be implemented as structs that implement `BaseAgent`.
 pub trait Agent : Send + Sync {
+    /// Fetches the agent version information.
+    fn agent_version(&self, span: &mut Span) -> AgentResult<AgentVersion>;
+
     /// Fetches the datastore version information.
     fn datastore_version(&self, span: &mut Span) -> AgentResult<DatastoreVersion>;
 
@@ -135,27 +142,17 @@ type AgentContainer = Arc<Box<Agent>>;
 pub struct AgentRunner {
     agent: AgentContainer,
     conf: self::config::AgentConfig,
-    version: self::models::AgentVersion,
 }
 
 impl AgentRunner {
-    pub fn new(
-        agent: Box<Agent>,
-        conf: self::config::AgentConfig,
-        version: self::models::AgentVersion
-    ) -> AgentRunner {
-        AgentRunner {
-            agent: Arc::new(agent),
-            conf, version
-        }
+    pub fn new(agent: Box<Agent>, conf: self::config::AgentConfig) -> AgentRunner {
+        AgentRunner { agent: Arc::new(agent), conf }
     }
 
     /// Starts the Agent process and waits for it to terminate.
     pub fn run(&self) -> () {
         let mut router = Router::new();
-        let info = api::InfoHandler::new(
-            Arc::clone(&self.agent), self.version.clone()
-        );
+        let info = api::InfoHandler::new(Arc::clone(&self.agent));
         let status = api::StatusHandler::new(Arc::clone(&self.agent));
 
         router.get("/", api::index, "index");

@@ -31,6 +31,12 @@ impl TestAgent {
 }
 
 impl Agent for TestAgent {
+    fn agent_version(&self, _: &mut Span) -> AgentResult<AgentVersion> {
+        Ok(AgentVersion::new(
+            env!("GIT_BUILD_HASH"), env!("CARGO_PKG_VERSION"), env!("GIT_BUILD_TAINT")
+        ))
+    }
+
     fn datastore_version(&self, _: &mut Span) -> AgentResult<DatastoreVersion> {
         Ok(DatastoreVersion::new("Test DB", "1.2.3"))
     }
@@ -56,13 +62,7 @@ fn main() {
     reporter.stop_delay(Duration::from_secs(2));
 
     // Setup and run the agent.
-    let runner = AgentRunner::new(
-        Box::new(TestAgent::new(tracer)),
-        AgentConfig::default(),
-        AgentVersion::new(
-            env!("GIT_BUILD_HASH"), env!("CARGO_PKG_VERSION"),
-            env!("GIT_BUILD_TAINT")
-        )
-    );
+    let agent = TestAgent::new(tracer);
+    let runner = AgentRunner::new(Box::new(agent), AgentConfig::default());
     runner.run();
 }
