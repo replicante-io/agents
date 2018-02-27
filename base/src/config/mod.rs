@@ -32,7 +32,7 @@ pub struct AgentConfig {
     pub server: AgentServerConfig,
 }
 
-impl AgentConfig {
+impl Default for AgentConfig {
     /// Returns an `AgentConfig` filled with default values.
     ///
     /// Agent implementations should override defaults with their preferred
@@ -63,7 +63,7 @@ impl AgentConfig {
     ///     );
     /// }
     /// ```
-    pub fn default() -> AgentConfig {
+    fn default() -> AgentConfig {
         AgentConfig {
             server: AgentServerConfig {
                 bind: String::from("127.0.0.1:8000")
@@ -95,10 +95,7 @@ impl From<AgentConfig> for Value {
     /// ```
     fn from(agent: AgentConfig) -> Value {
         let mut server: HashMap<String, Value> = HashMap::new();
-        server.insert(
-            String::from("bind"),
-            Value::new(None, agent.server.bind)
-        );
+        server.insert(String::from("bind"), Value::new(None, agent.server.bind));
 
         let mut conf: HashMap<String, Value> = HashMap::new();
         conf.insert(String::from("server"), Value::new(None, server));
