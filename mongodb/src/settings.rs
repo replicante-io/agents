@@ -19,22 +19,6 @@ pub struct MongoDBAgentSettings {
 
 impl Default for MongoDBAgentSettings {
     /// Generate a default configuration for the MongoDB agent.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// extern crate replicante_agent_mongodb;
-    /// use replicante_agent_mongodb::settings::MongoDBAgentSettings;
-    ///
-    /// fn main() {
-    ///     let conf = MongoDBAgentSettings::default();
-    ///     let agent = conf.agent();
-    ///     let mongo = conf.mongo();
-    ///     assert_eq!("localhost:37017", agent.server.bind);
-    ///     assert_eq!("localhost", mongo.host);
-    ///     assert_eq!(27017, mongo.port);
-    /// }
-    /// ```
     fn default() -> MongoDBAgentSettings {
         let mut agent = AgentConfig::default();
         agent.server.bind = String::from("localhost:37017");
@@ -93,28 +77,37 @@ impl Default for MongoDBSettings {
 
 impl From<MongoDBSettings> for Value {
     /// Convert a `MongoDBSettings` into a `Value` for the `config` crate.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// extern crate config;
-    /// extern crate replicante_agent_mongodb;
-    ///
-    /// use config::Config;
-    /// use replicante_agent_mongodb::settings::MongoDBSettings;
-    ///
-    /// fn main() {
-    ///     let default = MongoDBSettings::default();
-    ///     let mut conf = Config::new();
-    ///     conf.set_default("mongo", default);
-    ///     assert_eq!("localhost", conf.get_str("mongo.host").unwrap());
-    ///     assert_eq!(27017, conf.get_int("mongo.port").unwrap());
-    /// }
-    /// ```
     fn from(mongo: MongoDBSettings) -> Value {
         let mut conf: HashMap<String, Value> = HashMap::new();
         conf.insert(String::from("host"), Value::new(None, mongo.host));
         conf.insert(String::from("port"), Value::new(None, mongo.port));
         Value::new(None, conf)
+    }
+}
+
+
+#[cfg(test)]
+mod tests {
+    use config::Config;
+    use super::MongoDBAgentSettings;
+    use super::MongoDBSettings;
+
+    #[test]
+    fn defaults() {
+        let conf = MongoDBAgentSettings::default();
+        let agent = conf.agent();
+        let mongo = conf.mongo();
+        assert_eq!("localhost:37017", agent.server.bind);
+        assert_eq!("localhost", mongo.host);
+        assert_eq!(27017, mongo.port);
+    }
+
+    #[test]
+    fn into_value() {
+        let default = MongoDBSettings::default();
+        let mut conf = Config::new();
+        conf.set_default("mongo", default).unwrap();
+        assert_eq!("localhost", conf.get_str("mongo.host").unwrap());
+        assert_eq!(27017, conf.get_int("mongo.port").unwrap());
     }
 }

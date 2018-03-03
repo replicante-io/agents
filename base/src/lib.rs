@@ -1,6 +1,6 @@
-//! This package provides interfaces and structs to build ??? agents.
+//! This crate provides interfaces and structs to build Replicante agents.
 //!
-//! The package implements a base `Agent` trait to provide a common interface.
+//! The crate provides a base `Agent` trait defining a common interface.
 //!
 //! To create an agent implement the `Agent` trait for a struct and pass that
 //! struct to `AgentRunner::new` to create a runner.
