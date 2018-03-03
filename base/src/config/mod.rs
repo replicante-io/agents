@@ -3,6 +3,10 @@ use std::convert::From;
 
 use config_crate::Value;
 
+mod tracer;
+pub use self::tracer::configure_tracer;
+pub use self::tracer::TracerBackend;
+
 
 /// Stores the base agent configuration options.
 ///
@@ -30,6 +34,7 @@ use config_crate::Value;
 #[derive(Debug, Deserialize)]
 pub struct AgentConfig {
     pub server: AgentServerConfig,
+    pub tracer: TracerConfig,
 }
 
 impl Default for AgentConfig {
@@ -66,7 +71,11 @@ impl Default for AgentConfig {
     fn default() -> AgentConfig {
         AgentConfig {
             server: AgentServerConfig {
-                bind: String::from("127.0.0.1:8000")
+                bind: String::from("127.0.0.1:8000"),
+            },
+            tracer: TracerConfig {
+                backend: TracerBackend::NoopTracer.to_string(),
+                zipkin: None,
             }
         }
     }
@@ -97,8 +106,15 @@ impl From<AgentConfig> for Value {
         let mut server: HashMap<String, Value> = HashMap::new();
         server.insert(String::from("bind"), Value::new(None, agent.server.bind));
 
+        let mut tracer: HashMap<String, Value> = HashMap::new();
+        tracer.insert(
+            String::from("backend"),
+            Value::new(None, TracerBackend::NoopTracer.to_string())
+        );
+
         let mut conf: HashMap<String, Value> = HashMap::new();
         conf.insert(String::from("server"), Value::new(None, server));
+        conf.insert(String::from("tracer"), Value::new(None, tracer));
         Value::new(None, conf)
     }
 }
@@ -108,4 +124,21 @@ impl From<AgentConfig> for Value {
 #[derive(Debug, Deserialize)]
 pub struct AgentServerConfig {
     pub bind: String,
+}
+
+
+/// Configuration options for distributed tracing.
+#[derive(Debug, Deserialize)]
+pub struct TracerConfig {
+    pub backend: String,
+    pub zipkin: Option<TracerConfigZipkin>,
+}
+
+
+/// Configuration options specific to the Zipkin tracer.
+#[derive(Debug, Deserialize)]
+pub struct TracerConfigZipkin {
+    pub service_name: String,
+    pub kafka: Vec<String>,
+    pub topic: Option<String>,
 }

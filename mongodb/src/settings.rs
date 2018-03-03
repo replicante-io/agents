@@ -17,7 +17,7 @@ pub struct MongoDBAgentSettings {
     conf: Config
 }
 
-impl MongoDBAgentSettings {
+impl Default for MongoDBAgentSettings {
     /// Generate a default configuration for the MongoDB agent.
     ///
     /// # Examples
@@ -35,7 +35,7 @@ impl MongoDBAgentSettings {
     ///     assert_eq!(27017, mongo.port);
     /// }
     /// ```
-    pub fn default() -> MongoDBAgentSettings {
+    fn default() -> MongoDBAgentSettings {
         let mut agent = AgentConfig::default();
         agent.server.bind = String::from("localhost:37017");
 
@@ -82,8 +82,8 @@ pub struct MongoDBSettings {
     pub port: i64,
 }
 
-impl MongoDBSettings {
-    pub fn default() -> MongoDBSettings {
+impl Default for MongoDBSettings {
+    fn default() -> MongoDBSettings {
         MongoDBSettings {
             host: String::from("localhost"),
             port: 27017

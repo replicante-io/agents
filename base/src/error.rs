@@ -24,6 +24,9 @@ pub type AgentResult<T> = Result<T, AgentError>;
 /// The error type for the `Agent` interface.
 #[derive(Debug)]
 pub enum AgentError {
+    /// Invalid configuration option found.
+    ConfigError(String),
+
     /// The datastore returned an error.
     DatastoreError(String),
 
@@ -58,6 +61,9 @@ impl From<AgentError> for IronError {
 impl fmt::Display for AgentError {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         match *self {
+            AgentError::ConfigError(ref msg) => write!(
+                fmt, "Invalid configuration found: {}", msg
+            ),
             AgentError::DatastoreError(ref msg) => write!(
                 fmt, "Received error from datastore: {}", msg
             ),
@@ -77,6 +83,7 @@ impl fmt::Display for AgentError {
 impl Error for AgentError {
     fn description(&self) -> &str {
         match *self {
+            AgentError::ConfigError(_) => "ConfigError",
             AgentError::DatastoreError(_) => "DatastoreError",
             AgentError::GenericError(_) => "GenericError",
             AgentError::ModelViolation(_) => "ModelViolation",
