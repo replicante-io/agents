@@ -11,13 +11,17 @@ extern crate serde_derive;
 extern crate replicante_agent;
 
 use bson::Bson;
+use bson::ordered::OrderedDocument;
+
 use mongodb::Client;
 use mongodb::CommandType;
 use mongodb::ThreadedClient;
 use mongodb::db::ThreadedDatabase;
 
-use opentracingrust::Tracer;
+use opentracingrust::Log;
 use opentracingrust::Span;
+use opentracingrust::Tracer;
+use opentracingrust::utils::FailSpan;
 
 use replicante_agent::Agent;
 use replicante_agent::AgentError;
@@ -72,6 +76,36 @@ impl MongoDBAgent {
     fn client(&self) -> &Client {
         self.client.as_ref().unwrap()
     }
+
+    /// Executes the buildInfo command against the DB.
+    fn build_info(&self, parent: &mut Span) -> AgentResult<OrderedDocument> {
+        let mut span = self.tracer().span("buildInfo").auto_finish();
+        span.child_of(parent.context().clone());
+        let mongo = self.client();
+        span.log(Log::new().log("span.kind", "client-send"));
+        let info = mongo.db("test").command(
+            doc! {"buildInfo" => 1},
+            CommandType::BuildInfo,
+            None
+        ).fail_span(&mut span).map_err(self::error::to_agent)?;
+        span.log(Log::new().log("span.kind", "client-receive"));
+        Ok(info)
+    }
+
+    /// Executes the replSetGetStatus command against the DB.
+    fn repl_set_get_status(&self, parent: &mut Span) -> AgentResult<OrderedDocument> {
+        let mut span = self.tracer().span("replSetGetStatus").auto_finish();
+        span.child_of(parent.context().clone());
+        let mongo = self.client();
+        span.log(Log::new().log("span.kind", "client-send"));
+        let status = mongo.db("admin").command(
+            doc! {"replSetGetStatus" => 1},
+            CommandType::IsMaster,
+            None
+        ).fail_span(&mut span).map_err(self::error::to_agent)?;
+        span.log(Log::new().log("span.kind", "client-receive"));
+        Ok(status)
+    }
 }
 
 impl Agent for MongoDBAgent {
@@ -81,13 +115,8 @@ impl Agent for MongoDBAgent {
         ))
     }
 
-    fn datastore_version(&self, _: &mut Span) -> AgentResult<DatastoreVersion> {
-        let mongo = self.client();
-        let info = mongo.db("test").command(
-            doc! {"buildInfo" => 1},
-            CommandType::BuildInfo,
-            None
-        ).map_err(self::error::to_agent)?;
+    fn datastore_version(&self, span: &mut Span) -> AgentResult<DatastoreVersion> {
+        let info = self.build_info(span)?;
         let version = info.get("version").ok_or(AgentError::ModelViolation(
             String::from("Unable to determine MongoDB version")
         ))?;
@@ -104,13 +133,8 @@ impl Agent for MongoDBAgent {
         &self.tracer
     }
 
-    fn shards(&self, _: &mut Span) -> AgentResult<Vec<Shard>> {
-        let mongo = self.client();
-        let status = mongo.db("admin").command(
-            doc! {"replSetGetStatus" => 1},
-            CommandType::IsMaster,
-            None
-        ).map_err(self::error::to_agent)?;
+    fn shards(&self, span: &mut Span) -> AgentResult<Vec<Shard>> {
+        let status = self.repl_set_get_status(span)?;
         let name = rs_status::name(&status)?;
         let role = rs_status::role(&status)?;
         let last_op = rs_status::last_op(&status)?;
