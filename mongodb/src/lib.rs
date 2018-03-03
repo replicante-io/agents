@@ -139,8 +139,16 @@ impl Agent for MongoDBAgent {
         let role = rs_status::role(&status)?;
         let last_op = rs_status::last_op(&status)?;
         let lag = match role {
-            ShardRole::Primary => 0,
-            _ => rs_status::lag(&status, last_op)?
+            ShardRole::Primary => Some(0),
+            _ => match rs_status::lag(&status, last_op) {
+                Ok(lag) => Some(lag),
+                Err(err) => {
+                    // TODO: fix logging
+                    println!("Failed to compute lag: {:?}", err);
+                    span.tag("lag.error", format!("Failed lag detection: {:?}", err));
+                    None
+                }
+            }
         };
         Ok(vec![Shard::new(&name, role, lag, last_op)])
     }

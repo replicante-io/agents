@@ -47,7 +47,7 @@ impl Agent for TestAgent {
 
     fn shards(&self, _: &mut Span) -> AgentResult<Vec<Shard>> {
         Ok(vec![
-            Shard::new("test-shard", ShardRole::Primary, 1, 2)
+            Shard::new("test-shard", ShardRole::Primary, Some(1), 2)
         ])
     }
 }
