@@ -9,6 +9,7 @@ use opentracingrust::utils::FailSpan;
 
 use super::super::AgentContainer;
 use super::super::models::Shard;
+use super::super::util::tracing::ResponseCarrier;
 
 
 /// Handler implementing the /api/v1/status endpoint.
@@ -32,6 +33,13 @@ impl Handler for StatusHandler {
             shards: self.agent.shards(&mut span).fail_span(&mut span)?
         };
         let mut response = Response::new();
+        match ResponseCarrier::inject(span.context(), &mut response, self.agent.tracer()) {
+            Ok(_) => (),
+            Err(err) => {
+                // TODO: convert to logging.
+                println!("Failed to inject span: {:?}", err)
+            }
+        };
         response.set_mut(JsonResponse::json(&shards)).set_mut(status::Ok);
         Ok(response)
     }

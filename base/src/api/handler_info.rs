@@ -10,6 +10,7 @@ use opentracingrust::utils::FailSpan;
 use super::super::AgentContainer;
 use super::super::models::AgentVersion;
 use super::super::models::DatastoreVersion;
+use super::super::util::tracing::ResponseCarrier;
 
 
 /// Handler implementing the /api/v1/info endpoint.
@@ -36,6 +37,13 @@ impl Handler for InfoHandler {
             version: agent
         };
         let mut response = Response::new();
+        match ResponseCarrier::inject(span.context(), &mut response, self.agent.tracer()) {
+            Ok(_) => (),
+            Err(err) => {
+                // TODO: convert to logging.
+                println!("Failed to inject span: {:?}", err)
+            }
+        };
         response.set_mut(JsonResponse::json(version)).set_mut(status::Ok);
         Ok(response)
     }

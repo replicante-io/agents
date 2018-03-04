@@ -98,6 +98,7 @@ mod api;
 pub mod config;
 pub mod error;
 pub mod models;
+pub mod util;
 
 pub use self::error::AgentError;
 pub use self::error::AgentResult;
