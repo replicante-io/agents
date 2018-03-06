@@ -8,9 +8,11 @@ use iron_json_response::JsonResponseMiddleware;
 use opentracingrust::utils::FailSpan;
 
 use super::super::AgentContainer;
+use super::super::error::otr_to_iron;
+
 use super::super::models::AgentVersion;
 use super::super::models::DatastoreVersion;
-use super::super::util::tracing::ResponseCarrier;
+use super::super::util::tracing::HeadersCarrier;
 
 
 /// Handler implementing the /api/v1/info endpoint.
@@ -28,8 +30,9 @@ impl InfoHandler {
 }
 
 impl Handler for InfoHandler {
-    fn handle(&self, _: &mut Request) -> IronResult<Response> {
-        let mut span = self.agent.tracer().span("info").auto_finish();
+    fn handle(&self, request: &mut Request) -> IronResult<Response> {
+        let mut span = HeadersCarrier::child_of("info", &mut request.headers, self.agent.tracer())
+            .map_err(otr_to_iron)?.auto_finish();
         let agent = self.agent.agent_version(&mut span).fail_span(&mut span)?;
         let datastore = self.agent.datastore_version(&mut span).fail_span(&mut span)?;
         let version = VersionInfo {
@@ -37,7 +40,7 @@ impl Handler for InfoHandler {
             version: agent
         };
         let mut response = Response::new();
-        match ResponseCarrier::inject(span.context(), &mut response, self.agent.tracer()) {
+        match HeadersCarrier::inject(span.context(), &mut response.headers, self.agent.tracer()) {
             Ok(_) => (),
             Err(err) => {
                 // TODO: convert to logging.

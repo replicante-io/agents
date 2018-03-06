@@ -8,8 +8,10 @@ use iron_json_response::JsonResponseMiddleware;
 use opentracingrust::utils::FailSpan;
 
 use super::super::AgentContainer;
+use super::super::error::otr_to_iron;
+
 use super::super::models::Shard;
-use super::super::util::tracing::ResponseCarrier;
+use super::super::util::tracing::HeadersCarrier;
 
 
 /// Handler implementing the /api/v1/status endpoint.
@@ -27,13 +29,14 @@ impl StatusHandler {
 }
 
 impl Handler for StatusHandler {
-    fn handle(&self, _: &mut Request) -> IronResult<Response> {
-        let mut span = self.agent.tracer().span("status").auto_finish();
+    fn handle(&self, request: &mut Request) -> IronResult<Response> {
+        let mut span = HeadersCarrier::child_of("status", &mut request.headers, self.agent.tracer())
+            .map_err(otr_to_iron)?.auto_finish();
         let shards = StatusRespone {
             shards: self.agent.shards(&mut span).fail_span(&mut span)?
         };
         let mut response = Response::new();
-        match ResponseCarrier::inject(span.context(), &mut response, self.agent.tracer()) {
+        match HeadersCarrier::inject(span.context(), &mut response.headers, self.agent.tracer()) {
             Ok(_) => (),
             Err(err) => {
                 // TODO: convert to logging.

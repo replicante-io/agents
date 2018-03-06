@@ -3,7 +3,10 @@ use std::fmt;
 
 use iron::prelude::*;
 use iron::status;
+use iron::IronError;
 use iron_json_response::JsonResponse;
+
+use opentracingrust::Error as OTError;
 
 
 /// Wrapps an AgentError into a serializable struct.
@@ -93,6 +96,22 @@ impl Error for AgentError {
 
     fn cause(&self) -> Option<&Error> {
         None
+    }
+}
+
+
+/// Conver and OpenTracingRust error into an IronError.
+pub fn otr_to_iron(error: OTError) -> IronError {
+    // TODO: OTError should really have implemented `Error` :-(
+    let payload = AgentErrorResponse {
+        error: format!("{:?}", error),
+        kind: "OpenTracingRustError".into()
+    };
+    let mut response = Response::new();
+    response.set_mut(JsonResponse::json(payload)).set_mut(status::BadRequest);
+    IronError {
+        error: Box::new(AgentError::GenericError("OpenTracingRustError".into())),
+        response: response
     }
 }
 

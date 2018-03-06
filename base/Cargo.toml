@@ -37,7 +37,7 @@ serde_derive = "^1.0.25"
 serde_json = "^1.0.8"
 
 opentracingrust = "^0.3.1"
-opentracingrust_zipkin = "^0.1.0"
+opentracingrust_zipkin = "^0.1.2"
 
 
 [build-dependencies]
