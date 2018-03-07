@@ -4,5 +4,3 @@
 /target/
 docs/specs/_book/
 node_modules/
-
-Cargo.lock
