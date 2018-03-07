@@ -3,6 +3,7 @@ extern crate bson;
 extern crate config;
 extern crate mongodb;
 extern crate opentracingrust;
+extern crate prometheus;
 
 extern crate serde;
 #[macro_use]
@@ -22,6 +23,8 @@ use opentracingrust::Log;
 use opentracingrust::Span;
 use opentracingrust::Tracer;
 use opentracingrust::utils::FailSpan;
+
+use prometheus::Registry;
 
 use replicante_agent::Agent;
 use replicante_agent::AgentError;
@@ -45,6 +48,7 @@ pub struct MongoDBAgent {
     // To implement this, the client is stored in an option that is
     // filled just after the agent is created while in the factory.
     client: Option<Client>,
+    registry: Registry,
     settings: MongoDBSettings,
     tracer: Tracer,
 }
@@ -53,6 +57,7 @@ impl MongoDBAgent {
     pub fn new(settings: MongoDBSettings, tracer: Tracer) -> AgentResult<MongoDBAgent> {
         let mut agent = MongoDBAgent {
             client: None,
+            registry: Registry::new(),
             tracer,
             settings: settings,
         };
@@ -129,10 +134,6 @@ impl Agent for MongoDBAgent {
         }
     }
 
-    fn tracer(&self) -> &Tracer {
-        &self.tracer
-    }
-
     fn shards(&self, span: &mut Span) -> AgentResult<Vec<Shard>> {
         let status = self.repl_set_get_status(span)?;
         let name = rs_status::name(&status)?;
@@ -151,5 +152,13 @@ impl Agent for MongoDBAgent {
             }
         };
         Ok(vec![Shard::new(&name, role, lag, last_op)])
+    }
+
+    fn metrics(&self) -> Registry {
+        self.registry.clone()
+    }
+
+    fn tracer(&self) -> &Tracer {
+        &self.tracer
     }
 }

@@ -10,11 +10,13 @@
 //!
 //! ```
 //! extern crate opentracingrust;
+//! extern crate prometheus;
 //! extern crate replicante_agent;
 //!
 //! use opentracingrust::Span;
 //! use opentracingrust::Tracer;
 //! use opentracingrust::tracers::NoopTracer;
+//! use prometheus::Registry;
 //!
 //! use replicante_agent::Agent;
 //! use replicante_agent::AgentResult;
@@ -28,12 +30,16 @@
 //! 
 //! 
 //! pub struct TestAgent {
-//!     tracer: Tracer
+//!     registry: Registry,
+//!     tracer: Tracer,
 //! }
 //! 
 //! impl TestAgent {
 //!     pub fn new(tracer: Tracer) -> TestAgent {
-//!         TestAgent { tracer }
+//!         TestAgent {
+//!             registry: Registry::new(),
+//!             tracer,
+//!         }
 //!     }
 //! }
 //! 
@@ -49,12 +55,16 @@
 //!         Ok(DatastoreVersion::new("Test DB", "1.2.3"))
 //!     }
 //!
-//!     fn tracer(&self) -> &Tracer {
-//!         &self.tracer
-//!     }
-//!
 //!     fn shards(&self, _: &mut Span) -> AgentResult<Vec<Shard>> {
 //!         Ok(vec![])
+//!     }
+//!
+//!     fn metrics(&self) -> Registry {
+//!         self.registry.clone()
+//!     }
+//!
+//!     fn tracer(&self) -> &Tracer {
+//!         &self.tracer
 //!     }
 //! }
 //! 
@@ -79,6 +89,7 @@ extern crate iron_test;
 
 extern crate opentracingrust;
 extern crate opentracingrust_zipkin;
+extern crate prometheus;
 
 extern crate serde;
 extern crate serde_json;
@@ -93,6 +104,7 @@ use router::Router;
 
 use opentracingrust::Span;
 use opentracingrust::Tracer;
+use prometheus::Registry;
 
 mod api;
 pub mod config;
@@ -112,11 +124,24 @@ use self::models::Shard;
 ///
 /// Agents should be implemented as structs that implement `BaseAgent`.
 pub trait Agent : Send + Sync {
+    //*** Methods to access datastore model requirements ***//
     /// Fetches the agent version information.
     fn agent_version(&self, span: &mut Span) -> AgentResult<AgentVersion>;
 
     /// Fetches the datastore version information.
     fn datastore_version(&self, span: &mut Span) -> AgentResult<DatastoreVersion>;
+
+    /// Fetches all shards and details on the managed datastore node.
+    fn shards(&self, span: &mut Span) -> AgentResult<Vec<Shard>>;
+
+
+    //*** Methods needed for agent introspection and diagnostics ***//
+    /// Acess the agent's metrics [`Registry`].
+    ///
+    /// Agents MUST register their metrics at creation time and as part of the same [`Registry`].
+    ///
+    /// [`Registry`]: https://docs.rs/prometheus/0.3.13/prometheus/struct.Registry.html
+    fn metrics(&self) -> Registry;
 
     /// Access the agent's [`Tracer`].
     ///
@@ -124,9 +149,6 @@ pub trait Agent : Send + Sync {
     ///
     /// [`Tracer`]: https://docs.rs/opentracingrust/0.3.0/opentracingrust/struct.Tracer.html
     fn tracer(&self) -> &Tracer;
-
-    /// Fetches all shards and details on the managed datastore node.
-    fn shards(&self, span: &mut Span) -> AgentResult<Vec<Shard>>;
 }
 
 /// Container type to hold an Agent trait object.

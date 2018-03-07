@@ -1,5 +1,8 @@
 extern crate opentracingrust;
+extern crate prometheus;
+
 extern crate replicante_agent;
+
 
 use std::time::Duration;
 
@@ -7,6 +10,7 @@ use opentracingrust::Span;
 use opentracingrust::Tracer;
 use opentracingrust::tracers::NoopTracer;
 use opentracingrust::utils::ReporterThread;
+use prometheus::Registry;
 
 use replicante_agent::Agent;
 use replicante_agent::AgentResult;
@@ -21,12 +25,16 @@ use replicante_agent::models::ShardRole;
 
 
 pub struct TestAgent {
+    registry: Registry,
     tracer: Tracer,
 }
 
 impl TestAgent {
     pub fn new(tracer: Tracer) -> TestAgent {
-        TestAgent { tracer }
+        TestAgent {
+            registry: Registry::new(),
+            tracer
+        }
     }
 }
 
@@ -41,14 +49,18 @@ impl Agent for TestAgent {
         Ok(DatastoreVersion::new("Test DB", "1.2.3"))
     }
 
-    fn tracer(&self) -> &Tracer {
-        &self.tracer
-    }
-
     fn shards(&self, _: &mut Span) -> AgentResult<Vec<Shard>> {
         Ok(vec![
             Shard::new("test-shard", ShardRole::Primary, Some(1), 2)
         ])
+    }
+
+    fn metrics(&self) -> Registry {
+        self.registry.clone()
+    }
+
+    fn tracer(&self) -> &Tracer {
+        &self.tracer
     }
 }
 

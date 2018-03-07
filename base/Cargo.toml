@@ -31,6 +31,7 @@ maintenance = { status = "actively-developed" }
 config = "^0.7.0"
 iron = "^0.6.0"
 iron-json-response = "^0.6.0"
+prometheus = "^0.3.13"
 router = "^0.6.0"
 serde = "^1.0.25"
 serde_derive = "^1.0.25"

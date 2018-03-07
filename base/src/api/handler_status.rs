@@ -68,6 +68,7 @@ mod tests {
     use opentracingrust::Span;
     use opentracingrust::Tracer;
     use opentracingrust::tracers::NoopTracer;
+    use prometheus::Registry;
 
     use super::StatusHandler;
     use super::super::super::Agent;
@@ -80,6 +81,7 @@ mod tests {
     use super::super::super::models::ShardRole;
 
     struct TestAgent {
+        registry: Registry,
         tracer: Tracer,
     }
 
@@ -92,14 +94,18 @@ mod tests {
             Err(AgentError::GenericError(String::from("Not Needed")))
         }
 
-        fn tracer(&self) -> &Tracer {
-            &self.tracer
-        }
-
         fn shards(&self, _: &mut Span) -> AgentResult<Vec<Shard>> {
             Ok(vec![
                Shard::new("test-shard", ShardRole::Primary, Some(1), 2)
             ])
+        }
+
+        fn metrics(&self) -> Registry {
+            self.registry.clone()
+        }
+
+        fn tracer(&self) -> &Tracer {
+            &self.tracer
         }
     }
 
@@ -118,7 +124,10 @@ mod tests {
     #[test]
     fn status_retruns_shards() {
         let (tracer, _receiver) = NoopTracer::new();
-        let result = request_get(Box::new(TestAgent { tracer })).unwrap();
+        let result = request_get(Box::new(TestAgent {
+            registry: Registry::new(),
+            tracer
+        })).unwrap();
         assert_eq!(result, r#"{"shards":[{"id":"test-shard","role":"Primary","lag":1,"last_op":2}]}"#);
     }
 }

@@ -73,6 +73,7 @@ mod tests {
     use opentracingrust::Span;
     use opentracingrust::Tracer;
     use opentracingrust::tracers::NoopTracer;
+    use prometheus::Registry;
 
     use super::InfoHandler;
     use super::super::super::Agent;
@@ -84,6 +85,7 @@ mod tests {
     use super::super::super::models::Shard;
 
     struct TestAgent {
+        registry: Registry,
         success_version: bool,
         tracer: Tracer,
     }
@@ -101,12 +103,16 @@ mod tests {
             }
         }
 
-        fn tracer(&self) -> &Tracer {
-            &self.tracer
-        }
-
         fn shards(&self, _:&mut Span) -> AgentResult<Vec<Shard>> {
             Ok(vec![])
+        }
+
+        fn metrics(&self) -> Registry {
+            self.registry.clone()
+        }
+
+        fn tracer(&self) -> &Tracer {
+            &self.tracer
         }
     }
 
@@ -126,6 +132,7 @@ mod tests {
     fn info_handler_returns_error() {
         let (tracer, _receiver) = NoopTracer::new();
         let result = request_get(Box::new(TestAgent {
+            registry: Registry::new(),
             success_version: false,
             tracer,
         }));
@@ -141,6 +148,7 @@ mod tests {
     fn info_handler_returns_version() {
         let (tracer, _receiver) = NoopTracer::new();
         let result = request_get(Box::new(TestAgent {
+            registry: Registry::new(),
             success_version: true,
             tracer,
         })).unwrap();
