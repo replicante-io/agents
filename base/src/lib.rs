@@ -112,6 +112,9 @@ pub mod error;
 pub mod models;
 pub mod util;
 
+#[cfg(test)]
+pub mod testing;
+
 pub use self::error::AgentError;
 pub use self::error::AgentResult;
 
@@ -164,11 +167,11 @@ type AgentContainer = Arc<Box<Agent>>;
 /// agent will need on top of the `Agent` trait.
 pub struct AgentRunner {
     agent: AgentContainer,
-    conf: self::config::AgentConfig,
+    conf: config::AgentConfig,
 }
 
 impl AgentRunner {
-    pub fn new(agent: Box<Agent>, conf: self::config::AgentConfig) -> AgentRunner {
+    pub fn new(agent: Box<Agent>, conf: config::AgentConfig) -> AgentRunner {
         AgentRunner { agent: Arc::new(agent), conf }
     }
 
@@ -176,10 +179,12 @@ impl AgentRunner {
     pub fn run(&self) -> () {
         let mut router = Router::new();
         let info = api::InfoHandler::new(Arc::clone(&self.agent));
+        let metrics = api::MetricsHandler::new(Arc::clone(&self.agent));
         let status = api::StatusHandler::new(Arc::clone(&self.agent));
 
         router.get("/", api::index, "index");
         router.get("/api/v1/info", info, "info");
+        router.get("/api/v1/metrics", metrics, "metrics");
         router.get("/api/v1/status", status, "status");
 
         let bind = &self.conf.server.bind;

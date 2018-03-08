@@ -130,6 +130,7 @@ impl<'a> MapCarrier for HeadersCarrier<'a> {
     fn set(&mut self, key: &str, value: &str) {
         let value = String::from(value).into_bytes();
         self.headers.set_raw(String::from(key), vec![value]);
+        self.prepare_iter();
     }
 }
 

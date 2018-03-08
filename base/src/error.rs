@@ -25,7 +25,7 @@ pub type AgentResult<T> = Result<T, AgentError>;
 
 
 /// The error type for the `Agent` interface.
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub enum AgentError {
     /// Invalid configuration option found.
     ConfigError(String),
