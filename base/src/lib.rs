@@ -99,11 +99,17 @@ extern crate serde_derive;
 
 use std::sync::Arc;
 
+use iron::Chain;
 use iron::Iron;
 use router::Router;
 
 use opentracingrust::Span;
 use opentracingrust::Tracer;
+
+use prometheus::CounterVec;
+use prometheus::HistogramOpts;
+use prometheus::HistogramVec;
+use prometheus::Opts;
 use prometheus::Registry;
 
 mod api;
@@ -121,6 +127,8 @@ pub use self::error::AgentResult;
 use self::models::AgentVersion;
 use self::models::DatastoreVersion;
 use self::models::Shard;
+
+use self::util::iron::MetricsMiddleware;
 
 
 /// Trait to share common agent code and features.
@@ -176,7 +184,13 @@ impl AgentRunner {
     }
 
     /// Starts the Agent process and waits for it to terminate.
+    ///
+    /// # Panics
+    ///
+    /// TODO: metrics
+    /// TODO: bind
     pub fn run(&self) -> () {
+        // Create and configure API handlers.
         let mut router = Router::new();
         let info = api::InfoHandler::new(Arc::clone(&self.agent));
         let metrics = api::MetricsHandler::new(Arc::clone(&self.agent));
@@ -187,9 +201,36 @@ impl AgentRunner {
         router.get("/api/v1/metrics", metrics, "metrics");
         router.get("/api/v1/status", status, "status");
 
+        // Setup metrics collection.
+        let duration = HistogramVec::new(
+            HistogramOpts::new(
+                "agent_endpoint_duration",
+                "Observe the duration (in seconds) of agent endpoints"
+            ),
+            &vec!["method", "path"]
+        ).expect("Unable to configure duration histogram");
+        let errors = CounterVec::new(
+            Opts::new(
+                "agent_enpoint_errors",
+                "Number of errors encountered while handling requests"
+            ),
+            &vec!["method", "path"]
+        ).expect("Unable to configure errors counter");
+
+        let registry = self.agent.metrics();
+        registry.register(Box::new(duration.clone()))
+            .expect("Unable to register d<F12>uration histogram");
+        registry.register(Box::new(errors.clone())).expect("Unable to register errors counter");
+
+        // Wrap the router with middleweres.
+        let metrics = MetricsMiddleware::new(duration, errors);
+        let mut handler = Chain::new(router);
+        handler.link(metrics.into_middleware());
+
+        // Start the agent server.
         let bind = &self.conf.server.bind;
         println!("Listening on {} ...", bind);
-        Iron::new(router)
+        Iron::new(handler)
             .http(bind)
             .expect("Unable to start server");
     }
