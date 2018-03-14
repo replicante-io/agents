@@ -216,14 +216,23 @@ impl AgentRunner {
             ),
             &vec!["method", "path"]
         ).expect("Unable to configure errors counter");
+        let requests = CounterVec::new(
+            Opts::new(
+                "agent_enpoint_requests",
+                "Number of requests processed"
+            ),
+            &vec!["method", "path", "status"]
+        ).expect("Unable to configure requests counter");
 
         let registry = self.agent.metrics();
         registry.register(Box::new(duration.clone()))
-            .expect("Unable to register d<F12>uration histogram");
+            .expect("Unable to register duration histogram");
         registry.register(Box::new(errors.clone())).expect("Unable to register errors counter");
+        registry.register(Box::new(requests.clone()))
+            .expect("Unable to register requests counter");
 
         // Wrap the router with middleweres.
-        let metrics = MetricsMiddleware::new(duration, errors);
+        let metrics = MetricsMiddleware::new(duration, errors, requests);
         let mut handler = Chain::new(router);
         handler.link(metrics.into_middleware());
 
