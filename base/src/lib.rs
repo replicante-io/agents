@@ -111,6 +111,7 @@ use prometheus::HistogramOpts;
 use prometheus::HistogramVec;
 use prometheus::Opts;
 use prometheus::Registry;
+use prometheus::process_collector::ProcessCollector;
 
 mod api;
 pub mod config;
@@ -187,8 +188,10 @@ impl AgentRunner {
     ///
     /// # Panics
     ///
-    /// TODO: metrics
-    /// TODO: bind
+    /// This method panics if:
+    ///
+    ///   * It fails to configure or register the metrics.
+    ///   * It fails to bind to the configured port.
     pub fn run(&self) -> () {
         // Create and configure API handlers.
         let mut router = Router::new();
@@ -230,6 +233,10 @@ impl AgentRunner {
         registry.register(Box::new(errors.clone())).expect("Unable to register errors counter");
         registry.register(Box::new(requests.clone()))
             .expect("Unable to register requests counter");
+
+        // Setup process metrics.
+        let process = ProcessCollector::for_self();
+        registry.register(Box::new(process)).expect("Unable to register process metrics");
 
         // Wrap the router with middleweres.
         let metrics = MetricsMiddleware::new(duration, errors, requests);
