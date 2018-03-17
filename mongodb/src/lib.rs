@@ -24,6 +24,8 @@ use opentracingrust::Span;
 use opentracingrust::Tracer;
 use opentracingrust::utils::FailSpan;
 
+use prometheus::CounterVec;
+use prometheus::Opts;
 use prometheus::Registry;
 
 use replicante_agent::Agent;
@@ -48,18 +50,37 @@ pub struct MongoDBAgent {
     // To implement this, the client is stored in an option that is
     // filled just after the agent is created while in the factory.
     client: Option<Client>,
-    registry: Registry,
     settings: MongoDBSettings,
+
+    // Introspection.
+    mongo_command_counts: CounterVec,
+    registry: Registry,
     tracer: Tracer,
 }
 
 impl MongoDBAgent {
     pub fn new(settings: MongoDBSettings, tracer: Tracer) -> AgentResult<MongoDBAgent> {
+        // Init metrics.
+        let mongo_command_counts = CounterVec::new(
+            Opts::new(
+                "replicante_mongodb_commands",
+                "Counts the commands executed against the MongoDB node"
+            ),
+            &["command"]
+        ).expect("Unable to configure commands counter");
+        let registry = Registry::new();
+        registry.register(Box::new(mongo_command_counts.clone()))
+            .expect("Unable to register commands counter");
+
+        // Init agent.
         let mut agent = MongoDBAgent {
             client: None,
-            registry: Registry::new(),
-            tracer,
             settings: settings,
+
+            // Introspection.
+            mongo_command_counts,
+            registry,
+            tracer,
         };
         agent.init_client()?;
         Ok(agent)
@@ -88,6 +109,7 @@ impl MongoDBAgent {
         span.child_of(parent.context().clone());
         let mongo = self.client();
         span.log(Log::new().log("span.kind", "client-send"));
+        self.mongo_command_counts.with_label_values(&["buildInfo"]).inc();
         let info = mongo.db("test").command(
             doc! {"buildInfo" => 1},
             CommandType::BuildInfo,
@@ -103,6 +125,7 @@ impl MongoDBAgent {
         span.child_of(parent.context().clone());
         let mongo = self.client();
         span.log(Log::new().log("span.kind", "client-send"));
+        self.mongo_command_counts.with_label_values(&["replSetGetStatus"]).inc();
         let status = mongo.db("admin").command(
             doc! {"replSetGetStatus" => 1},
             CommandType::IsMaster,

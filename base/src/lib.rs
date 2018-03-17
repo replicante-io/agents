@@ -207,23 +207,20 @@ impl AgentRunner {
         // Setup metrics collection.
         let duration = HistogramVec::new(
             HistogramOpts::new(
-                "agent_endpoint_duration",
+                "replicante_agent_endpoint_duration",
                 "Observe the duration (in seconds) of agent endpoints"
             ),
             &vec!["method", "path"]
         ).expect("Unable to configure duration histogram");
         let errors = CounterVec::new(
             Opts::new(
-                "agent_enpoint_errors",
+                "replicante_agent_enpoint_errors",
                 "Number of errors encountered while handling requests"
             ),
             &vec!["method", "path"]
         ).expect("Unable to configure errors counter");
         let requests = CounterVec::new(
-            Opts::new(
-                "agent_enpoint_requests",
-                "Number of requests processed"
-            ),
+            Opts::new("replicante_agent_enpoint_requests", "Number of requests processed"),
             &vec!["method", "path", "status"]
         ).expect("Unable to configure requests counter");
 
