@@ -33,7 +33,7 @@ use replicante_agent::AgentError;
 use replicante_agent::AgentResult;
 
 use replicante_agent::models::AgentVersion;
-use replicante_agent::models::DatastoreVersion;
+use replicante_agent::models::DatastoreInfo;
 use replicante_agent::models::Shard;
 use replicante_agent::models::ShardRole;
 
@@ -143,13 +143,13 @@ impl Agent for MongoDBAgent {
         ))
     }
 
-    fn datastore_version(&self, span: &mut Span) -> AgentResult<DatastoreVersion> {
+    fn datastore_info(&self, span: &mut Span) -> AgentResult<DatastoreInfo> {
         let info = self.build_info(span)?;
         let version = info.get("version").ok_or(AgentError::ModelViolation(
             String::from("Unable to determine MongoDB version")
         ))?;
         if let &Bson::String(ref version) = version {
-            Ok(DatastoreVersion::new("MongoDB", version))
+            Ok(DatastoreInfo::new("MongoDB", version))
         } else {
             Err(AgentError::ModelViolation(String::from(
                 "Unexpeted version type (should be String)"

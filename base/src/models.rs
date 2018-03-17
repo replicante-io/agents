@@ -1,3 +1,16 @@
+/// Stores agent information.
+#[derive(Clone, Debug, Serialize)]
+pub struct AgentInfo {
+    version: AgentVersion,
+}
+
+impl AgentInfo {
+    pub fn new(version: AgentVersion) -> AgentInfo {
+        AgentInfo { version }
+    }
+}
+
+
 /// Stores agent version details.
 #[derive(Clone, Debug, Serialize)]
 pub struct AgentVersion {
@@ -20,15 +33,15 @@ impl AgentVersion {
 /// Stores datastore version details.
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[derive(PartialEq)]
-pub struct DatastoreVersion {
-    name: String,
+pub struct DatastoreInfo {
+    kind: String,
     version: String,
 }
 
-impl DatastoreVersion {
-    pub fn new(name: &str, version: &str) -> DatastoreVersion {
-        DatastoreVersion {
-            name: String::from(name),
+impl DatastoreInfo {
+    pub fn new(kind: &str, version: &str) -> DatastoreInfo {
+        DatastoreInfo {
+            kind: String::from(kind),
             version: String::from(version)
         }
     }
@@ -67,6 +80,20 @@ pub enum ShardRole {
 
 #[cfg(test)]
 mod tests {
+    mod agent_info {
+        use serde_json;
+        use super::super::AgentInfo;
+        use super::super::AgentVersion;
+
+        #[test]
+        fn to_json() {
+            let info = AgentInfo::new(AgentVersion::new("abc123", "1.2.3", "tainted"));
+            let payload = serde_json::to_string(&info).unwrap();
+            let expected = r#"{"version":{"checkout":"abc123","number":"1.2.3","taint":"tainted"}}"#;
+            assert_eq!(payload, expected);
+        }
+    }
+
     mod agent_version {
         use serde_json;
         use super::super::AgentVersion;
@@ -80,23 +107,23 @@ mod tests {
         }
     }
 
-    mod datastore_version {
+    mod datastore_info {
         use serde_json;
-        use super::super::DatastoreVersion;
+        use super::super::DatastoreInfo;
 
         #[test]
         fn from_json() {
-            let payload = r#"{"name":"DB","version":"1.2.3"}"#;
-            let version: DatastoreVersion = serde_json::from_str(payload).unwrap();
-            let expected = DatastoreVersion::new("DB", "1.2.3");
-            assert_eq!(version, expected);
+            let payload = r#"{"kind":"DB","version":"1.2.3"}"#;
+            let info: DatastoreInfo = serde_json::from_str(payload).unwrap();
+            let expected = DatastoreInfo::new("DB", "1.2.3");
+            assert_eq!(info, expected);
         }
 
         #[test]
         fn to_json() {
-            let version = DatastoreVersion::new("DB", "1.2.3");
-            let payload = serde_json::to_string(&version).unwrap();
-            let expected = r#"{"name":"DB","version":"1.2.3"}"#;
+            let info = DatastoreInfo::new("DB", "1.2.3");
+            let payload = serde_json::to_string(&info).unwrap();
+            let expected = r#"{"kind":"DB","version":"1.2.3"}"#;
             assert_eq!(payload, expected);
         }
     }

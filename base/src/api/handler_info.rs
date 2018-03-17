@@ -10,8 +10,8 @@ use opentracingrust::utils::FailSpan;
 use super::super::AgentContainer;
 use super::super::error::otr_to_iron;
 
-use super::super::models::AgentVersion;
-use super::super::models::DatastoreVersion;
+use super::super::models::AgentInfo;
+use super::super::models::DatastoreInfo;
 use super::super::util::tracing::HeadersCarrier;
 
 
@@ -33,12 +33,12 @@ impl Handler for InfoHandler {
     fn handle(&self, request: &mut Request) -> IronResult<Response> {
         let mut span = HeadersCarrier::child_of("info", &mut request.headers, self.agent.tracer())
             .map_err(otr_to_iron)?.auto_finish();
-        let agent = self.agent.agent_version(&mut span).fail_span(&mut span)?;
-        let datastore = self.agent.datastore_version(&mut span).fail_span(&mut span)?;
-        let version = VersionInfo {
-            datastore: datastore,
-            version: agent
-        };
+
+        let agent_version = self.agent.agent_version(&mut span).fail_span(&mut span)?;
+        let agent = AgentInfo::new(agent_version);
+        let datastore = self.agent.datastore_info(&mut span).fail_span(&mut span)?;
+        let info = InfoResponse { datastore, agent };
+
         let mut response = Response::new();
         match HeadersCarrier::inject(span.context(), &mut response.headers, self.agent.tracer()) {
             Ok(_) => (),
@@ -47,7 +47,7 @@ impl Handler for InfoHandler {
                 println!("Failed to inject span: {:?}", err)
             }
         };
-        response.set_mut(JsonResponse::json(version)).set_mut(status::Ok);
+        response.set_mut(JsonResponse::json(info)).set_mut(status::Ok);
         Ok(response)
     }
 }
@@ -55,9 +55,9 @@ impl Handler for InfoHandler {
 
 /// Wrapps the agent and datastore versions for API response.
 #[derive(Serialize)]
-struct VersionInfo {
-    datastore: DatastoreVersion,
-    version: AgentVersion
+struct InfoResponse {
+    agent: AgentInfo,
+    datastore: DatastoreInfo,
 }
 
 
@@ -81,7 +81,7 @@ mod tests {
     use super::super::super::AgentResult;
 
     use super::super::super::models::AgentVersion;
-    use super::super::super::models::DatastoreVersion;
+    use super::super::super::models::DatastoreInfo;
     use super::super::super::models::Shard;
 
     struct TestAgent {
@@ -95,9 +95,9 @@ mod tests {
             Ok(AgentVersion::new("dcd", "1.2.3", "tainted"))
         }
 
-        fn datastore_version(&self, _: &mut Span) -> AgentResult<DatastoreVersion> {
+        fn datastore_info(&self, _: &mut Span) -> AgentResult<DatastoreInfo> {
             if self.success_version {
-                Ok(DatastoreVersion::new("DB", "1.2.3"))
+                Ok(DatastoreInfo::new("DB", "1.2.3"))
             } else {
                 Err(AgentError::GenericError(String::from("Testing failure")))
             }
@@ -152,7 +152,7 @@ mod tests {
             success_version: true,
             tracer,
         })).unwrap();
-        let expected = r#"{"datastore":{"name":"DB","version":"1.2.3"},"version":{"checkout":"dcd","number":"1.2.3","taint":"tainted"}}"#;
+        let expected = r#"{"agent":{"version":{"checkout":"dcd","number":"1.2.3","taint":"tainted"}},"datastore":{"kind":"DB","version":"1.2.3"}}"#;
         assert_eq!(result, expected);
     }
 }

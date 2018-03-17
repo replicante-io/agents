@@ -19,7 +19,7 @@ use replicante_agent::AgentRunner;
 use replicante_agent::config::AgentConfig;
 
 use replicante_agent::models::AgentVersion;
-use replicante_agent::models::DatastoreVersion;
+use replicante_agent::models::DatastoreInfo;
 use replicante_agent::models::Shard;
 use replicante_agent::models::ShardRole;
 
@@ -45,8 +45,8 @@ impl Agent for TestAgent {
         ))
     }
 
-    fn datastore_version(&self, _: &mut Span) -> AgentResult<DatastoreVersion> {
-        Ok(DatastoreVersion::new("Test DB", "1.2.3"))
+    fn datastore_info(&self, _: &mut Span) -> AgentResult<DatastoreInfo> {
+        Ok(DatastoreInfo::new("Test DB", "1.2.3"))
     }
 
     fn shards(&self, _: &mut Span) -> AgentResult<Vec<Shard>> {

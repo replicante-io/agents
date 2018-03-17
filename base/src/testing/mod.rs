@@ -9,14 +9,14 @@ use super::Agent;
 use super::AgentResult;
 
 use super::models::AgentVersion;
-use super::models::DatastoreVersion;
+use super::models::DatastoreInfo;
 use super::models::Shard;
 
 
 /// An implementation of Agent to be used for tests.
 pub struct MockAgent {
     // Mock responses
-    pub datastore_version: AgentResult<DatastoreVersion>,
+    pub datastore_info: AgentResult<DatastoreInfo>,
 
     // Introspection
     registry: Registry,
@@ -41,7 +41,7 @@ impl MockAgent {
     pub fn new_with_tracer(tracer: Tracer) -> MockAgent {
         MockAgent {
             // Mock responses
-            datastore_version: Ok(DatastoreVersion::new("DB", "1.2.3")),
+            datastore_info: Ok(DatastoreInfo::new("DB", "1.2.3")),
 
             // Introspection
             registry: Registry::new(),
@@ -55,8 +55,8 @@ impl Agent for MockAgent {
         Ok(AgentVersion::new("dcd", "1.2.3", "tainted"))
     }
 
-    fn datastore_version(&self, _: &mut Span) -> AgentResult<DatastoreVersion> {
-        self.datastore_version.clone()
+    fn datastore_info(&self, _: &mut Span) -> AgentResult<DatastoreInfo> {
+        self.datastore_info.clone()
     }
 
     fn shards(&self, _:&mut Span) -> AgentResult<Vec<Shard>> {
