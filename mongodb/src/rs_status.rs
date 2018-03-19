@@ -35,6 +35,21 @@ pub fn name(rs: &Document) -> AgentResult<String> {
     }
 }
 
+/// Extracts the node's name from the output of replSetGetStatus.
+pub fn node_name(rs: &Document) -> AgentResult<String> {
+    let node = find_self(rs)?;
+    let name = node.get("name").ok_or(AgentError::ModelViolation(
+        String::from("Unable to determine local node's name")
+    ))?;
+    if let &Bson::String(ref name) = name {
+        Ok(name.clone())
+    } else {
+        Err(AgentError::ModelViolation(String::from(
+            "Unexpeted local node name type (should be String)"
+        )))
+    }
+}
+
 
 /// Extracts the node's role in the Replica Set.
 pub fn role(rs: &Document) -> AgentResult<ShardRole> {
@@ -147,6 +162,7 @@ mod tests {
             "set": "test-rs",
             "members": [{
                 "_id": 0,
+                "name": "host0",
                 "optime": {
                     "ts": Bson::TimeStamp((1514677701 as i64) << 32)
                 },
@@ -154,6 +170,7 @@ mod tests {
                 "state": 1
             }, {
                 "_id": 1,
+                "name": "host1",
                 "optime": {
                     "ts": Bson::TimeStamp((1514677698 as i64) << 32)
                 },
@@ -392,6 +409,50 @@ mod tests {
             match rs_name {
                 Err(AgentError::ModelViolation(ref msg)) => assert_eq!(
                     "Unable to determine Replica Set name", msg
+                ),
+                Err(err) => panic!("Unexpected error: {:?}", err),
+                Ok(success) => panic!("Unexpected success: {:?}", success)
+            };
+        }
+    }
+
+    mod test_node_name {
+        use replicante_agent::AgentError;
+        use super::make_rs;
+        use super::super::node_name;
+
+        #[test]
+        fn found() {
+            let rs = make_rs();
+            let name = node_name(&rs).unwrap();
+            assert_eq!("host1", name);
+        }
+
+        #[test]
+        fn not_a_string() {
+            let rs = doc! {"members": [{
+                "name": 22,
+                "self": true
+            }]};
+            let name = node_name(&rs);
+            match name {
+                Err(AgentError::ModelViolation(ref msg)) => assert_eq!(
+                    "Unexpeted local node name type (should be String)", msg
+                ),
+                Err(err) => panic!("Unexpected error: {:?}", err),
+                Ok(success) => panic!("Unexpected success: {:?}", success)
+            };
+        }
+
+        #[test]
+        fn not_present() {
+            let rs = doc! {"members": [{
+                "self": true
+            }]};
+            let name = node_name(&rs);
+            match name {
+                Err(AgentError::ModelViolation(ref msg)) => assert_eq!(
+                    "Unable to determine local node's name", msg
                 ),
                 Err(err) => panic!("Unexpected error: {:?}", err),
                 Ok(success) => panic!("Unexpected success: {:?}", success)
