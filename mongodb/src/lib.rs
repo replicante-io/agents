@@ -149,7 +149,8 @@ impl Agent for MongoDBAgent {
             String::from("Unable to determine MongoDB version")
         ))?;
         if let &Bson::String(ref version) = version {
-            Ok(DatastoreInfo::new("MongoDB", version))
+            // TODO: extract node name.
+            Ok(DatastoreInfo::new("MongoDB", "TODO", version))
         } else {
             Err(AgentError::ModelViolation(String::from(
                 "Unexpeted version type (should be String)"

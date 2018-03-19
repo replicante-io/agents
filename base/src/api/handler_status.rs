@@ -65,49 +65,13 @@ mod tests {
     use iron_test::request;
     use iron_test::response;
 
-    use opentracingrust::Span;
-    use opentracingrust::Tracer;
-    use opentracingrust::tracers::NoopTracer;
-    use prometheus::Registry;
-
     use super::StatusHandler;
     use super::super::super::Agent;
-    use super::super::super::AgentError;
-    use super::super::super::AgentResult;
 
-    use super::super::super::models::AgentVersion;
-    use super::super::super::models::DatastoreInfo;
     use super::super::super::models::Shard;
     use super::super::super::models::ShardRole;
 
-    struct TestAgent {
-        registry: Registry,
-        tracer: Tracer,
-    }
-
-    impl Agent for TestAgent {
-        fn agent_version(&self, _: &mut Span) -> AgentResult<AgentVersion> {
-            Ok(AgentVersion::new("dcd", "1.2.3", "tainted"))
-        }
-
-        fn datastore_info(&self, _: &mut Span) -> AgentResult<DatastoreInfo> {
-            Err(AgentError::GenericError(String::from("Not Needed")))
-        }
-
-        fn shards(&self, _: &mut Span) -> AgentResult<Vec<Shard>> {
-            Ok(vec![
-               Shard::new("test-shard", ShardRole::Primary, Some(1), 2)
-            ])
-        }
-
-        fn metrics(&self) -> Registry {
-            self.registry.clone()
-        }
-
-        fn tracer(&self) -> &Tracer {
-            &self.tracer
-        }
-    }
+    use super::super::super::testing::MockAgent;
 
     fn request_get(agent: Box<Agent>) -> Result<String, IronError> {
         let handler = StatusHandler::new(Arc::new(agent));
@@ -123,11 +87,9 @@ mod tests {
 
     #[test]
     fn status_retruns_shards() {
-        let (tracer, _receiver) = NoopTracer::new();
-        let result = request_get(Box::new(TestAgent {
-            registry: Registry::new(),
-            tracer
-        })).unwrap();
+        let (mut agent, _receiver) = MockAgent::new();
+        agent.shards = Ok(vec![Shard::new("test-shard", ShardRole::Primary, Some(1), 2)]);
+        let result = request_get(Box::new(agent)).unwrap();
         assert_eq!(result, r#"{"shards":[{"id":"test-shard","role":"Primary","lag":1,"last_op":2}]}"#);
     }
 }

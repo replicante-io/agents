@@ -17,6 +17,7 @@ use super::models::Shard;
 pub struct MockAgent {
     // Mock responses
     pub datastore_info: AgentResult<DatastoreInfo>,
+    pub shards: AgentResult<Vec<Shard>>,
 
     // Introspection
     registry: Registry,
@@ -41,7 +42,8 @@ impl MockAgent {
     pub fn new_with_tracer(tracer: Tracer) -> MockAgent {
         MockAgent {
             // Mock responses
-            datastore_info: Ok(DatastoreInfo::new("DB", "1.2.3")),
+            datastore_info: Ok(DatastoreInfo::new("DB", "mock", "1.2.3")),
+            shards: Ok(vec![]),
 
             // Introspection
             registry: Registry::new(),
@@ -60,7 +62,7 @@ impl Agent for MockAgent {
     }
 
     fn shards(&self, _:&mut Span) -> AgentResult<Vec<Shard>> {
-        Ok(vec![])
+        self.shards.clone()
     }
 
     fn metrics(&self) -> Registry {

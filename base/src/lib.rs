@@ -52,7 +52,7 @@
 //!     }
 //!
 //!     fn datastore_info(&self, _: &mut Span) -> AgentResult<DatastoreInfo> {
-//!         Ok(DatastoreInfo::new("Test DB", "1.2.3"))
+//!         Ok(DatastoreInfo::new("Test DB", "Test", "1.2.3"))
 //!     }
 //!
 //!     fn shards(&self, _: &mut Span) -> AgentResult<Vec<Shard>> {

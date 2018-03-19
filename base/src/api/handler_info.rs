@@ -70,51 +70,11 @@ mod tests {
     use iron_test::request;
     use iron_test::response;
 
-    use opentracingrust::Span;
-    use opentracingrust::Tracer;
-    use opentracingrust::tracers::NoopTracer;
-    use prometheus::Registry;
-
     use super::InfoHandler;
     use super::super::super::Agent;
     use super::super::super::AgentError;
-    use super::super::super::AgentResult;
 
-    use super::super::super::models::AgentVersion;
-    use super::super::super::models::DatastoreInfo;
-    use super::super::super::models::Shard;
-
-    struct TestAgent {
-        registry: Registry,
-        success_version: bool,
-        tracer: Tracer,
-    }
-
-    impl Agent for TestAgent {
-        fn agent_version(&self, _: &mut Span) -> AgentResult<AgentVersion> {
-            Ok(AgentVersion::new("dcd", "1.2.3", "tainted"))
-        }
-
-        fn datastore_info(&self, _: &mut Span) -> AgentResult<DatastoreInfo> {
-            if self.success_version {
-                Ok(DatastoreInfo::new("DB", "1.2.3"))
-            } else {
-                Err(AgentError::GenericError(String::from("Testing failure")))
-            }
-        }
-
-        fn shards(&self, _:&mut Span) -> AgentResult<Vec<Shard>> {
-            Ok(vec![])
-        }
-
-        fn metrics(&self) -> Registry {
-            self.registry.clone()
-        }
-
-        fn tracer(&self) -> &Tracer {
-            &self.tracer
-        }
-    }
+    use super::super::super::testing::MockAgent;
 
     fn request_get(agent: Box<Agent>) -> Result<String, IronError> {
         let handler = InfoHandler::new(Arc::new(agent));
@@ -130,12 +90,9 @@ mod tests {
 
     #[test]
     fn info_handler_returns_error() {
-        let (tracer, _receiver) = NoopTracer::new();
-        let result = request_get(Box::new(TestAgent {
-            registry: Registry::new(),
-            success_version: false,
-            tracer,
-        }));
+        let (mut agent, _receiver) = MockAgent::new();
+        agent.datastore_info = Err(AgentError::GenericError(String::from("Testing failure")));
+        let result = request_get(Box::new(agent));
         assert!(result.is_err());
         if let Some(result) = result.err() {
             let body = response::extract_body_to_bytes(result.response);
@@ -146,13 +103,9 @@ mod tests {
 
     #[test]
     fn info_handler_returns_version() {
-        let (tracer, _receiver) = NoopTracer::new();
-        let result = request_get(Box::new(TestAgent {
-            registry: Registry::new(),
-            success_version: true,
-            tracer,
-        })).unwrap();
-        let expected = r#"{"agent":{"version":{"checkout":"dcd","number":"1.2.3","taint":"tainted"}},"datastore":{"kind":"DB","version":"1.2.3"}}"#;
+        let (agent, _receiver) = MockAgent::new();
+        let result = request_get(Box::new(agent)).unwrap();
+        let expected = r#"{"agent":{"version":{"checkout":"dcd","number":"1.2.3","taint":"tainted"}},"datastore":{"kind":"DB","name":"mock","version":"1.2.3"}}"#;
         assert_eq!(result, expected);
     }
 }

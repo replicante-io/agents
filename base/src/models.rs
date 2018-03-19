@@ -35,14 +35,16 @@ impl AgentVersion {
 #[derive(PartialEq)]
 pub struct DatastoreInfo {
     kind: String,
+    name: String,
     version: String,
 }
 
 impl DatastoreInfo {
-    pub fn new(kind: &str, version: &str) -> DatastoreInfo {
+    pub fn new(kind: &str, name: &str, version: &str) -> DatastoreInfo {
         DatastoreInfo {
             kind: String::from(kind),
-            version: String::from(version)
+            name: String::from(name),
+            version: String::from(version),
         }
     }
 }
@@ -113,17 +115,17 @@ mod tests {
 
         #[test]
         fn from_json() {
-            let payload = r#"{"kind":"DB","version":"1.2.3"}"#;
+            let payload = r#"{"kind":"DB","name":"Name","version":"1.2.3"}"#;
             let info: DatastoreInfo = serde_json::from_str(payload).unwrap();
-            let expected = DatastoreInfo::new("DB", "1.2.3");
+            let expected = DatastoreInfo::new("DB", "Name", "1.2.3");
             assert_eq!(info, expected);
         }
 
         #[test]
         fn to_json() {
-            let info = DatastoreInfo::new("DB", "1.2.3");
+            let info = DatastoreInfo::new("DB", "Name", "1.2.3");
             let payload = serde_json::to_string(&info).unwrap();
-            let expected = r#"{"kind":"DB","version":"1.2.3"}"#;
+            let expected = r#"{"kind":"DB","name":"Name","version":"1.2.3"}"#;
             assert_eq!(payload, expected);
         }
     }
