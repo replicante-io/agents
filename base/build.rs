@@ -1,38 +1,26 @@
 extern crate git2;
 
-use git2::STATUS_INDEX_DELETED;
-use git2::STATUS_INDEX_MODIFIED;
-use git2::STATUS_INDEX_NEW;
-use git2::STATUS_INDEX_RENAMED;
-use git2::STATUS_INDEX_TYPECHANGE;
-
-use git2::STATUS_WT_DELETED;
-use git2::STATUS_WT_MODIFIED;
-use git2::STATUS_WT_NEW;
-use git2::STATUS_WT_RENAMED;
-use git2::STATUS_WT_TYPECHANGE;
-
 use git2::Repository;
 use git2::Status;
 
 
 fn is_index_status(status: &Status) -> bool {
     status.intersects(
-        STATUS_INDEX_DELETED |
-        STATUS_INDEX_MODIFIED |
-        STATUS_INDEX_NEW |
-        STATUS_INDEX_RENAMED |
-        STATUS_INDEX_TYPECHANGE
+        Status::INDEX_DELETED |
+        Status::INDEX_MODIFIED |
+        Status::INDEX_NEW |
+        Status::INDEX_RENAMED |
+        Status::INDEX_TYPECHANGE
     )
 }
 
 fn is_workdir_status(status: &Status) -> bool {
     status.intersects(
-        STATUS_WT_DELETED |
-        STATUS_WT_MODIFIED |
-        STATUS_WT_NEW |
-        STATUS_WT_RENAMED |
-        STATUS_WT_TYPECHANGE
+        Status::WT_DELETED |
+        Status::WT_MODIFIED |
+        Status::WT_NEW |
+        Status::WT_RENAMED |
+        Status::WT_TYPECHANGE
     )
 }
 
