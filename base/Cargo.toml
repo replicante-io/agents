@@ -13,11 +13,6 @@ keywords = ["automation", "datastore", "operations"]
 license = "MIT"
 
 
-[[bin]]
-name = "replicante-agent-test"
-path = "src/bin/test-agent.rs"
-
-
 [lib]
 name = "replicante_agent"
 path = "src/lib.rs"
