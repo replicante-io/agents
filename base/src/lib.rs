@@ -96,6 +96,11 @@ extern crate serde_json;
 #[macro_use]
 extern crate serde_derive;
 
+extern crate replicante_util_iron;
+
+#[macro_use]
+extern crate slog;
+
 
 use std::sync::Arc;
 
@@ -113,6 +118,12 @@ use prometheus::Opts;
 use prometheus::Registry;
 use prometheus::process_collector::ProcessCollector;
 
+use replicante_util_iron::MetricsMiddleware;
+
+use slog::Discard;
+use slog::Logger;
+
+
 mod api;
 pub mod config;
 pub mod error;
@@ -129,7 +140,6 @@ use self::models::AgentVersion;
 use self::models::DatastoreInfo;
 use self::models::Shard;
 
-use self::util::iron::MetricsMiddleware;
 
 
 /// Trait to share common agent code and features.
@@ -235,8 +245,11 @@ impl AgentRunner {
         let process = ProcessCollector::for_self();
         registry.register(Box::new(process)).expect("Unable to register process metrics");
 
+        // TODO: setup logging properly.
+        let logger = Logger::root(Discard, o!());
+
         // Wrap the router with middleweres.
-        let metrics = MetricsMiddleware::new(duration, errors, requests);
+        let metrics = MetricsMiddleware::new(duration, errors, requests, logger);
         let mut handler = Chain::new(router);
         handler.link(metrics.into_middleware());
 

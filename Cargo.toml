@@ -1,5 +1,9 @@
 [workspace]
 members = [
+    # Agent crates
     "base",
-    "mongodb"
+    "mongodb",
+
+    # Common crates
+    "common/util/iron"
 ]
