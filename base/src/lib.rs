@@ -111,13 +111,10 @@ use router::Router;
 use opentracingrust::Span;
 use opentracingrust::Tracer;
 
-use prometheus::CounterVec;
-use prometheus::HistogramOpts;
-use prometheus::HistogramVec;
-use prometheus::Opts;
 use prometheus::Registry;
 use prometheus::process_collector::ProcessCollector;
 
+use replicante_util_iron::MetricsHandler;
 use replicante_util_iron::MetricsMiddleware;
 
 use slog::Discard;
@@ -206,7 +203,7 @@ impl AgentRunner {
         // Create and configure API handlers.
         let mut router = Router::new();
         let info = api::InfoHandler::new(Arc::clone(&self.agent));
-        let metrics = api::MetricsHandler::new(Arc::clone(&self.agent));
+        let metrics = MetricsHandler::new(self.agent.metrics().clone());
         let status = api::StatusHandler::new(Arc::clone(&self.agent));
 
         router.get("/", api::index, "index");
@@ -215,26 +212,8 @@ impl AgentRunner {
         router.get("/api/v1/status", status, "status");
 
         // Setup metrics collection.
-        let duration = HistogramVec::new(
-            HistogramOpts::new(
-                "replicante_agent_endpoint_duration",
-                "Observe the duration (in seconds) of agent endpoints"
-            ),
-            &vec!["method", "path"]
-        ).expect("Unable to configure duration histogram");
-        let errors = CounterVec::new(
-            Opts::new(
-                "replicante_agent_enpoint_errors",
-                "Number of errors encountered while handling requests"
-            ),
-            &vec!["method", "path"]
-        ).expect("Unable to configure errors counter");
-        let requests = CounterVec::new(
-            Opts::new("replicante_agent_enpoint_requests", "Number of requests processed"),
-            &vec!["method", "path", "status"]
-        ).expect("Unable to configure requests counter");
-
         let registry = self.agent.metrics();
+        let (duration, errors, requests) = MetricsMiddleware::metrics("replicante_agent");
         registry.register(Box::new(duration.clone()))
             .expect("Unable to register duration histogram");
         registry.register(Box::new(errors.clone())).expect("Unable to register errors counter");
