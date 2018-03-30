@@ -7,7 +7,7 @@ use iron_json_response::JsonResponseMiddleware;
 
 use opentracingrust::utils::FailSpan;
 
-use replicante_agent_models::Shard;
+use replicante_agent_models::NodeStatus;
 
 use super::super::AgentContainer;
 use super::super::error::otr_to_iron;
@@ -32,9 +32,8 @@ impl Handler for StatusHandler {
     fn handle(&self, request: &mut Request) -> IronResult<Response> {
         let mut span = HeadersCarrier::child_of("status", &mut request.headers, self.agent.tracer())
             .map_err(otr_to_iron)?.auto_finish();
-        let shards = StatusRespone {
-            shards: self.agent.shards(&mut span).fail_span(&mut span)?
-        };
+        let shards = self.agent.shards(&mut span).fail_span(&mut span)?;
+        let status = NodeStatus::new(shards);
         let mut response = Response::new();
         match HeadersCarrier::inject(span.context(), &mut response.headers, self.agent.tracer()) {
             Ok(_) => (),
@@ -43,16 +42,9 @@ impl Handler for StatusHandler {
                 println!("Failed to inject span: {:?}", err)
             }
         };
-        response.set_mut(JsonResponse::json(&shards)).set_mut(status::Ok);
+        response.set_mut(JsonResponse::json(&status)).set_mut(status::Ok);
         Ok(response)
     }
-}
-
-
-/// Wrapps the shards info for API response.
-#[derive(Serialize)]
-struct StatusRespone {
-    shards: Vec<Shard>
 }
 
 
