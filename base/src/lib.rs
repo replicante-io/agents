@@ -11,7 +11,9 @@
 //! ```
 //! extern crate opentracingrust;
 //! extern crate prometheus;
+//!
 //! extern crate replicante_agent;
+//! extern crate replicante_agent_models;
 //!
 //! use opentracingrust::Span;
 //! use opentracingrust::Tracer;
@@ -24,9 +26,9 @@
 //!
 //! use replicante_agent::config::AgentConfig;
 //!
-//! use replicante_agent::models::AgentVersion;
-//! use replicante_agent::models::DatastoreInfo;
-//! use replicante_agent::models::Shard;
+//! use replicante_agent_models::AgentVersion;
+//! use replicante_agent_models::DatastoreInfo;
+//! use replicante_agent_models::Shard;
 //! 
 //! 
 //! pub struct TestAgent {
@@ -92,10 +94,11 @@ extern crate opentracingrust_zipkin;
 extern crate prometheus;
 
 extern crate serde;
-extern crate serde_json;
 #[macro_use]
 extern crate serde_derive;
+extern crate serde_json;
 
+extern crate replicante_agent_models;
 extern crate replicante_util_iron;
 
 #[macro_use]
@@ -114,6 +117,10 @@ use opentracingrust::Tracer;
 use prometheus::Registry;
 use prometheus::process_collector::ProcessCollector;
 
+use replicante_agent_models::AgentVersion;
+use replicante_agent_models::DatastoreInfo;
+use replicante_agent_models::Shard;
+
 use replicante_util_iron::MetricsHandler;
 use replicante_util_iron::MetricsMiddleware;
 
@@ -124,7 +131,6 @@ use slog::Logger;
 mod api;
 pub mod config;
 pub mod error;
-pub mod models;
 pub mod util;
 
 #[cfg(test)]
@@ -132,11 +138,6 @@ pub mod testing;
 
 pub use self::error::AgentError;
 pub use self::error::AgentResult;
-
-use self::models::AgentVersion;
-use self::models::DatastoreInfo;
-use self::models::Shard;
-
 
 
 /// Trait to share common agent code and features.

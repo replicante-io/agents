@@ -8,9 +8,9 @@ use prometheus::Registry;
 use super::Agent;
 use super::AgentResult;
 
-use super::models::AgentVersion;
-use super::models::DatastoreInfo;
-use super::models::Shard;
+use replicante_agent_models::AgentVersion;
+use replicante_agent_models::DatastoreInfo;
+use replicante_agent_models::Shard;
 
 
 /// An implementation of Agent to be used for tests.

@@ -7,11 +7,11 @@ use iron_json_response::JsonResponseMiddleware;
 
 use opentracingrust::utils::FailSpan;
 
+use replicante_agent_models::AgentInfo;
+use replicante_agent_models::DatastoreInfo;
+
 use super::super::AgentContainer;
 use super::super::error::otr_to_iron;
-
-use super::super::models::AgentInfo;
-use super::super::models::DatastoreInfo;
 use super::super::util::tracing::HeadersCarrier;
 
 

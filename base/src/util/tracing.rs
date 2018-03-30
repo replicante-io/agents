@@ -18,6 +18,7 @@ use opentracingrust::Tracer;
 /// # Examples
 ///
 /// Inject a span context:
+///
 /// ```ignore
 /// use replicante_agent::util::HeadersCarrier;
 ///
@@ -26,6 +27,7 @@ use opentracingrust::Tracer;
 /// ```
 ///
 /// Optionally extract a context:
+///
 /// ```ignore
 /// use replicante_agent::util::HeadersCarrier;
 ///
@@ -34,6 +36,7 @@ use opentracingrust::Tracer;
 /// ```
 ///
 /// Create a new span, making it a child if the headers have a context:
+///
 /// ```ignore
 /// use replicante_agent::util::HeadersCarrier;
 ///

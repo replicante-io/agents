@@ -7,10 +7,10 @@ use iron_json_response::JsonResponseMiddleware;
 
 use opentracingrust::utils::FailSpan;
 
+use replicante_agent_models::Shard;
+
 use super::super::AgentContainer;
 use super::super::error::otr_to_iron;
-
-use super::super::models::Shard;
 use super::super::util::tracing::HeadersCarrier;
 
 
@@ -65,12 +65,11 @@ mod tests {
     use iron_test::request;
     use iron_test::response;
 
+    use replicante_agent_models::Shard;
+    use replicante_agent_models::ShardRole;
+
     use super::StatusHandler;
     use super::super::super::Agent;
-
-    use super::super::super::models::Shard;
-    use super::super::super::models::ShardRole;
-
     use super::super::super::testing::MockAgent;
 
     fn request_get(agent: Box<Agent>) -> Result<String, IronError> {

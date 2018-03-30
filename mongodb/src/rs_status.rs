@@ -3,7 +3,7 @@ use bson::Document;
 
 use replicante_agent::AgentError;
 use replicante_agent::AgentResult;
-use replicante_agent::models::ShardRole;
+use replicante_agent_models::ShardRole;
 
 
 /// Extracts the lag (in seconds) from the primary.
@@ -462,7 +462,7 @@ mod tests {
 
     mod test_role {
         use replicante_agent::AgentError;
-        use replicante_agent::models::ShardRole;
+        use replicante_agent_models::ShardRole;
         use super::super::role;
 
         #[test]

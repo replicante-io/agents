@@ -10,6 +10,7 @@ extern crate serde;
 extern crate serde_derive;
 
 extern crate replicante_agent;
+extern crate replicante_agent_models;
 
 use bson::Bson;
 use bson::ordered::OrderedDocument;
@@ -32,10 +33,10 @@ use replicante_agent::Agent;
 use replicante_agent::AgentError;
 use replicante_agent::AgentResult;
 
-use replicante_agent::models::AgentVersion;
-use replicante_agent::models::DatastoreInfo;
-use replicante_agent::models::Shard;
-use replicante_agent::models::ShardRole;
+use replicante_agent_models::AgentVersion;
+use replicante_agent_models::DatastoreInfo;
+use replicante_agent_models::Shard;
+use replicante_agent_models::ShardRole;
 
 pub mod settings;
 mod error;
@@ -151,7 +152,7 @@ impl Agent for MongoDBAgent {
         if let &Bson::String(ref version) = version {
             let status = self.repl_set_get_status(span)?;
             let node_name = rs_status::node_name(&status)?;
-            Ok(DatastoreInfo::new("MongoDB", &node_name, version))
+            Ok(DatastoreInfo::new("MongoDB", node_name, version.clone()))
         } else {
             Err(AgentError::ModelViolation(String::from(
                 "Unexpeted version type (should be String)"
@@ -176,7 +177,7 @@ impl Agent for MongoDBAgent {
                 }
             }
         };
-        Ok(vec![Shard::new(&name, role, lag, last_op)])
+        Ok(vec![Shard::new(name, role, lag, last_op)])
     }
 
     fn metrics(&self) -> Registry {
