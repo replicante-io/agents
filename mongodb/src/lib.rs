@@ -151,8 +151,9 @@ impl Agent for MongoDBAgent {
         ))?;
         if let &Bson::String(ref version) = version {
             let status = self.repl_set_get_status(span)?;
+            let cluster = rs_status::name(&status)?;
             let node_name = rs_status::node_name(&status)?;
-            Ok(DatastoreInfo::new("MongoDB", node_name, version.clone()))
+            Ok(DatastoreInfo::new(cluster, "MongoDB", node_name, version.clone()))
         } else {
             Err(AgentError::ModelViolation(String::from(
                 "Unexpeted version type (should be String)"

@@ -42,7 +42,7 @@ impl MockAgent {
     pub fn new_with_tracer(tracer: Tracer) -> MockAgent {
         MockAgent {
             // Mock responses
-            datastore_info: Ok(DatastoreInfo::new("DB", "mock", "1.2.3")),
+            datastore_info: Ok(DatastoreInfo::new("cluster", "DB", "mock", "1.2.3")),
             shards: Ok(vec![]),
 
             // Introspection

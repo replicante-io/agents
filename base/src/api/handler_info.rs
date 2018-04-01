@@ -97,7 +97,7 @@ mod tests {
     fn info_handler_returns_version() {
         let (agent, _receiver) = MockAgent::new();
         let result = request_get(Box::new(agent)).unwrap();
-        let expected = r#"{"agent":{"version":{"checkout":"dcd","number":"1.2.3","taint":"tainted"}},"datastore":{"kind":"DB","name":"mock","version":"1.2.3"}}"#;
+        let expected = r#"{"agent":{"version":{"checkout":"dcd","number":"1.2.3","taint":"tainted"}},"datastore":{"cluster":"cluster","kind":"DB","name":"mock","version":"1.2.3"}}"#;
         assert_eq!(result, expected);
     }
 }
