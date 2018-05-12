@@ -9,8 +9,8 @@ use opentracingrust::utils::FailSpan;
 
 use replicante_agent_models::NodeStatus;
 
-use super::super::AgentContainer;
 use super::super::error::otr_to_iron;
+use super::super::runner::AgentContainer;
 use super::super::util::tracing::HeadersCarrier;
 
 
@@ -64,7 +64,9 @@ mod tests {
     use super::super::super::Agent;
     use super::super::super::testing::MockAgent;
 
-    fn request_get(agent: Box<Agent>) -> Result<String, IronError> {
+    fn request_get<A>(agent: A) -> Result<String, IronError> 
+        where A: Agent + 'static
+    {
         let handler = StatusHandler::new(Arc::new(agent));
         request::get(
             "http://localhost:3000/api/v1/status",
@@ -80,7 +82,7 @@ mod tests {
     fn status_retruns_shards() {
         let (mut agent, _receiver) = MockAgent::new();
         agent.shards = Ok(vec![Shard::new("test-shard", ShardRole::Primary, Some(1), 2)]);
-        let result = request_get(Box::new(agent)).unwrap();
+        let result = request_get(agent).unwrap();
         assert_eq!(result, r#"{"shards":[{"id":"test-shard","role":"Primary","lag":1,"last_op":2}]}"#);
     }
 }

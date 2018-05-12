@@ -13,8 +13,15 @@ use slog::Logger;
 
 use super::api;
 use super::config;
+
 use super::Agent;
-use super::AgentContainer;
+
+
+/// Container type to hold an Agent trait object.
+///
+/// This type also adds the Send and Sync requirements needed by the
+/// API handlers to hold a reference to an Agent implementation.
+pub type AgentContainer = Arc<Agent>;
 
 
 /// Common implementation for Agents.
@@ -27,7 +34,9 @@ pub struct AgentRunner {
 }
 
 impl AgentRunner {
-    pub fn new(agent: Box<Agent>, conf: config::AgentConfig) -> AgentRunner {
+    pub fn new<A>(agent: A, conf: config::AgentConfig) -> AgentRunner
+        where A: 'static + Agent
+    {
         AgentRunner { agent: Arc::new(agent), conf }
     }
 

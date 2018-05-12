@@ -27,6 +27,6 @@ fn main() {
     // Setup and run the agent.
     let agent = MongoDBAgent::new(settings.mongo(), tracer)
         .expect("Failed to initialise agent");
-    let runner = AgentRunner::new(Box::new(agent), settings.agent());
+    let runner = AgentRunner::new(agent, settings.agent());
     runner.run();
 }

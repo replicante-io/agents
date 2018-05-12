@@ -10,8 +10,8 @@ use opentracingrust::utils::FailSpan;
 use replicante_agent_models::AgentInfo;
 use replicante_agent_models::NodeInfo;
 
-use super::super::AgentContainer;
 use super::super::error::otr_to_iron;
+use super::super::runner::AgentContainer;
 use super::super::util::tracing::HeadersCarrier;
 
 
@@ -68,7 +68,9 @@ mod tests {
 
     use super::super::super::testing::MockAgent;
 
-    fn request_get(agent: Box<Agent>) -> Result<String, IronError> {
+    fn request_get<A>(agent: A) -> Result<String, IronError> 
+        where A: Agent + 'static
+    {
         let handler = InfoHandler::new(Arc::new(agent));
         request::get(
             "http://localhost:3000/api/v1/index",
@@ -84,7 +86,7 @@ mod tests {
     fn info_handler_returns_error() {
         let (mut agent, _receiver) = MockAgent::new();
         agent.datastore_info = Err(AgentError::GenericError(String::from("Testing failure")));
-        let result = request_get(Box::new(agent));
+        let result = request_get(agent);
         assert!(result.is_err());
         if let Some(result) = result.err() {
             let body = response::extract_body_to_bytes(result.response);
@@ -96,7 +98,7 @@ mod tests {
     #[test]
     fn info_handler_returns_version() {
         let (agent, _receiver) = MockAgent::new();
-        let result = request_get(Box::new(agent)).unwrap();
+        let result = request_get(agent).unwrap();
         let expected = r#"{"agent":{"version":{"checkout":"dcd","number":"1.2.3","taint":"tainted"}},"datastore":{"cluster":"cluster","kind":"DB","name":"mock","version":"1.2.3"}}"#;
         assert_eq!(result, expected);
     }

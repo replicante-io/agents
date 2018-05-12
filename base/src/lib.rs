@@ -74,7 +74,7 @@
 //! fn main() {
 //!     let (tracer, _receiver) = NoopTracer::new();
 //!     let runner = AgentRunner::new(
-//!         Box::new(TestAgent::new(tracer)),
+//!         TestAgent::new(tracer),
 //!         AgentConfig::default(),
 //!     );
 //!     // This will block the process serving requests.
@@ -105,19 +105,9 @@ extern crate replicante_util_iron;
 extern crate slog;
 
 
-use std::sync::Arc;
-
-use opentracingrust::Span;
-use opentracingrust::Tracer;
-use prometheus::Registry;
-
-use replicante_agent_models::AgentVersion;
-use replicante_agent_models::DatastoreInfo;
-use replicante_agent_models::Shard;
-
-
 mod api;
 mod runner;
+mod traits;
 
 pub mod config;
 pub mod error;
@@ -129,41 +119,4 @@ pub mod testing;
 pub use self::error::AgentError;
 pub use self::error::AgentResult;
 pub use self::runner::AgentRunner;
-
-
-/// Trait to share common agent code and features.
-///
-/// Agents should be implemented as structs that implement `BaseAgent`.
-pub trait Agent : Send + Sync {
-    //*** Methods to access datastore model requirements ***//
-    /// Fetches the agent version information.
-    fn agent_version(&self, span: &mut Span) -> AgentResult<AgentVersion>;
-
-    /// Fetches the datastore information.
-    fn datastore_info(&self, span: &mut Span) -> AgentResult<DatastoreInfo>;
-
-    /// Fetches all shards and details on the managed datastore node.
-    fn shards(&self, span: &mut Span) -> AgentResult<Vec<Shard>>;
-
-
-    //*** Methods needed for agent introspection and diagnostics ***//
-    /// Acess the agent's metrics [`Registry`].
-    ///
-    /// Agents MUST register their metrics at creation time and as part of the same [`Registry`].
-    ///
-    /// [`Registry`]: https://docs.rs/prometheus/0.3.13/prometheus/struct.Registry.html
-    fn metrics(&self) -> Registry;
-
-    /// Access the agent's [`Tracer`].
-    ///
-    /// This is the agent's way to access the optional opentracing compatible tracer.
-    ///
-    /// [`Tracer`]: https://docs.rs/opentracingrust/0.3.0/opentracingrust/struct.Tracer.html
-    fn tracer(&self) -> &Tracer;
-}
-
-/// Container type to hold an Agent trait object.
-///
-/// This type also adds the Send and Sync requirements needed by the
-/// API handlers to hold a reference to an Agent implementation.
-type AgentContainer = Arc<Box<Agent>>;
+pub use self::traits::Agent;
