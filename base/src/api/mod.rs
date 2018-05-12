@@ -1,8 +1,8 @@
-mod handler_index;
-mod handler_info;
-mod handler_status;
+mod index;
+mod info;
+mod shards;
 
 // Re-export handlers.
-pub use self::handler_index::index;
-pub use self::handler_info::InfoHandler;
-pub use self::handler_status::StatusHandler;
+pub use self::index::index;
+pub use self::info::Info;
+pub use self::shards::Shards;

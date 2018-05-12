@@ -15,20 +15,20 @@ use super::super::util::tracing::HeadersCarrier;
 
 
 /// Handler implementing the /api/v1/status endpoint.
-pub struct StatusHandler {
+pub struct Shards {
     agent: AgentContainer
 }
 
-impl StatusHandler {
+impl Shards {
     pub fn new(agent: AgentContainer) -> Chain {
-        let handler = StatusHandler { agent };
+        let handler = Shards { agent };
         let mut chain = Chain::new(handler);
         chain.link_after(JsonResponseMiddleware::new());
         chain
     }
 }
 
-impl Handler for StatusHandler {
+impl Handler for Shards {
     fn handle(&self, request: &mut Request) -> IronResult<Response> {
         let mut span = HeadersCarrier::child_of("status", &mut request.headers, self.agent.tracer())
             .map_err(otr_to_iron)?.auto_finish();
@@ -60,14 +60,14 @@ mod tests {
     use replicante_agent_models::Shard;
     use replicante_agent_models::ShardRole;
 
-    use super::StatusHandler;
+    use super::Shards;
     use super::super::super::Agent;
     use super::super::super::testing::MockAgent;
 
     fn request_get<A>(agent: A) -> Result<String, IronError> 
         where A: Agent + 'static
     {
-        let handler = StatusHandler::new(Arc::new(agent));
+        let handler = Shards::new(Arc::new(agent));
         request::get(
             "http://localhost:3000/api/v1/status",
             Headers::new(), &handler

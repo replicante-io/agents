@@ -16,20 +16,20 @@ use super::super::util::tracing::HeadersCarrier;
 
 
 /// Handler implementing the /api/v1/info endpoint.
-pub struct InfoHandler {
+pub struct Info {
     agent: AgentContainer,
 }
 
-impl InfoHandler {
+impl Info {
     pub fn new(agent: AgentContainer) -> Chain {
-        let handler = InfoHandler { agent };
+        let handler = Info { agent };
         let mut chain = Chain::new(handler);
         chain.link_after(JsonResponseMiddleware::new());
         chain
     }
 }
 
-impl Handler for InfoHandler {
+impl Handler for Info {
     fn handle(&self, request: &mut Request) -> IronResult<Response> {
         let mut span = HeadersCarrier::child_of("info", &mut request.headers, self.agent.tracer())
             .map_err(otr_to_iron)?.auto_finish();
@@ -62,7 +62,7 @@ mod tests {
     use iron_test::request;
     use iron_test::response;
 
-    use super::InfoHandler;
+    use super::Info;
     use super::super::super::Agent;
     use super::super::super::AgentError;
 
@@ -71,7 +71,7 @@ mod tests {
     fn request_get<A>(agent: A) -> Result<String, IronError> 
         where A: Agent + 'static
     {
-        let handler = InfoHandler::new(Arc::new(agent));
+        let handler = Info::new(Arc::new(agent));
         request::get(
             "http://localhost:3000/api/v1/index",
             Headers::new(), &handler
