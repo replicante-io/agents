@@ -4,7 +4,7 @@ use prometheus::Registry;
 
 use replicante_agent_models::AgentInfo;
 use replicante_agent_models::DatastoreInfo;
-use replicante_agent_models::Shard;
+use replicante_agent_models::Shards;
 
 use super::AgentResult;
 
@@ -21,7 +21,7 @@ pub trait Agent : Send + Sync {
     fn datastore_info(&self, span: &mut Span) -> AgentResult<DatastoreInfo>;
 
     /// Fetches all shards and details on the managed datastore node.
-    fn shards(&self, span: &mut Span) -> AgentResult<Vec<Shard>>;
+    fn shards(&self, span: &mut Span) -> AgentResult<Shards>;
 
 
     //*** Methods needed for agent introspection and diagnostics ***//

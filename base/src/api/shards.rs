@@ -7,8 +7,6 @@ use iron_json_response::JsonResponseMiddleware;
 
 use opentracingrust::utils::FailSpan;
 
-use replicante_agent_models::NodeStatus;
-
 use super::super::error::otr_to_iron;
 use super::super::runner::AgentContainer;
 use super::super::util::tracing::HeadersCarrier;
@@ -33,7 +31,6 @@ impl Handler for Shards {
         let mut span = HeadersCarrier::child_of("status", &mut request.headers, self.agent.tracer())
             .map_err(otr_to_iron)?.auto_finish();
         let shards = self.agent.shards(&mut span).fail_span(&mut span)?;
-        let status = NodeStatus::new(shards);
         let mut response = Response::new();
         match HeadersCarrier::inject(span.context(), &mut response.headers, self.agent.tracer()) {
             Ok(_) => (),
@@ -42,7 +39,7 @@ impl Handler for Shards {
                 println!("Failed to inject span: {:?}", err)
             }
         };
-        response.set_mut(JsonResponse::json(&status)).set_mut(status::Ok);
+        response.set_mut(JsonResponse::json(&shards)).set_mut(status::Ok);
         Ok(response)
     }
 }
@@ -58,6 +55,7 @@ mod tests {
     use iron_test::response;
 
     use replicante_agent_models::Shard;
+    use replicante_agent_models::Shards as ShardsModel;
     use replicante_agent_models::ShardRole;
 
     use super::Shards;
@@ -81,7 +79,9 @@ mod tests {
     #[test]
     fn status_retruns_shards() {
         let (mut agent, _receiver) = MockAgent::new();
-        agent.shards = Ok(vec![Shard::new("test-shard", ShardRole::Primary, Some(1), 2)]);
+        agent.shards = Ok(ShardsModel::new(vec![
+            Shard::new("test-shard", ShardRole::Primary, Some(1), 2)
+        ]));
         let result = request_get(agent).unwrap();
         assert_eq!(result, r#"{"shards":[{"id":"test-shard","role":"Primary","lag":1,"last_op":2}]}"#);
     }

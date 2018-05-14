@@ -37,6 +37,7 @@ use replicante_agent_models::AgentInfo;
 use replicante_agent_models::AgentVersion;
 use replicante_agent_models::DatastoreInfo;
 use replicante_agent_models::Shard;
+use replicante_agent_models::Shards;
 use replicante_agent_models::ShardRole;
 
 pub mod settings;
@@ -163,7 +164,7 @@ impl Agent for MongoDBAgent {
         }
     }
 
-    fn shards(&self, span: &mut Span) -> AgentResult<Vec<Shard>> {
+    fn shards(&self, span: &mut Span) -> AgentResult<Shards> {
         let status = self.repl_set_get_status(span)?;
         let name = rs_status::name(&status)?;
         let role = rs_status::role(&status)?;
@@ -180,7 +181,8 @@ impl Agent for MongoDBAgent {
                 }
             }
         };
-        Ok(vec![Shard::new(name, role, lag, last_op)])
+        let shards = vec![Shard::new(name, role, lag, last_op)];
+        Ok(Shards::new(shards))
     }
 
     fn metrics(&self) -> Registry {

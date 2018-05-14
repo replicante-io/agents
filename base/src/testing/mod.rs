@@ -11,7 +11,7 @@ use super::AgentResult;
 use replicante_agent_models::AgentInfo;
 use replicante_agent_models::AgentVersion;
 use replicante_agent_models::DatastoreInfo;
-use replicante_agent_models::Shard;
+use replicante_agent_models::Shards;
 
 
 /// An implementation of Agent to be used for tests.
@@ -19,7 +19,7 @@ pub struct MockAgent {
     // Mock responses
     pub agent_info: AgentResult<AgentInfo>,
     pub datastore_info: AgentResult<DatastoreInfo>,
-    pub shards: AgentResult<Vec<Shard>>,
+    pub shards: AgentResult<Shards>,
 
     // Introspection
     registry: Registry,
@@ -46,7 +46,7 @@ impl MockAgent {
             // Mock responses
             agent_info: Ok(AgentInfo::new(AgentVersion::new("dcd", "1.2.3", "tainted"))),
             datastore_info: Ok(DatastoreInfo::new("cluster", "DB", "mock", "1.2.3")),
-            shards: Ok(vec![]),
+            shards: Ok(Shards::new(vec![])),
 
             // Introspection
             registry: Registry::new(),
@@ -64,7 +64,7 @@ impl Agent for MockAgent {
         self.datastore_info.clone()
     }
 
-    fn shards(&self, _:&mut Span) -> AgentResult<Vec<Shard>> {
+    fn shards(&self, _:&mut Span) -> AgentResult<Shards> {
         self.shards.clone()
     }
 

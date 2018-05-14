@@ -54,13 +54,13 @@ impl AgentRunner {
         let agent_info = api::AgentInfo::new(Arc::clone(&self.agent));
         let datastore_info = api::DatastoreInfo::new(Arc::clone(&self.agent));
         let metrics = MetricsHandler::new(self.agent.metrics().clone());
-        let status = api::Shards::new(Arc::clone(&self.agent));
+        let shards = api::Shards::new(Arc::clone(&self.agent));
 
         router.get("/", api::index, "index");
         router.get("/api/v1/info/agent", agent_info, "agent_info");
         router.get("/api/v1/info/datastore", datastore_info, "datastore_info");
         router.get("/api/v1/metrics", metrics, "metrics");
-        router.get("/api/v1/status", status, "status");
+        router.get("/api/v1/shards", shards, "shards");
 
         // Setup metrics collection.
         let registry = self.agent.metrics();
