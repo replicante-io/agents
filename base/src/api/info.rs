@@ -7,38 +7,70 @@ use iron_json_response::JsonResponseMiddleware;
 
 use opentracingrust::utils::FailSpan;
 
-use replicante_agent_models::AgentInfo;
-use replicante_agent_models::NodeInfo;
+use replicante_agent_models::AgentInfo as AgentInfoModel;
 
 use super::super::error::otr_to_iron;
 use super::super::runner::AgentContainer;
 use super::super::util::tracing::HeadersCarrier;
 
 
-/// Handler implementing the /api/v1/info endpoint.
-pub struct Info {
+/// Handler implementing the /api/v1/info/agent endpoint.
+pub struct AgentInfo {
     agent: AgentContainer,
 }
 
-impl Info {
+impl AgentInfo {
     pub fn new(agent: AgentContainer) -> Chain {
-        let handler = Info { agent };
+        let handler = AgentInfo { agent };
         let mut chain = Chain::new(handler);
         chain.link_after(JsonResponseMiddleware::new());
         chain
     }
 }
 
-impl Handler for Info {
+impl Handler for AgentInfo {
     fn handle(&self, request: &mut Request) -> IronResult<Response> {
-        let mut span = HeadersCarrier::child_of("info", &mut request.headers, self.agent.tracer())
-            .map_err(otr_to_iron)?.auto_finish();
+        let mut span = HeadersCarrier::child_of(
+            "agent-info", &mut request.headers, self.agent.tracer()
+        ).map_err(otr_to_iron)?.auto_finish();
 
         let agent_version = self.agent.agent_version(&mut span).fail_span(&mut span)?;
-        let agent = AgentInfo::new(agent_version);
-        let datastore = self.agent.datastore_info(&mut span).fail_span(&mut span)?;
-        let info = NodeInfo::new(agent, datastore);
+        let info = AgentInfoModel::new(agent_version);
+        let mut response = Response::new();
+        match HeadersCarrier::inject(span.context(), &mut response.headers, self.agent.tracer()) {
+            Ok(_) => (),
+            Err(err) => {
+                // TODO: convert to logging.
+                println!("Failed to inject span: {:?}", err)
+            }
+        };
+        response.set_mut(JsonResponse::json(info)).set_mut(status::Ok);
+        Ok(response)
+    }
+}
 
+
+/// Handler implementing the /api/v1/info/datastore endpoint.
+pub struct DatastoreInfo {
+    agent: AgentContainer,
+}
+
+impl DatastoreInfo {
+    pub fn new(agent: AgentContainer) -> Chain {
+        let handler = DatastoreInfo { agent };
+        let mut chain = Chain::new(handler);
+        chain.link_after(JsonResponseMiddleware::new());
+        chain
+    }
+}
+
+impl Handler for DatastoreInfo {
+    fn handle(&self, request: &mut Request) -> IronResult<Response> {
+        let mut span = HeadersCarrier::child_of(
+            "datastore-info", &mut request.headers, self.agent.tracer()
+        ).map_err(otr_to_iron)?.auto_finish();
+
+        let info = self.agent.datastore_info(&mut span).fail_span(&mut span)?;
         let mut response = Response::new();
         match HeadersCarrier::inject(span.context(), &mut response.headers, self.agent.tracer()) {
             Ok(_) => (),
@@ -55,51 +87,105 @@ impl Handler for Info {
 
 #[cfg(test)]
 mod tests {
-    use std::sync::Arc;
+    mod agent {
+        use std::sync::Arc;
 
-    use iron::IronError;
-    use iron::Headers;
-    use iron_test::request;
-    use iron_test::response;
+        use iron::IronError;
+        use iron::Headers;
+        use iron_test::request;
+        use iron_test::response;
 
-    use super::Info;
-    use super::super::super::Agent;
-    use super::super::super::AgentError;
+        use super::super::AgentInfo;
+        use super::super::super::super::Agent;
+        use super::super::super::super::AgentError;
 
-    use super::super::super::testing::MockAgent;
+        use super::super::super::super::testing::MockAgent;
 
-    fn request_get<A>(agent: A) -> Result<String, IronError> 
-        where A: Agent + 'static
-    {
-        let handler = Info::new(Arc::new(agent));
-        request::get(
-            "http://localhost:3000/api/v1/index",
-            Headers::new(), &handler
-        )
-        .map(|response| {
-            let body = response::extract_body_to_bytes(response);
-            String::from_utf8(body).unwrap()
-        })
-    }
 
-    #[test]
-    fn info_handler_returns_error() {
-        let (mut agent, _receiver) = MockAgent::new();
-        agent.datastore_info = Err(AgentError::GenericError(String::from("Testing failure")));
-        let result = request_get(agent);
-        assert!(result.is_err());
-        if let Some(result) = result.err() {
-            let body = response::extract_body_to_bytes(result.response);
-            let body = String::from_utf8(body).unwrap();
-            assert_eq!(body, r#"{"error":"Generic error: Testing failure","kind":"GenericError"}"#);
+        fn get<A>(agent: A) -> Result<String, IronError> 
+            where A: Agent + 'static
+        {
+            let handler = AgentInfo::new(Arc::new(agent));
+            request::get(
+                "http://localhost:3000/api/v1/info/agent",
+                Headers::new(), &handler
+            )
+            .map(|response| {
+                let body = response::extract_body_to_bytes(response);
+                String::from_utf8(body).unwrap()
+            })
+        }
+
+        #[test]
+        fn returns_error() {
+            let (mut agent, _receiver) = MockAgent::new();
+            agent.agent_info = Err(AgentError::GenericError(String::from("Testing failure")));
+            let result = get(agent);
+            assert!(result.is_err());
+            if let Some(result) = result.err() {
+                let body = response::extract_body_to_bytes(result.response);
+                let body = String::from_utf8(body).unwrap();
+                assert_eq!(body, r#"{"error":"Generic error: Testing failure","kind":"GenericError"}"#);
+            }
+        }
+
+        #[test]
+        fn returns_version() {
+            let (agent, _receiver) = MockAgent::new();
+            let result = get(agent).unwrap();
+            let expected = r#"{"version":{"checkout":"dcd","number":"1.2.3","taint":"tainted"}}"#;
+            assert_eq!(result, expected);
         }
     }
 
-    #[test]
-    fn info_handler_returns_version() {
-        let (agent, _receiver) = MockAgent::new();
-        let result = request_get(agent).unwrap();
-        let expected = r#"{"agent":{"version":{"checkout":"dcd","number":"1.2.3","taint":"tainted"}},"datastore":{"cluster":"cluster","kind":"DB","name":"mock","version":"1.2.3"}}"#;
-        assert_eq!(result, expected);
+    mod datastore {
+        use std::sync::Arc;
+
+        use iron::IronError;
+        use iron::Headers;
+        use iron_test::request;
+        use iron_test::response;
+
+        use super::super::DatastoreInfo;
+        use super::super::super::super::Agent;
+        use super::super::super::super::AgentError;
+
+        use super::super::super::super::testing::MockAgent;
+
+
+        fn get<A>(agent: A) -> Result<String, IronError> 
+            where A: Agent + 'static
+        {
+            let handler = DatastoreInfo::new(Arc::new(agent));
+            request::get(
+                "http://localhost:3000/api/v1/info/datastore",
+                Headers::new(), &handler
+            )
+            .map(|response| {
+                let body = response::extract_body_to_bytes(response);
+                String::from_utf8(body).unwrap()
+            })
+        }
+
+        #[test]
+        fn returns_error() {
+            let (mut agent, _receiver) = MockAgent::new();
+            agent.datastore_info = Err(AgentError::GenericError(String::from("Testing failure")));
+            let result = get(agent);
+            assert!(result.is_err());
+            if let Some(result) = result.err() {
+                let body = response::extract_body_to_bytes(result.response);
+                let body = String::from_utf8(body).unwrap();
+                assert_eq!(body, r#"{"error":"Generic error: Testing failure","kind":"GenericError"}"#);
+            }
+        }
+
+        #[test]
+        fn returns_version() {
+            let (agent, _receiver) = MockAgent::new();
+            let result = get(agent).unwrap();
+            let expected = r#"{"cluster":"cluster","kind":"DB","name":"mock","version":"1.2.3"}"#;
+            assert_eq!(result, expected);
+        }
     }
 }

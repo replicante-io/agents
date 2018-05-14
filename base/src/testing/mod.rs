@@ -8,6 +8,7 @@ use prometheus::Registry;
 use super::Agent;
 use super::AgentResult;
 
+use replicante_agent_models::AgentInfo;
 use replicante_agent_models::AgentVersion;
 use replicante_agent_models::DatastoreInfo;
 use replicante_agent_models::Shard;
@@ -16,6 +17,7 @@ use replicante_agent_models::Shard;
 /// An implementation of Agent to be used for tests.
 pub struct MockAgent {
     // Mock responses
+    pub agent_info: AgentResult<AgentInfo>,
     pub datastore_info: AgentResult<DatastoreInfo>,
     pub shards: AgentResult<Vec<Shard>>,
 
@@ -42,6 +44,7 @@ impl MockAgent {
     pub fn new_with_tracer(tracer: Tracer) -> MockAgent {
         MockAgent {
             // Mock responses
+            agent_info: Ok(AgentInfo::new(AgentVersion::new("dcd", "1.2.3", "tainted"))),
             datastore_info: Ok(DatastoreInfo::new("cluster", "DB", "mock", "1.2.3")),
             shards: Ok(vec![]),
 
@@ -54,7 +57,7 @@ impl MockAgent {
 
 impl Agent for MockAgent {
     fn agent_version(&self, _: &mut Span) -> AgentResult<AgentVersion> {
-        Ok(AgentVersion::new("dcd", "1.2.3", "tainted"))
+        self.agent_info.clone().map(|info| info.version)
     }
 
     fn datastore_info(&self, _: &mut Span) -> AgentResult<DatastoreInfo> {
