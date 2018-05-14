@@ -2,7 +2,7 @@ use opentracingrust::Span;
 use opentracingrust::Tracer;
 use prometheus::Registry;
 
-use replicante_agent_models::AgentVersion;
+use replicante_agent_models::AgentInfo;
 use replicante_agent_models::DatastoreInfo;
 use replicante_agent_models::Shard;
 
@@ -15,7 +15,7 @@ use super::AgentResult;
 pub trait Agent : Send + Sync {
     //*** Methods to access datastore model requirements ***//
     /// Fetches the agent version information.
-    fn agent_version(&self, span: &mut Span) -> AgentResult<AgentVersion>;
+    fn agent_info(&self, span: &mut Span) -> AgentResult<AgentInfo>;
 
     /// Fetches the datastore information.
     fn datastore_info(&self, span: &mut Span) -> AgentResult<DatastoreInfo>;

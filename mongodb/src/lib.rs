@@ -33,6 +33,7 @@ use replicante_agent::Agent;
 use replicante_agent::AgentError;
 use replicante_agent::AgentResult;
 
+use replicante_agent_models::AgentInfo;
 use replicante_agent_models::AgentVersion;
 use replicante_agent_models::DatastoreInfo;
 use replicante_agent_models::Shard;
@@ -138,10 +139,11 @@ impl MongoDBAgent {
 }
 
 impl Agent for MongoDBAgent {
-    fn agent_version(&self, _: &mut Span) -> AgentResult<AgentVersion> {
-        Ok(AgentVersion::new(
+    fn agent_info(&self, _: &mut Span) -> AgentResult<AgentInfo> {
+        let version = AgentVersion::new(
             env!("GIT_BUILD_HASH"), env!("CARGO_PKG_VERSION"), env!("GIT_BUILD_TAINT")
-        ))
+        );
+        Ok(AgentInfo::new(version))
     }
 
     fn datastore_info(&self, span: &mut Span) -> AgentResult<DatastoreInfo> {

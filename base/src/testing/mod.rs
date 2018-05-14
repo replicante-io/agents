@@ -56,8 +56,8 @@ impl MockAgent {
 }
 
 impl Agent for MockAgent {
-    fn agent_version(&self, _: &mut Span) -> AgentResult<AgentVersion> {
-        self.agent_info.clone().map(|info| info.version)
+    fn agent_info(&self, _: &mut Span) -> AgentResult<AgentInfo> {
+        self.agent_info.clone()
     }
 
     fn datastore_info(&self, _: &mut Span) -> AgentResult<DatastoreInfo> {

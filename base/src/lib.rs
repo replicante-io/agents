@@ -26,6 +26,7 @@
 //!
 //! use replicante_agent::config::AgentConfig;
 //!
+//! use replicante_agent_models::AgentInfo;
 //! use replicante_agent_models::AgentVersion;
 //! use replicante_agent_models::DatastoreInfo;
 //! use replicante_agent_models::Shard;
@@ -46,11 +47,11 @@
 //! }
 //! 
 //! impl Agent for TestAgent {
-//!     fn agent_version(&self, _: &mut Span) -> AgentResult<AgentVersion> {
-//!         Ok(AgentVersion::new(
+//!     fn agent_info(&self, _: &mut Span) -> AgentResult<AgentInfo> {
+//!         Ok(AgentInfo::new(AgentVersion::new(
 //!             env!("GIT_BUILD_HASH"), env!("CARGO_PKG_VERSION"),
 //!             env!("GIT_BUILD_TAINT")
-//!         ))
+//!         )))
 //!     }
 //!
 //!     fn datastore_info(&self, _: &mut Span) -> AgentResult<DatastoreInfo> {

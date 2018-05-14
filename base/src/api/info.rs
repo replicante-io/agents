@@ -7,8 +7,6 @@ use iron_json_response::JsonResponseMiddleware;
 
 use opentracingrust::utils::FailSpan;
 
-use replicante_agent_models::AgentInfo as AgentInfoModel;
-
 use super::super::error::otr_to_iron;
 use super::super::runner::AgentContainer;
 use super::super::util::tracing::HeadersCarrier;
@@ -34,8 +32,7 @@ impl Handler for AgentInfo {
             "agent-info", &mut request.headers, self.agent.tracer()
         ).map_err(otr_to_iron)?.auto_finish();
 
-        let agent_version = self.agent.agent_version(&mut span).fail_span(&mut span)?;
-        let info = AgentInfoModel::new(agent_version);
+        let info = self.agent.agent_info(&mut span).fail_span(&mut span)?;
         let mut response = Response::new();
         match HeadersCarrier::inject(span.context(), &mut response.headers, self.agent.tracer()) {
             Ok(_) => (),
