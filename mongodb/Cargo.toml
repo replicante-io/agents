@@ -22,7 +22,7 @@ path = "src/bin/mongodb/rs/agent.rs"
 bson = "^0.10.0"
 config = "^0.8.0"
 mongodb = "^0.3.7"
-prometheus = "^0.3.13"
+prometheus = "^0.4.1"
 serde = "^1.0.25"
 serde_derive = "^1.0.25"
 

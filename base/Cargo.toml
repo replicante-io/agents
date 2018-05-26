@@ -26,7 +26,7 @@ maintenance = { status = "actively-developed" }
 config = "^0.8.0"
 iron = "^0.6.0"
 iron-json-response = "^0.6.0"
-prometheus = { version = "^0.3.13", features = ["process"] }
+prometheus = { version = "^0.4.1", features = ["process"] }
 router = "^0.6.0"
 serde = "^1.0.25"
 serde_derive = "^1.0.25"

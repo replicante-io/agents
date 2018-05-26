@@ -5,7 +5,6 @@
 //! To create an agent implement the `Agent` trait for a struct and pass that
 //! struct to `AgentRunner::new` to create a runner.
 //! The `AgentRunner::run` method will then spin up the API server.
-//! ```
 extern crate config as config_crate;
 
 extern crate iron;
