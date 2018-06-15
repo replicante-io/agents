@@ -2,5 +2,6 @@
 **/*.rs.bk
 
 /target/
-docs/specs/_book/
+
+_book/
 node_modules/
