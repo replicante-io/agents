@@ -1,0 +1,23 @@
+# Datastore independent agent configuration.
+agent:
+  # HTTP server configuration.
+  server:
+    # Address and port to bind the server to.
+    bind: '127.0.0.1:8000'
+
+  # Distributed tracing configuration.
+  tracer:
+    # Distributed tracing backend to use.
+    #
+    # Avaliable options:
+    #
+    #   - NoopTracer
+    #   - ZipkinTracer
+    backend: 'NoopTracer'
+
+    # Zipkin specific tracer configuration.
+    #zipkin:
+    #  service_name: 'agent'
+    #  topic: 'zipkin'
+    #  kafka:
+    #    - 'localhost:9092'
