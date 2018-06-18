@@ -18,7 +18,7 @@ pub struct Shards {
 }
 
 impl Shards {
-    pub fn new(agent: AgentContainer) -> Chain {
+    pub fn make(agent: AgentContainer) -> Chain {
         let handler = Shards { agent };
         let mut chain = Chain::new(handler);
         chain.link_after(JsonResponseMiddleware::new());
@@ -65,7 +65,7 @@ mod tests {
     fn request_get<A>(agent: A) -> Result<String, IronError> 
         where A: Agent + 'static
     {
-        let handler = Shards::new(Arc::new(agent));
+        let handler = Shards::make(Arc::new(agent));
         request::get(
             "http://localhost:3000/api/v1/status",
             Headers::new(), &handler

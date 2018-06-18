@@ -56,7 +56,7 @@ impl From<AgentError> for IronError {
         response.set_mut(JsonResponse::json(payload)).set_mut(code);
         IronError {
             error: Box::new(error),
-            response: response
+            response
         }
     }
 }
@@ -101,6 +101,7 @@ impl Error for AgentError {
 
 
 /// Conver and OpenTracingRust error into an IronError.
+#[cfg_attr(feature = "cargo-clippy", allow(needless_pass_by_value))]
 pub fn otr_to_iron(error: OTError) -> IronError {
     // TODO: OTError should really have implemented `Error` :-(
     let payload = AgentErrorResponse {
@@ -111,7 +112,7 @@ pub fn otr_to_iron(error: OTError) -> IronError {
     response.set_mut(JsonResponse::json(payload)).set_mut(status::BadRequest);
     IronError {
         error: Box::new(AgentError::GenericError("OpenTracingRustError".into())),
-        response: response
+        response
     }
 }
 

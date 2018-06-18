@@ -23,10 +23,10 @@ pub fn last_op(rs: &Document) -> AgentResult<i64> {
 
 /// Extracts the Replica Set name from the output of replSetGetStatus.
 pub fn name(rs: &Document) -> AgentResult<String> {
-    let name = rs.get("set").ok_or(AgentError::ModelViolation(
+    let name = rs.get("set").ok_or_else(|| AgentError::ModelViolation(
         String::from("Unable to determine Replica Set name")
     ))?;
-    if let &Bson::String(ref name) = name {
+    if let Bson::String(ref name) = *name {
         Ok(name.clone())
     } else {
         Err(AgentError::ModelViolation(String::from(
@@ -38,10 +38,10 @@ pub fn name(rs: &Document) -> AgentResult<String> {
 /// Extracts the node's name from the output of replSetGetStatus.
 pub fn node_name(rs: &Document) -> AgentResult<String> {
     let node = find_self(rs)?;
-    let name = node.get("name").ok_or(AgentError::ModelViolation(
+    let name = node.get("name").ok_or_else(|| AgentError::ModelViolation(
         String::from("Unable to determine local node's name")
     ))?;
-    if let &Bson::String(ref name) = name {
+    if let Bson::String(ref name) = *name {
         Ok(name.clone())
     } else {
         Err(AgentError::ModelViolation(String::from(
@@ -53,10 +53,10 @@ pub fn node_name(rs: &Document) -> AgentResult<String> {
 
 /// Extracts the node's role in the Replica Set.
 pub fn role(rs: &Document) -> AgentResult<ShardRole> {
-    let role = rs.get("myState").ok_or(AgentError::ModelViolation(
+    let role = rs.get("myState").ok_or_else(|| AgentError::ModelViolation(
         String::from("Unable to determine Replica Set myState")
     ))?;
-    if let &Bson::I32(state) = role {
+    if let Bson::I32(state) = *role {
         match state {
             0 => Ok(ShardRole::Unknown(String::from("STARTUP"))),
             1 => Ok(ShardRole::Primary),
@@ -82,12 +82,12 @@ pub fn role(rs: &Document) -> AgentResult<ShardRole> {
 
 /// Extract the value of rs.status().members[x].optime.ts.
 fn extract_timestamp(member: &Document) -> AgentResult<i64> {
-    let optime = member.get("optime").ok_or(AgentError::UnsupportedDatastore(
+    let optime = member.get("optime").ok_or_else(|| AgentError::UnsupportedDatastore(
         String::from("Unable to determine node's optime")
     ))?;
-    let timestamp = match optime {
-        &Bson::Document(ref doc) => doc.get("ts").ok_or(
-            AgentError::UnsupportedDatastore(
+    let timestamp = match *optime {
+        Bson::Document(ref doc) => doc.get("ts").ok_or_else(
+            || AgentError::UnsupportedDatastore(
                 String::from("Unable to determine node's optime timestamp")
             )
         ),
@@ -95,8 +95,8 @@ fn extract_timestamp(member: &Document) -> AgentResult<i64> {
             String::from("Node's optime is not a document")
         ))
     }?;
-    match timestamp {
-        &Bson::TimeStamp(timestamp) => Ok((timestamp >> 32) as i64),
+    match *timestamp {
+        Bson::TimeStamp(timestamp) => Ok((timestamp >> 32) as i64),
         _ => Err(AgentError::UnsupportedDatastore(
             String::from("Node's optime timestamp is not a timestamp")
         ))
@@ -108,17 +108,17 @@ fn extract_timestamp(member: &Document) -> AgentResult<i64> {
 fn first_member<F: Fn(&Document) -> bool>(
     rs: &Document, condition: F
 ) -> AgentResult<Option<&Document>> {
-    let members = rs.get("members").ok_or(AgentError::UnsupportedDatastore(
+    let members = rs.get("members").ok_or_else(|| AgentError::UnsupportedDatastore(
         String::from("Unable to find Replica Set members")
     ))?;
-    let members = match members {
-        &Bson::Array(ref array) => array,
+    let members = match *members {
+        Bson::Array(ref array) => array,
         _ => return Err(AgentError::UnsupportedDatastore(String::from(
             "Unexpeted members list type (should be an Array)"
         )))
     };
     for member in members {
-        if let &Bson::Document(ref member) = member {
+        if let Bson::Document(ref member) = *member {
             if condition(member) {
                 return Ok(Some(member));
             }
@@ -134,7 +134,7 @@ fn find_primary(rs: &Document) -> AgentResult<&Document> {
             Some(&Bson::I32(1)) => true,
             _ => false
         }
-    })?.ok_or(AgentError::DatastoreError(
+    })?.ok_or_else(|| AgentError::DatastoreError(
         String::from("Unable to find PRIMARY member")
     ))
 }
@@ -146,7 +146,7 @@ fn find_self(rs: &Document) -> AgentResult<&Document> {
             Some(&Bson::Boolean(true)) => true,
             _ => false
         }
-    })?.ok_or(AgentError::UnsupportedDatastore(
+    })?.ok_or_else(|| AgentError::UnsupportedDatastore(
         String::from("Unable to find self in members list")
     ))
 }

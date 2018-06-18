@@ -3,6 +3,7 @@ use mongodb;
 use replicante_agent::AgentError;
 
 
+#[cfg_attr(feature = "cargo-clippy", allow(needless_pass_by_value))]
 pub fn to_agent(error: mongodb::error::Error) -> AgentError {
     match error {
         _ => AgentError::DatastoreError(error.to_string())

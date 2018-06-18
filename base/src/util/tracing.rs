@@ -91,9 +91,8 @@ impl<'a> HeadersCarrier<'a> {
     /// If the headers do not include any context the span will be a root span.
     pub fn child_of(name: &str, headers: &mut Headers, tracer: &Tracer) -> OTResult<Span> {
         let mut span = tracer.span(name);
-        match HeadersCarrier::context(headers, tracer)? {
-            Some(context) => span.child_of(context),
-            None => ()
+        if let Some(context) = HeadersCarrier::context(headers, tracer)? {
+            span.child_of(context);
         }
         Ok(span)
     }
@@ -110,9 +109,8 @@ impl<'a> HeadersCarrier<'a> {
     /// If the headers do not include any context the span will be a root span.
     pub fn follows_from(name: &str, headers: &mut Headers, tracer: &Tracer) -> OTResult<Span> {
         let mut span = tracer.span(name);
-        match HeadersCarrier::context(headers, tracer)? {
-            Some(context) => span.follows(context),
-            None => ()
+        if let Some(context) = HeadersCarrier::context(headers, tracer)? {
+            span.follows(context);
         }
         Ok(span)
     }

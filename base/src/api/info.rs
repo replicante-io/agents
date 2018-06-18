@@ -18,7 +18,7 @@ pub struct AgentInfo {
 }
 
 impl AgentInfo {
-    pub fn new(agent: AgentContainer) -> Chain {
+    pub fn make(agent: AgentContainer) -> Chain {
         let handler = AgentInfo { agent };
         let mut chain = Chain::new(handler);
         chain.link_after(JsonResponseMiddleware::new());
@@ -53,7 +53,7 @@ pub struct DatastoreInfo {
 }
 
 impl DatastoreInfo {
-    pub fn new(agent: AgentContainer) -> Chain {
+    pub fn make(agent: AgentContainer) -> Chain {
         let handler = DatastoreInfo { agent };
         let mut chain = Chain::new(handler);
         chain.link_after(JsonResponseMiddleware::new());
@@ -102,7 +102,7 @@ mod tests {
         fn get<A>(agent: A) -> Result<String, IronError> 
             where A: Agent + 'static
         {
-            let handler = AgentInfo::new(Arc::new(agent));
+            let handler = AgentInfo::make(Arc::new(agent));
             request::get(
                 "http://localhost:3000/api/v1/info/agent",
                 Headers::new(), &handler
@@ -153,7 +153,7 @@ mod tests {
         fn get<A>(agent: A) -> Result<String, IronError> 
             where A: Agent + 'static
         {
-            let handler = DatastoreInfo::new(Arc::new(agent));
+            let handler = DatastoreInfo::make(Arc::new(agent));
             request::get(
                 "http://localhost:3000/api/v1/info/datastore",
                 Headers::new(), &handler

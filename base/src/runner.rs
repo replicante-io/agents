@@ -51,10 +51,10 @@ impl AgentRunner {
     pub fn run(&self) -> () {
         // Create and configure API handlers.
         let mut router = Router::new();
-        let agent_info = api::AgentInfo::new(Arc::clone(&self.agent));
-        let datastore_info = api::DatastoreInfo::new(Arc::clone(&self.agent));
+        let agent_info = api::AgentInfo::make(Arc::clone(&self.agent));
+        let datastore_info = api::DatastoreInfo::make(Arc::clone(&self.agent));
         let metrics = MetricsHandler::new(self.agent.metrics().clone());
-        let shards = api::Shards::new(Arc::clone(&self.agent));
+        let shards = api::Shards::make(Arc::clone(&self.agent));
 
         router.get("/", api::index, "index");
         router.get("/api/v1/info/agent", agent_info, "agent_info");

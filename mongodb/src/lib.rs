@@ -78,7 +78,7 @@ impl MongoDBAgent {
         // Init agent.
         let mut agent = MongoDBAgent {
             client: None,
-            settings: settings,
+            settings,
 
             // Introspection.
             mongo_command_counts,
@@ -149,10 +149,10 @@ impl Agent for MongoDBAgent {
 
     fn datastore_info(&self, span: &mut Span) -> AgentResult<DatastoreInfo> {
         let info = self.build_info(span)?;
-        let version = info.get("version").ok_or(AgentError::ModelViolation(
+        let version = info.get("version").ok_or_else(|| AgentError::ModelViolation(
             String::from("Unable to determine MongoDB version")
         ))?;
-        if let &Bson::String(ref version) = version {
+        if let Bson::String(ref version) = *version {
             let status = self.repl_set_get_status(span)?;
             let cluster = rs_status::name(&status)?;
             let node_name = rs_status::node_name(&status)?;

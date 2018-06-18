@@ -24,9 +24,9 @@ pub enum TracerBackend {
 
 impl fmt::Display for TracerBackend {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let tracer = match self {
-            &TracerBackend::NoopTracer => "NoopTracer",
-            &TracerBackend::ZipkinTracer => "ZipkinTracer",
+        let tracer = match *self {
+            TracerBackend::NoopTracer => "NoopTracer",
+            TracerBackend::ZipkinTracer => "ZipkinTracer",
         };
         write!(f, "{}", tracer)
     }
@@ -95,21 +95,20 @@ pub fn configure_tracer(config: TracerConfig) -> AgentResult<(Tracer, ReporterTh
             Ok((tracer, reporter))
         },
         TracerBackend::ZipkinTracer => {
-            let zipkin = config.zipkin.ok_or(
-                AgentError::ConfigError(String::from("Missing Zipkin tracer configuration"))
+            let zipkin = config.zipkin.ok_or_else(
+                || AgentError::ConfigError(String::from("Missing Zipkin tracer configuration"))
             )?;
             let service_name = zipkin.service_name;
             let kafka = zipkin.kafka;
-            let topic = zipkin.topic.unwrap_or("zipkin".into());
+            let topic = zipkin.topic.unwrap_or_else(|| "zipkin".into());
             let mut collector = KafkaCollector::new(
                 ZipkinEndpoint::new(None, None, Some(service_name), None),
                 topic, kafka
             );
             let (tracer, receiver) = ZipkinTracer::new();
             let reporter = ReporterThread::new(receiver, move |span| {
-                match collector.collect(span) {
-                    Err(err) => println!("Failed to report span: {:?}", err),
-                    _ => (),
+                if let Err(err) = collector.collect(span) {
+                    println!("Failed to report span: {:?}", err);
                 }
             });
             Ok((tracer, reporter))
