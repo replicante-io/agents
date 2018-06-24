@@ -36,8 +36,8 @@ slog = "^2.2.1"
 opentracingrust = "^0.3.1"
 opentracingrust_zipkin = "^0.1.2"
 
-replicante_agent_models = { path = "../common/agent/models" }
-replicante_util_iron = { path = "../common/util/iron" }
+replicante_agent_models = { path = "../common/agent/models", version = "0.1.0" }
+replicante_util_iron = { path = "../common/util/iron", version = "0.1.0" }
 
 
 [build-dependencies]
