@@ -17,6 +17,9 @@
       "options": [{
         "text": "Master (unreleased)",
         "value": "https://replicante.io/docs/agents/master/"
+      }, {
+        "text": "Version 0.1.0",
+        "value": "https://replicante.io/docs/agents/0.1.0/"
       }]
     }
   }

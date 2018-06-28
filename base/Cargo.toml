@@ -1,6 +1,6 @@
 [package]
 name = "replicante_agent"
-version = "0.1.0"
+version = "0.1.0" # remember to update html_root_url
 authors = ["Stefano Pogliani <stefano@spogliani.net>"]
 build = "build.rs"
 
@@ -8,7 +8,6 @@ description = "Replicante agent framework"
 documentation = "https://docs.rs/replicante_agent"
 homepage = "https://www.replicante.io/"
 repository = "https://github.com/replicante-io/replicante-agents"
-readme = "Readme.md"
 keywords = ["automation", "datastore", "operations"]
 license = "MIT"
 
@@ -36,8 +35,8 @@ slog = "^2.2.1"
 opentracingrust = "^0.3.1"
 opentracingrust_zipkin = "^0.1.2"
 
-replicante_agent_models = { path = "../common/agent/models", version = "0.1.0" }
-replicante_util_iron = { path = "../common/util/iron", version = "0.1.0" }
+replicante_agent_models = { path = "../common/agent/models", version = "0.1.1" }
+replicante_util_iron = { path = "../common/util/iron", version = "0.1.1" }
 
 
 [build-dependencies]

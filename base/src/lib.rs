@@ -5,6 +5,7 @@
 //! To create an agent implement the `Agent` trait for a struct and pass that
 //! struct to `AgentRunner::new` to create a runner.
 //! The `AgentRunner::run` method will then spin up the API server.
+#![doc(html_root_url = "https://docs.rs/replicante_agent/0.1.0")]
 extern crate config as config_crate;
 
 extern crate iron;
