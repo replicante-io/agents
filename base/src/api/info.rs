@@ -7,7 +7,7 @@ use iron_json_response::JsonResponseMiddleware;
 
 use opentracingrust::utils::FailSpan;
 
-use super::super::error::otr_to_iron;
+use super::super::errors::otr_to_iron;
 use super::super::runner::AgentContainer;
 use super::super::util::tracing::HeadersCarrier;
 
@@ -94,8 +94,6 @@ mod tests {
 
         use super::super::AgentInfo;
         use super::super::super::super::Agent;
-        use super::super::super::super::AgentError;
-
         use super::super::super::super::testing::MockAgent;
 
 
@@ -116,13 +114,13 @@ mod tests {
         #[test]
         fn returns_error() {
             let (mut agent, _receiver) = MockAgent::new();
-            agent.agent_info = Err(AgentError::GenericError(String::from("Testing failure")));
+            agent.agent_info = Err("Testing failure".into());
             let result = get(agent);
             assert!(result.is_err());
             if let Some(result) = result.err() {
                 let body = response::extract_body_to_bytes(result.response);
                 let body = String::from_utf8(body).unwrap();
-                assert_eq!(body, r#"{"error":"Generic error: Testing failure","kind":"GenericError"}"#);
+                assert_eq!(body, r#"{"error":"Error: Testing failure\n"}"#);
             }
         }
 
@@ -145,8 +143,6 @@ mod tests {
 
         use super::super::DatastoreInfo;
         use super::super::super::super::Agent;
-        use super::super::super::super::AgentError;
-
         use super::super::super::super::testing::MockAgent;
 
 
@@ -167,13 +163,13 @@ mod tests {
         #[test]
         fn returns_error() {
             let (mut agent, _receiver) = MockAgent::new();
-            agent.datastore_info = Err(AgentError::GenericError(String::from("Testing failure")));
+            agent.datastore_info = Err("Testing failure".into());
             let result = get(agent);
             assert!(result.is_err());
             if let Some(result) = result.err() {
                 let body = response::extract_body_to_bytes(result.response);
                 let body = String::from_utf8(body).unwrap();
-                assert_eq!(body, r#"{"error":"Generic error: Testing failure","kind":"GenericError"}"#);
+                assert_eq!(body, r#"{"error":"Error: Testing failure\n"}"#);
             }
         }
 

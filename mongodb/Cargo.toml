@@ -1,6 +1,6 @@
 [package]
 name = "replicante_agent_mongodb"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["Stefano Pogliani <stefano@spogliani.net>"]
 build = "../base/build.rs"
 
@@ -14,8 +14,8 @@ license = "MIT"
 
 
 [[bin]]
-name = "replicante-agent-mongodb-rs"
-path = "src/bin/mongodb/rs/agent.rs"
+name = "replicante-agent-mongodb"
+path = "src/main.rs"
 
 
 [dependencies]

@@ -25,7 +25,7 @@ cd agents
 cargo build --release
 
 # Ensure the built binaries work.
-target/release/replicante-agent-mongodb-rs
+target/release/replicante-agent-mongodb
 ```
 
 

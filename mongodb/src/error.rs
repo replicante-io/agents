@@ -1,12 +1,12 @@
 use mongodb;
 
-use replicante_agent::AgentError;
+use replicante_agent::Error;
 
 
 #[cfg_attr(feature = "cargo-clippy", allow(needless_pass_by_value))]
-pub fn to_agent(error: mongodb::error::Error) -> AgentError {
+pub fn to_agent(error: mongodb::error::Error) -> Error {
     match error {
-        _ => AgentError::DatastoreError(error.to_string())
+        _ => error.to_string().into()
     }
 }
 
@@ -14,14 +14,15 @@ pub fn to_agent(error: mongodb::error::Error) -> AgentError {
 #[cfg(test)]
 mod tests {
     use mongodb::error::Error;
-    use replicante_agent::AgentError;
+    use replicante_agent::Error as AgentError;
+    use replicante_agent::ErrorKind;
     use super::to_agent;
 
     #[test]
     fn operational_error_conversion() {
         let err = Error::OperationError(String::from("abc"));
         match to_agent(err) {
-            AgentError::DatastoreError(msg) => assert_eq!(msg, "abc"),
+            AgentError(ErrorKind::Msg(msg), _) => assert_eq!(msg, "abc"),
             _ => panic!("Error is not of valid type")
         }
     }

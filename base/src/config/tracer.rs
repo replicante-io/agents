@@ -9,8 +9,8 @@ use opentracingrust_zipkin::KafkaCollector;
 use opentracingrust_zipkin::ZipkinEndpoint;
 use opentracingrust_zipkin::ZipkinTracer;
 
-use super::super::error::AgentError;
-use super::super::error::AgentResult;
+use super::super::Error;
+use super::super::Result;
 
 use super::TracerConfig;
 
@@ -33,12 +33,12 @@ impl fmt::Display for TracerBackend {
 }
 
 impl FromStr for TracerBackend {
-    type Err = AgentError;
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
+    type Err = Error;
+    fn from_str(s: &str) -> ::std::result::Result<Self, Self::Err> {
         match s {
             "NoopTracer" => Ok(TracerBackend::NoopTracer),
             "ZipkinTracer" => Ok(TracerBackend::ZipkinTracer),
-            _ => Err(AgentError::ConfigError(format!("Unsupported tracer: {}", s)))
+            _ => Err(format!("Unsupported tracer: {}", s).into())
         }
     }
 }
@@ -84,7 +84,7 @@ impl FromStr for TracerBackend {
 ///         - host2:9092
 ///       topic: traces  # Default: zipkin
 /// ```
-pub fn configure_tracer(config: TracerConfig) -> AgentResult<(Tracer, ReporterThread)> {
+pub fn configure_tracer(config: TracerConfig) -> Result<(Tracer, ReporterThread)> {
     let backend = config.backend.parse::<TracerBackend>()?;
     match backend {
         TracerBackend::NoopTracer => {
@@ -96,7 +96,7 @@ pub fn configure_tracer(config: TracerConfig) -> AgentResult<(Tracer, ReporterTh
         },
         TracerBackend::ZipkinTracer => {
             let zipkin = config.zipkin.ok_or_else(
-                || AgentError::ConfigError(String::from("Missing Zipkin tracer configuration"))
+                || Error::from("Missing Zipkin tracer configuration")
             )?;
             let service_name = zipkin.service_name;
             let kafka = zipkin.kafka;
@@ -121,7 +121,8 @@ pub fn configure_tracer(config: TracerConfig) -> AgentResult<(Tracer, ReporterTh
 mod tests {
     use std::time::Duration;
 
-    use super::AgentError;
+    use super::super::super::Error;
+    use super::super::super::ErrorKind;
     use super::TracerConfig;
 
     use super::TracerBackend;
@@ -134,7 +135,7 @@ mod tests {
             zipkin: None,
         };
         match configure_tracer(config) {
-            Err(AgentError::ConfigError(msg)) => assert_eq!(
+            Err(Error(ErrorKind::Msg(msg), _)) => assert_eq!(
                 "Unsupported tracer: unsupported", msg
             ),
             Err(err) => panic!("Expected ConfigError but got {:?}", err),
@@ -157,11 +158,12 @@ mod tests {
         use std::time::Duration;
 
         use super::super::super::TracerConfigZipkin;
-        use super::super::AgentError;
         use super::super::TracerConfig;
-
         use super::super::TracerBackend;
         use super::super::configure_tracer;
+
+        use super::Error;
+        use super::ErrorKind;
 
         #[test]
         fn needs_options() {
@@ -170,10 +172,10 @@ mod tests {
                 zipkin: None,
             };
             match configure_tracer(config) {
-            Err(AgentError::ConfigError(msg)) => assert_eq!(
-                "Missing Zipkin tracer configuration", msg
-            ),
-            Err(err) => panic!("Expected ConfigError but got {:?}", err),
+                Err(Error(ErrorKind::Msg(msg), _)) => assert_eq!(
+                    "Missing Zipkin tracer configuration", msg
+                ),
+                Err(err) => panic!("Expected ConfigError but got {:?}", err),
                 Ok((_, mut reporter)) => {
                     reporter.stop_delay(Duration::from_millis(10));
                     panic!("Expected configuration failure");

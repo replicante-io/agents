@@ -6,7 +6,7 @@ use opentracingrust::tracers::NoopTracer;
 use prometheus::Registry;
 
 use super::Agent;
-use super::AgentResult;
+use super::Result;
 
 use replicante_agent_models::AgentInfo;
 use replicante_agent_models::AgentVersion;
@@ -16,12 +16,10 @@ use replicante_agent_models::Shards;
 
 /// An implementation of Agent to be used for tests.
 pub struct MockAgent {
-    // Mock responses
-    pub agent_info: AgentResult<AgentInfo>,
-    pub datastore_info: AgentResult<DatastoreInfo>,
-    pub shards: AgentResult<Shards>,
+    pub agent_info: ::std::result::Result<AgentInfo, String>,
+    pub datastore_info: ::std::result::Result<DatastoreInfo, String>,
+    pub shards: ::std::result::Result<Shards, String>,
 
-    // Introspection
     registry: Registry,
     tracer: Tracer,
 }
@@ -42,13 +40,13 @@ impl MockAgent {
 
     /// Creates a new MockAgent that uses the given tracer.
     pub fn new_with_tracer(tracer: Tracer) -> MockAgent {
+        let agent_info = Ok(AgentInfo::new(AgentVersion::new("dcd", "1.2.3", "tainted")));
+        let datastore_info = Ok(DatastoreInfo::new("cluster", "DB", "mock", "1.2.3"));
+        let shards = Ok(Shards::new(vec![]));
         MockAgent {
-            // Mock responses
-            agent_info: Ok(AgentInfo::new(AgentVersion::new("dcd", "1.2.3", "tainted"))),
-            datastore_info: Ok(DatastoreInfo::new("cluster", "DB", "mock", "1.2.3")),
-            shards: Ok(Shards::new(vec![])),
-
-            // Introspection
+            agent_info,
+            datastore_info,
+            shards,
             registry: Registry::new(),
             tracer: tracer
         }
@@ -56,16 +54,16 @@ impl MockAgent {
 }
 
 impl Agent for MockAgent {
-    fn agent_info(&self, _: &mut Span) -> AgentResult<AgentInfo> {
-        self.agent_info.clone()
+    fn agent_info(&self, _: &mut Span) -> Result<AgentInfo> {
+        self.agent_info.clone().map_err(|err| err.into())
     }
 
-    fn datastore_info(&self, _: &mut Span) -> AgentResult<DatastoreInfo> {
-        self.datastore_info.clone()
+    fn datastore_info(&self, _: &mut Span) -> Result<DatastoreInfo> {
+        self.datastore_info.clone().map_err(|err| err.into())
     }
 
-    fn shards(&self, _:&mut Span) -> AgentResult<Shards> {
-        self.shards.clone()
+    fn shards(&self, _:&mut Span) -> Result<Shards> {
+        self.shards.clone().map_err(|err| err.into())
     }
 
     fn metrics(&self) -> Registry {

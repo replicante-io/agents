@@ -1,13 +1,13 @@
 use bson::Bson;
 use bson::Document;
 
-use replicante_agent::AgentError;
-use replicante_agent::AgentResult;
+use replicante_agent::Error;
+use replicante_agent::Result;
 use replicante_agent_models::ShardRole;
 
 
 /// Extracts the lag (in seconds) from the primary.
-pub fn lag(rs: &Document, last_op: i64) -> AgentResult<i64> {
+pub fn lag(rs: &Document, last_op: i64) -> Result<i64> {
     let primary = find_primary(rs)?;
     let head = extract_timestamp(primary)?;
     Ok(head - last_op)
@@ -15,47 +15,43 @@ pub fn lag(rs: &Document, last_op: i64) -> AgentResult<i64> {
 
 
 /// Extracts the timestamp (in seconds) of the latest operation.
-pub fn last_op(rs: &Document) -> AgentResult<i64> {
+pub fn last_op(rs: &Document) -> Result<i64> {
     let node = find_self(rs)?;
     extract_timestamp(node)
 }
 
 
 /// Extracts the Replica Set name from the output of replSetGetStatus.
-pub fn name(rs: &Document) -> AgentResult<String> {
-    let name = rs.get("set").ok_or_else(|| AgentError::ModelViolation(
-        String::from("Unable to determine Replica Set name")
-    ))?;
+pub fn name(rs: &Document) -> Result<String> {
+    let name = rs.get("set").ok_or_else(
+        || Error::from("Unable to determine Replica Set name")
+    )?;
     if let Bson::String(ref name) = *name {
         Ok(name.clone())
     } else {
-        Err(AgentError::ModelViolation(String::from(
-            "Unexpeted Replica Set name type (should be String)"
-        )))
+        Err("Unexpeted Replica Set name type (should be String)".into())
     }
 }
 
 /// Extracts the node's name from the output of replSetGetStatus.
-pub fn node_name(rs: &Document) -> AgentResult<String> {
+pub fn node_name(rs: &Document) -> Result<String> {
     let node = find_self(rs)?;
-    let name = node.get("name").ok_or_else(|| AgentError::ModelViolation(
-        String::from("Unable to determine local node's name")
-    ))?;
+    let name = node.get("name").ok_or_else(
+        || Error::from("Unable to determine local node's name")
+    )?;
     if let Bson::String(ref name) = *name {
         Ok(name.clone())
     } else {
-        Err(AgentError::ModelViolation(String::from(
-            "Unexpeted local node name type (should be String)"
-        )))
+        Err("Unexpeted local node name type (should be String)".into())
     }
 }
 
 
 /// Extracts the node's role in the Replica Set.
-pub fn role(rs: &Document) -> AgentResult<ShardRole> {
-    let role = rs.get("myState").ok_or_else(|| AgentError::ModelViolation(
-        String::from("Unable to determine Replica Set myState")
-    ))?;
+pub fn role(rs: &Document) -> Result<ShardRole> {
+    let role = rs.get("myState").ok_or_else(
+        || Error::from("Unable to determine Replica Set myState")
+    )?;
     if let Bson::I32(state) = *role {
         match state {
             0 => Ok(ShardRole::Unknown(String::from("STARTUP"))),
@@ -68,38 +64,28 @@ pub fn role(rs: &Document) -> AgentResult<ShardRole> {
             8 => Ok(ShardRole::Unknown(String::from("DOWN"))),
             9 => Ok(ShardRole::Unknown(String::from("ROLLBACK"))),
             10 => Ok(ShardRole::Unknown(String::from("REMOVED"))),
-            _ => Err(AgentError::UnsupportedDatastore(
-                String::from("Unkown MongoDB node state")
-            ))
+            _ => Err("Unkown MongoDB node state".into())
         }
     } else {
-        Err(AgentError::ModelViolation(String::from(
-            "Unexpeted Replica Set name type (should be I32)"
-        )))
+        Err("Unexpeted Replica Set name type (should be I32)".into())
     }
 }
 
 
 /// Extract the value of rs.status().members[x].optime.ts.
-fn extract_timestamp(member: &Document) -> AgentResult<i64> {
-    let optime = member.get("optime").ok_or_else(|| AgentError::UnsupportedDatastore(
-        String::from("Unable to determine node's optime")
-    ))?;
+fn extract_timestamp(member: &Document) -> Result<i64> {
+    let optime = member.get("optime").ok_or_else(
+        || Error::from("Unable to determine node's optime")
+    )?;
     let timestamp = match *optime {
         Bson::Document(ref doc) => doc.get("ts").ok_or_else(
-            || AgentError::UnsupportedDatastore(
-                String::from("Unable to determine node's optime timestamp")
-            )
+            || Error::from("Unable to determine node's optime timestamp")
         ),
-        _ => Err(AgentError::UnsupportedDatastore(
-            String::from("Node's optime is not a document")
-        ))
+        _ => Err("Node's optime is not a document".into())
     }?;
     match *timestamp {
         Bson::TimeStamp(timestamp) => Ok((timestamp >> 32) as i64),
-        _ => Err(AgentError::UnsupportedDatastore(
-            String::from("Node's optime timestamp is not a timestamp")
-        ))
+        _ => Err("Node's optime timestamp is not a timestamp".into())
     }
 }
 
@@ -107,15 +93,13 @@ fn extract_timestamp(member: &Document) -> AgentResult<i64> {
 /// Iterates over RS members to find the first matching the predicate.
 fn first_member<F: Fn(&Document) -> bool>(
     rs: &Document, condition: F
-) -> AgentResult<Option<&Document>> {
-    let members = rs.get("members").ok_or_else(|| AgentError::UnsupportedDatastore(
-        String::from("Unable to find Replica Set members")
-    ))?;
+) -> Result<Option<&Document>> {
+    let members = rs.get("members").ok_or_else(
+        || Error::from("Unable to find Replica Set members")
+    )?;
     let members = match *members {
         Bson::Array(ref array) => array,
-        _ => return Err(AgentError::UnsupportedDatastore(String::from(
-            "Unexpeted members list type (should be an Array)"
-        )))
+        _ => return Err("Unexpeted members list type (should be an Array)".into())
     };
     for member in members {
         if let Bson::Document(ref member) = *member {
@@ -128,27 +112,25 @@ fn first_member<F: Fn(&Document) -> bool>(
 }
 
 /// Looks for the details of the primary member of the replica set.
-fn find_primary(rs: &Document) -> AgentResult<&Document> {
+fn find_primary(rs: &Document) -> Result<&Document> {
     first_member(rs, |member| {
         match member.get("state") {
             Some(&Bson::I32(1)) => true,
             _ => false
         }
-    })?.ok_or_else(|| AgentError::DatastoreError(
-        String::from("Unable to find PRIMARY member")
-    ))
+    })?
+    .ok_or_else(|| "Unable to find PRIMARY member".into())
 }
 
 /// Looks for the current member of the replica set.
-fn find_self(rs: &Document) -> AgentResult<&Document> {
+fn find_self(rs: &Document) -> Result<&Document> {
     first_member(rs, |member: &Document| -> bool {
         match member.get("self") {
             Some(&Bson::Boolean(true)) => true,
             _ => false
         }
-    })?.ok_or_else(|| AgentError::UnsupportedDatastore(
-        String::from("Unable to find self in members list")
-    ))
+    })?
+    .ok_or_else(|| "Unable to find self in members list".into())
 }
 
 
@@ -196,7 +178,8 @@ mod tests {
 
     mod test_extract_timestamp {
         use bson::Bson;
-        use replicante_agent::AgentError;
+        use replicante_agent::Error;
+        use replicante_agent::ErrorKind;
         use super::super::extract_timestamp;
 
         #[test]
@@ -215,7 +198,7 @@ mod tests {
             let member = doc! {};
             let timestamp = extract_timestamp(&member);
             match timestamp {
-                Err(AgentError::UnsupportedDatastore(ref msg)) => assert_eq!(
+                Err(Error(ErrorKind::Msg(ref msg), _)) => assert_eq!(
                     "Unable to determine node's optime", msg
                 ),
                 Err(err) => panic!("Unexpeted error: {:?}", err),
@@ -230,7 +213,7 @@ mod tests {
             };
             let timestamp = extract_timestamp(&member);
             match timestamp {
-                Err(AgentError::UnsupportedDatastore(ref msg)) => assert_eq!(
+                Err(Error(ErrorKind::Msg(ref msg), _)) => assert_eq!(
                     "Node's optime is not a document", msg
                 ),
                 Err(err) => panic!("Unexpeted error: {:?}", err),
@@ -245,7 +228,7 @@ mod tests {
             };
             let timestamp = extract_timestamp(&member);
             match timestamp {
-                Err(AgentError::UnsupportedDatastore(ref msg)) => assert_eq!(
+                Err(Error(ErrorKind::Msg(ref msg), _)) => assert_eq!(
                     "Unable to determine node's optime timestamp", msg
                 ),
                 Err(err) => panic!("Unexpeted error: {:?}", err),
@@ -262,7 +245,7 @@ mod tests {
             };
             let timestamp = extract_timestamp(&member);
             match timestamp {
-                Err(AgentError::UnsupportedDatastore(ref msg)) => assert_eq!(
+                Err(Error(ErrorKind::Msg(ref msg), _)) => assert_eq!(
                     "Node's optime timestamp is not a timestamp", msg
                 ),
                 Err(err) => panic!("Unexpeted error: {:?}", err),
@@ -272,9 +255,11 @@ mod tests {
     }
 
     mod test_first_member {
+        use replicante_agent::Error;
+        use replicante_agent::ErrorKind;
+
         use super::make_rs;
         use super::super::first_member;
-        use replicante_agent::AgentError;
 
         #[test]
         fn members_not_an_array() {
@@ -282,7 +267,7 @@ mod tests {
             let member = first_member(&rs, |_| true);
             assert_eq!(true, member.is_err());
             match member {
-                Err(AgentError::UnsupportedDatastore(ref msg)) => assert_eq!(
+                Err(Error(ErrorKind::Msg(ref msg), _)) => assert_eq!(
                     "Unexpeted members list type (should be an Array)", msg
                 ),
                 Err(err) => panic!("Unexpected error: {:?}", err),
@@ -306,7 +291,7 @@ mod tests {
             let member = first_member(&rs, |_| true);
             assert_eq!(true, member.is_err());
             match member {
-                Err(AgentError::UnsupportedDatastore(ref msg)) => {
+                Err(Error(ErrorKind::Msg(ref msg), _)) => {
                     assert_eq!("Unable to find Replica Set members", msg);
                 },
                 Err(err) => panic!("Unexpected error: {:?}", err),
@@ -323,9 +308,10 @@ mod tests {
         }
 
         mod test_find_primary {
+            use replicante_agent::Error;
+            use replicante_agent::ErrorKind;
             use super::super::make_rs;
             use super::super::super::find_primary;
-            use replicante_agent::AgentError;
 
             #[test]
             fn found() {
@@ -340,7 +326,7 @@ mod tests {
                 let rs = doc! {"members": [{"_id": 3}]};
                 let primary = find_primary(&rs);
                 match primary {
-                    Err(AgentError::DatastoreError(ref msg)) => {
+                    Err(Error(ErrorKind::Msg(ref msg), _)) => {
                         assert_eq!("Unable to find PRIMARY member", msg);
                     },
                     Err(err) => panic!("Unexpected error: {:?}", err),
@@ -350,9 +336,10 @@ mod tests {
         }
 
         mod test_find_self {
+            use replicante_agent::Error;
+            use replicante_agent::ErrorKind;
             use super::super::make_rs;
             use super::super::super::find_self;
-            use replicante_agent::AgentError;
 
             #[test]
             fn found() {
@@ -367,7 +354,7 @@ mod tests {
                 let rs = doc! {"members": [{"_id": 3}]};
                 let primary = find_self(&rs);
                 match primary {
-                    Err(AgentError::UnsupportedDatastore(ref msg)) => {
+                    Err(Error(ErrorKind::Msg(ref msg), _)) => {
                         assert_eq!("Unable to find self in members list", msg);
                     },
                     Err(err) => panic!("Unexpected error: {:?}", err),
@@ -378,7 +365,8 @@ mod tests {
     }
 
     mod test_name {
-        use replicante_agent::AgentError;
+        use replicante_agent::Error;
+        use replicante_agent::ErrorKind;
         use super::make_rs;
         use super::super::name;
 
@@ -394,7 +382,7 @@ mod tests {
             let rs = doc! {"set": 3};
             let rs_name = name(&rs);
             match rs_name {
-                Err(AgentError::ModelViolation(ref msg)) => assert_eq!(
+                Err(Error(ErrorKind::Msg(ref msg), _)) => assert_eq!(
                     "Unexpeted Replica Set name type (should be String)", msg
                 ),
                 Err(err) => panic!("Unexpected error: {:?}", err),
@@ -407,7 +395,7 @@ mod tests {
             let rs = doc! {};
             let rs_name = name(&rs);
             match rs_name {
-                Err(AgentError::ModelViolation(ref msg)) => assert_eq!(
+                Err(Error(ErrorKind::Msg(ref msg), _)) => assert_eq!(
                     "Unable to determine Replica Set name", msg
                 ),
                 Err(err) => panic!("Unexpected error: {:?}", err),
@@ -417,7 +405,8 @@ mod tests {
     }
 
     mod test_node_name {
-        use replicante_agent::AgentError;
+        use replicante_agent::Error;
+        use replicante_agent::ErrorKind;
         use super::make_rs;
         use super::super::node_name;
 
@@ -436,7 +425,7 @@ mod tests {
             }]};
             let name = node_name(&rs);
             match name {
-                Err(AgentError::ModelViolation(ref msg)) => assert_eq!(
+                Err(Error(ErrorKind::Msg(ref msg), _)) => assert_eq!(
                     "Unexpeted local node name type (should be String)", msg
                 ),
                 Err(err) => panic!("Unexpected error: {:?}", err),
@@ -451,7 +440,7 @@ mod tests {
             }]};
             let name = node_name(&rs);
             match name {
-                Err(AgentError::ModelViolation(ref msg)) => assert_eq!(
+                Err(Error(ErrorKind::Msg(ref msg), _)) => assert_eq!(
                     "Unable to determine local node's name", msg
                 ),
                 Err(err) => panic!("Unexpected error: {:?}", err),
@@ -461,7 +450,8 @@ mod tests {
     }
 
     mod test_role {
-        use replicante_agent::AgentError;
+        use replicante_agent::Error;
+        use replicante_agent::ErrorKind;
         use replicante_agent_models::ShardRole;
         use super::super::role;
 
@@ -477,7 +467,7 @@ mod tests {
             let rs = doc! {};
             let rs_role = role(&rs);
             match rs_role {
-                Err(AgentError::ModelViolation(ref msg)) => assert_eq!(
+                Err(Error(ErrorKind::Msg(ref msg), _)) => assert_eq!(
                     "Unable to determine Replica Set myState", msg
                 ),
                 Err(err) => panic!("Unexpeted error: {:?}", err),
@@ -490,7 +480,7 @@ mod tests {
             let rs = doc! {"myState": "wrong"};
             let rs_role = role(&rs);
             match rs_role {
-                Err(AgentError::ModelViolation(ref msg)) => assert_eq!(
+                Err(Error(ErrorKind::Msg(ref msg), _)) => assert_eq!(
                     "Unexpeted Replica Set name type (should be I32)", msg
                 ),
                 Err(err) => panic!("Unexpeted error: {:?}", err),
@@ -503,7 +493,7 @@ mod tests {
             let rs = doc! {"myState": 22};
             let rs_role = role(&rs);
             match rs_role {
-                Err(AgentError::UnsupportedDatastore(ref msg)) => assert_eq!(
+                Err(Error(ErrorKind::Msg(ref msg), _)) => assert_eq!(
                     "Unkown MongoDB node state", msg
                 ),
                 Err(err) => panic!("Unexpeted error: {:?}", err),

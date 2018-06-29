@@ -30,8 +30,8 @@ use prometheus::Opts;
 use prometheus::Registry;
 
 use replicante_agent::Agent;
-use replicante_agent::AgentError;
-use replicante_agent::AgentResult;
+use replicante_agent::Error;
+use replicante_agent::Result;
 
 use replicante_agent_models::AgentInfo;
 use replicante_agent_models::AgentVersion;
@@ -62,7 +62,7 @@ pub struct MongoDBAgent {
 }
 
 impl MongoDBAgent {
-    pub fn new(settings: MongoDBSettings, tracer: Tracer) -> AgentResult<MongoDBAgent> {
+    pub fn new(settings: MongoDBSettings, tracer: Tracer) -> Result<MongoDBAgent> {
         // Init metrics.
         let mongo_command_counts = CounterVec::new(
             Opts::new(
@@ -92,7 +92,7 @@ impl MongoDBAgent {
 
 impl MongoDBAgent {
     /// Initialises the MongoDB client instance for the agent.
-    fn init_client(&mut self) -> AgentResult<()> {
+    fn init_client(&mut self) -> Result<()> {
         let host = &self.settings.host;
         let port = self.settings.port as u16;
         let client = Client::connect(host, port)
@@ -107,7 +107,7 @@ impl MongoDBAgent {
     }
 
     /// Executes the buildInfo command against the DB.
-    fn build_info(&self, parent: &mut Span) -> AgentResult<OrderedDocument> {
+    fn build_info(&self, parent: &mut Span) -> Result<OrderedDocument> {
         let mut span = self.tracer().span("buildInfo").auto_finish();
         span.child_of(parent.context().clone());
         let mongo = self.client();
@@ -123,7 +123,7 @@ impl MongoDBAgent {
     }
 
     /// Executes the replSetGetStatus command against the DB.
-    fn repl_set_get_status(&self, parent: &mut Span) -> AgentResult<OrderedDocument> {
+    fn repl_set_get_status(&self, parent: &mut Span) -> Result<OrderedDocument> {
         let mut span = self.tracer().span("replSetGetStatus").auto_finish();
         span.child_of(parent.context().clone());
         let mongo = self.client();
@@ -140,31 +140,29 @@ impl MongoDBAgent {
 }
 
 impl Agent for MongoDBAgent {
-    fn agent_info(&self, _: &mut Span) -> AgentResult<AgentInfo> {
+    fn agent_info(&self, _: &mut Span) -> Result<AgentInfo> {
         let version = AgentVersion::new(
             env!("GIT_BUILD_HASH"), env!("CARGO_PKG_VERSION"), env!("GIT_BUILD_TAINT")
         );
         Ok(AgentInfo::new(version))
     }
 
-    fn datastore_info(&self, span: &mut Span) -> AgentResult<DatastoreInfo> {
+    fn datastore_info(&self, span: &mut Span) -> Result<DatastoreInfo> {
         let info = self.build_info(span)?;
-        let version = info.get("version").ok_or_else(|| AgentError::ModelViolation(
-            String::from("Unable to determine MongoDB version")
-        ))?;
+        let version = info.get("version").ok_or_else(
+            || Error::from("Unable to determine MongoDB version")
+        )?;
         if let Bson::String(ref version) = *version {
             let status = self.repl_set_get_status(span)?;
             let cluster = rs_status::name(&status)?;
             let node_name = rs_status::node_name(&status)?;
             Ok(DatastoreInfo::new(cluster, "MongoDB", node_name, version.clone()))
         } else {
-            Err(AgentError::ModelViolation(String::from(
-                "Unexpeted version type (should be String)"
-            )))
+            Err("Unexpeted version type (should be String)".into())
         }
     }
 
-    fn shards(&self, span: &mut Span) -> AgentResult<Shards> {
+    fn shards(&self, span: &mut Span) -> Result<Shards> {
         let status = self.repl_set_get_status(span)?;
         let name = rs_status::name(&status)?;
         let role = rs_status::role(&status)?;

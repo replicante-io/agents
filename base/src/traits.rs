@@ -6,7 +6,7 @@ use replicante_agent_models::AgentInfo;
 use replicante_agent_models::DatastoreInfo;
 use replicante_agent_models::Shards;
 
-use super::AgentResult;
+use super::Result;
 
 
 /// Trait to share common agent code and features.
@@ -15,13 +15,13 @@ use super::AgentResult;
 pub trait Agent : Send + Sync {
     //*** Methods to access datastore model requirements ***//
     /// Fetches the agent version information.
-    fn agent_info(&self, span: &mut Span) -> AgentResult<AgentInfo>;
+    fn agent_info(&self, span: &mut Span) -> Result<AgentInfo>;
 
     /// Fetches the datastore information.
-    fn datastore_info(&self, span: &mut Span) -> AgentResult<DatastoreInfo>;
+    fn datastore_info(&self, span: &mut Span) -> Result<DatastoreInfo>;
 
     /// Fetches all shards and details on the managed datastore node.
-    fn shards(&self, span: &mut Span) -> AgentResult<Shards>;
+    fn shards(&self, span: &mut Span) -> Result<Shards>;
 
 
     //*** Methods needed for agent introspection and diagnostics ***//
