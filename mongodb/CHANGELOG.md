@@ -6,8 +6,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 ### Changed
-- **BREAKING**: Use [error_chain](https://docs.rs/error-chain) for errors
 - **BREAKING**: Rename MongoDB Agent binary
+- **BREAKING**: Rework configuration using [serde](https://docs.rs/serde)
+- **BREAKING**: Use [error_chain](https://docs.rs/error-chain) for errors
 
 ## 0.1.0 - 2018-06-28
 ### Added

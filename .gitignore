@@ -1,6 +1,8 @@
 *.swp
 **/*.rs.bk
 
+agent-mongodb.yaml
+
 /target/
 
 _book/

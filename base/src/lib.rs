@@ -6,7 +6,6 @@
 //! struct to `AgentRunner::new` to create a runner.
 //! The `AgentRunner::run` method will then spin up the API server.
 #![doc(html_root_url = "https://docs.rs/replicante_agent/0.2.0")]
-extern crate config as config_crate;
 #[macro_use]
 extern crate error_chain;
 
@@ -16,6 +15,9 @@ extern crate router;
 #[cfg(test)]
 extern crate iron_test;
 
+#[macro_use]
+extern crate lazy_static;
+
 extern crate opentracingrust;
 extern crate opentracingrust_zipkin;
 extern crate prometheus;
@@ -24,9 +26,11 @@ extern crate serde;
 #[macro_use]
 extern crate serde_derive;
 extern crate serde_json;
+extern crate serde_yaml;
 
 extern crate replicante_agent_models;
 extern crate replicante_util_iron;
+extern crate replicante_util_tracing;
 
 #[macro_use]
 extern crate slog;

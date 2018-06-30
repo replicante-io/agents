@@ -30,11 +30,11 @@ pub type AgentContainer = Arc<Agent>;
 /// agent will need on top of the `Agent` trait.
 pub struct AgentRunner {
     agent: AgentContainer,
-    conf: config::AgentConfig,
+    conf: config::Agent,
 }
 
 impl AgentRunner {
-    pub fn new<A>(agent: A, conf: config::AgentConfig) -> AgentRunner
+    pub fn new<A>(agent: A, conf: config::Agent) -> AgentRunner
         where A: 'static + Agent
     {
         AgentRunner { agent: Arc::new(agent), conf }
@@ -84,7 +84,7 @@ impl AgentRunner {
         handler.link(metrics.into_middleware());
 
         // Start the agent server.
-        let bind = &self.conf.server.bind;
+        let bind = &self.conf.api.bind;
         println!("Listening on {} ...", bind);
         Iron::new(handler)
             .http(bind)

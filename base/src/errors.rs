@@ -11,7 +11,12 @@ use opentracingrust::Error as OTError;
 use serde_json;
 
 
-error_chain! {}
+error_chain! {
+    foreign_links {
+        IoError(::std::io::Error);
+        YamlError(::serde_yaml::Error);
+    }
+}
 
 impl From<Error> for IronError {
     fn from(error: Error) -> Self {
