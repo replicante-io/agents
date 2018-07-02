@@ -42,7 +42,7 @@ struct AgentErrorResponse {
 }
 
 
-/// TODO
+/// Wrapper type to serialise error responses.
 #[derive(Serialize)]
 struct JsonErrorWrapper {
     error: String,
@@ -52,7 +52,7 @@ struct JsonErrorWrapper {
 /// Conver and OpenTracingRust error into an IronError.
 #[cfg_attr(feature = "cargo-clippy", allow(needless_pass_by_value))]
 pub fn otr_to_iron(error: OTError) -> IronError {
-    // TODO: OTError should really have implemented `Error` :-(
+    // OTError should really have implemented `Error` :-(
     let payload = AgentErrorResponse {
         error: format!("{:?}", error),
         kind: "OpenTracingRustError".into()

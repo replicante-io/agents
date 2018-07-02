@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use iron::prelude::*;
 use iron::Handler;
 use iron::status;
@@ -7,19 +9,21 @@ use iron_json_response::JsonResponseMiddleware;
 
 use opentracingrust::utils::FailSpan;
 
+use super::super::Agent;
+use super::super::AgentContext;
 use super::super::errors::otr_to_iron;
-use super::super::runner::AgentContainer;
 use super::super::util::tracing::HeadersCarrier;
 
 
 /// Handler implementing the /api/v1/info/agent endpoint.
 pub struct AgentInfo {
-    agent: AgentContainer,
+    agent: Arc<Agent>,
+    context: AgentContext,
 }
 
 impl AgentInfo {
-    pub fn make(agent: AgentContainer) -> Chain {
-        let handler = AgentInfo { agent };
+    pub fn make(agent: Arc<Agent>, context: AgentContext) -> Chain {
+        let handler = AgentInfo { agent, context };
         let mut chain = Chain::new(handler);
         chain.link_after(JsonResponseMiddleware::new());
         chain
@@ -36,9 +40,9 @@ impl Handler for AgentInfo {
         let mut response = Response::new();
         match HeadersCarrier::inject(span.context(), &mut response.headers, self.agent.tracer()) {
             Ok(_) => (),
-            Err(err) => {
-                // TODO: convert to logging.
-                println!("Failed to inject span: {:?}", err)
+            Err(error) => {
+                let error = format!("{:?}", error);
+                error!(self.context.logger, "Failed to inject span"; "error" => error);
             }
         };
         response.set_mut(JsonResponse::json(info)).set_mut(status::Ok);
@@ -49,12 +53,13 @@ impl Handler for AgentInfo {
 
 /// Handler implementing the /api/v1/info/datastore endpoint.
 pub struct DatastoreInfo {
-    agent: AgentContainer,
+    agent: Arc<Agent>,
+    context: AgentContext,
 }
 
 impl DatastoreInfo {
-    pub fn make(agent: AgentContainer) -> Chain {
-        let handler = DatastoreInfo { agent };
+    pub fn make(agent: Arc<Agent>, context: AgentContext) -> Chain {
+        let handler = DatastoreInfo { agent, context };
         let mut chain = Chain::new(handler);
         chain.link_after(JsonResponseMiddleware::new());
         chain
@@ -71,9 +76,9 @@ impl Handler for DatastoreInfo {
         let mut response = Response::new();
         match HeadersCarrier::inject(span.context(), &mut response.headers, self.agent.tracer()) {
             Ok(_) => (),
-            Err(err) => {
-                // TODO: convert to logging.
-                println!("Failed to inject span: {:?}", err)
+            Err(error) => {
+                let error = format!("{:?}", error);
+                error!(self.context.logger, "Failed to inject span"; "error" => error);
             }
         };
         response.set_mut(JsonResponse::json(info)).set_mut(status::Ok);
@@ -92,15 +97,18 @@ mod tests {
         use iron_test::request;
         use iron_test::response;
 
-        use super::super::AgentInfo;
         use super::super::super::super::Agent;
+        use super::super::super::super::AgentContext;
+        use super::super::super::super::config::Agent as AgentConfig;
         use super::super::super::super::testing::MockAgent;
+        use super::super::AgentInfo;
 
 
         fn get<A>(agent: A) -> Result<String, IronError> 
             where A: Agent + 'static
         {
-            let handler = AgentInfo::make(Arc::new(agent));
+            let context = AgentContext::new(AgentConfig::default());
+            let handler = AgentInfo::make(Arc::new(agent), context);
             request::get(
                 "http://localhost:3000/api/v1/info/agent",
                 Headers::new(), &handler
@@ -141,15 +149,18 @@ mod tests {
         use iron_test::request;
         use iron_test::response;
 
-        use super::super::DatastoreInfo;
         use super::super::super::super::Agent;
+        use super::super::super::super::AgentContext;
+        use super::super::super::super::config::Agent as AgentConfig;
         use super::super::super::super::testing::MockAgent;
+        use super::super::DatastoreInfo;
 
 
         fn get<A>(agent: A) -> Result<String, IronError> 
             where A: Agent + 'static
         {
-            let handler = DatastoreInfo::make(Arc::new(agent));
+            let context = AgentContext::new(AgentConfig::default());
+            let handler = DatastoreInfo::make(Arc::new(agent), context);
             request::get(
                 "http://localhost:3000/api/v1/info/datastore",
                 Headers::new(), &handler

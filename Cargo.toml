@@ -5,5 +5,7 @@ members = [
     "mongodb",
 
     # Common crates
-    "common/util/iron"
+    "common/logging",
+    "common/util/iron",
+    "common/util/tracing"
 ]

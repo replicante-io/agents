@@ -5,6 +5,9 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Added
+- Logging support
+
 ### Changed
 - **BREAKING**: Rework configuration using [serde](https://docs.rs/serde)
 - **BREAKING**: Use [error_chain](https://docs.rs/error-chain) for errors

@@ -31,6 +31,7 @@ use clap::Arg;
 use slog::Discard;
 use slog::Logger;
 
+use replicante_agent::AgentContext;
 use replicante_agent::AgentRunner;
 use replicante_agent::Result;
 use replicante_agent::ResultExt;
@@ -92,7 +93,7 @@ pub fn run() -> Result<()> {
     let logger = Logger::root(Discard, o!());
 
     // Setup and run the tracer.
-    let (tracer, mut extra) = tracer(config.agent.tracer.clone(), logger)
+    let (tracer, mut extra) = tracer(config.agent.tracing.clone(), logger)
         .chain_err(|| "Unable to configure distributed tracer")?;
     match extra {
         TracerExtra::ReporterThread(ref mut reporter) => {
@@ -105,7 +106,8 @@ pub fn run() -> Result<()> {
     let agent_config = config.agent.clone();
     let agent = MongoDBAgent::new(config, tracer)
         .chain_err(|| "Failed to initialise MongoDB agent")?;
-    let runner = AgentRunner::new(agent, agent_config);
+    let context = AgentContext::new(agent_config);
+    let runner = AgentRunner::new(agent, context);
     runner.run();
     Ok(())
 }

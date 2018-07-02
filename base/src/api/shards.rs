@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use iron::prelude::*;
 use iron::Handler;
 use iron::status;
@@ -7,19 +9,21 @@ use iron_json_response::JsonResponseMiddleware;
 
 use opentracingrust::utils::FailSpan;
 
+use super::super::Agent;
+use super::super::AgentContext;
 use super::super::errors::otr_to_iron;
-use super::super::runner::AgentContainer;
 use super::super::util::tracing::HeadersCarrier;
 
 
 /// Handler implementing the /api/v1/status endpoint.
 pub struct Shards {
-    agent: AgentContainer
+    agent: Arc<Agent>,
+    context: AgentContext,
 }
 
 impl Shards {
-    pub fn make(agent: AgentContainer) -> Chain {
-        let handler = Shards { agent };
+    pub fn make(agent: Arc<Agent>, context: AgentContext) -> Chain {
+        let handler = Shards { agent, context };
         let mut chain = Chain::new(handler);
         chain.link_after(JsonResponseMiddleware::new());
         chain
@@ -35,9 +39,9 @@ impl Handler for Shards {
         let mut response = Response::new();
         match HeadersCarrier::inject(span.context(), &mut response.headers, self.agent.tracer()) {
             Ok(_) => (),
-            Err(err) => {
-                // TODO: convert to logging.
-                println!("Failed to inject span: {:?}", err)
+            Err(error) => {
+                let error = format!("{:?}", error);
+                error!(self.context.logger, "Failed to inject span"; "error" => error);
             }
         };
         response.set_mut(JsonResponse::json(&shards)).set_mut(status::Ok);
@@ -59,14 +63,17 @@ mod tests {
     use replicante_agent_models::Shards as ShardsModel;
     use replicante_agent_models::ShardRole;
 
-    use super::Shards;
     use super::super::super::Agent;
+    use super::super::super::AgentContext;
+    use super::super::super::config::Agent as AgentConfig;
     use super::super::super::testing::MockAgent;
+    use super::Shards;
 
     fn request_get<A>(agent: A) -> Result<String, IronError> 
         where A: Agent + 'static
     {
-        let handler = Shards::make(Arc::new(agent));
+        let context = AgentContext::new(AgentConfig::default());
+        let handler = Shards::make(Arc::new(agent), context);
         request::get(
             "http://localhost:3000/api/v1/status",
             Headers::new(), &handler

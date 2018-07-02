@@ -1,4 +1,6 @@
+use replicante_logging::Config as LoggingConfig;
 use replicante_util_tracing::Config as TracerConfig;
+
 
 mod api;
 pub use self::api::APIConfig;
@@ -18,16 +20,21 @@ pub struct Agent {
     #[serde(default)]
     pub api: APIConfig,
 
+    /// Logging configuration
+    #[serde(default)]
+    pub logging: LoggingConfig,
+
     /// OpenTracing configuration
     #[serde(default)]
-    pub tracer: TracerConfig,
+    pub tracing: TracerConfig,
 }
 
 impl Default for Agent {
     fn default() -> Self {
         Agent {
             api: APIConfig::default(),
-            tracer: TracerConfig::default(),
+            logging: LoggingConfig::default(),
+            tracing: TracerConfig::default(),
         }
     }
 }
