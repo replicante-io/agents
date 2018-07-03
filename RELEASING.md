@@ -17,4 +17,6 @@ In order for the `replicante_agent` crate to be published the following,
 otherwise internal, crates need to be publised as well:
 
 - [ ] replicante_agent_models
+- [ ] replicante_logging
 - [ ] replicante_util_iron
+- [ ] replicante_util_tracing

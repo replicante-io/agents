@@ -28,9 +28,6 @@ use std::time::Duration;
 use clap::App;
 use clap::Arg;
 
-use slog::Discard;
-use slog::Logger;
-
 use replicante_agent::AgentContext;
 use replicante_agent::AgentRunner;
 use replicante_agent::Result;
@@ -89,8 +86,10 @@ pub fn run() -> Result<()> {
             .chain_err(|| "Unable to load user configuration")?
     };
 
-    // TODO: setup logging properly.
-    let logger = Logger::root(Discard, o!());
+    // Configure the logger (from the agent context).
+    let agent_config = config.agent.clone();
+    let agent_context = AgentContext::new(agent_config);
+    let logger = agent_context.logger.clone();
 
     // Setup and run the tracer.
     let (tracer, mut extra) = tracer(config.agent.tracing.clone(), logger)
@@ -103,11 +102,9 @@ pub fn run() -> Result<()> {
     };
 
     // Setup and run the agent.
-    let agent_config = config.agent.clone();
-    let agent = MongoDBAgent::new(config, tracer)
+    let agent = MongoDBAgent::new(config, agent_context.clone(), tracer)
         .chain_err(|| "Failed to initialise MongoDB agent")?;
-    let context = AgentContext::new(agent_config);
-    let runner = AgentRunner::new(agent, context);
+    let runner = AgentRunner::new(agent, agent_context);
     runner.run();
     Ok(())
 }

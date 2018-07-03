@@ -16,6 +16,7 @@ use prometheus::Opts;
 use prometheus::Registry;
 
 use replicante_agent::Agent;
+use replicante_agent::AgentContext;
 use replicante_agent::Error;
 use replicante_agent::Result;
 
@@ -38,6 +39,7 @@ pub struct MongoDBAgent {
     // filled just after the agent is created while in the factory.
     client: Option<Client>,
     config: Config,
+    context: AgentContext,
 
     // Introspection.
     mongo_command_counts: CounterVec,
@@ -46,7 +48,7 @@ pub struct MongoDBAgent {
 }
 
 impl MongoDBAgent {
-    pub fn new(config: Config, tracer: Tracer) -> Result<MongoDBAgent> {
+    pub fn new(config: Config, context: AgentContext, tracer: Tracer) -> Result<MongoDBAgent> {
         // Init metrics.
         let mongo_command_counts = CounterVec::new(
             Opts::new(
@@ -63,6 +65,7 @@ impl MongoDBAgent {
         let mut agent = MongoDBAgent {
             client: None,
             config,
+            context,
 
             // Introspection.
             mongo_command_counts,
@@ -154,8 +157,8 @@ impl Agent for MongoDBAgent {
             _ => match rs_status::lag(&status, last_op) {
                 Ok(lag) => Some(lag),
                 Err(err) => {
-                    // TODO: fix logging
-                    println!("Failed to compute lag: {:?}", err);
+                    let error = format!("{:?}", err);
+                    error!(self.context.logger, "Failed to compute lag"; "error" => error);
                     span.tag("lag.error", format!("Failed lag detection: {:?}", err));
                     None
                 }

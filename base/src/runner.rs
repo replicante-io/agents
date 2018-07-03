@@ -7,6 +7,7 @@ use prometheus::process_collector::ProcessCollector;
 
 use replicante_util_iron::MetricsHandler;
 use replicante_util_iron::MetricsMiddleware;
+use replicante_util_iron::RequestLogger;
 
 use slog::Logger;
 
@@ -89,16 +90,17 @@ impl AgentRunner {
         registry.register(Box::new(errors.clone())).expect("Unable to register errors counter");
         registry.register(Box::new(requests.clone()))
             .expect("Unable to register requests counter");
+        let metrics = MetricsMiddleware::new(
+            duration, errors, requests, self.context.logger.clone()
+        );
 
         // Setup process metrics.
         let process = ProcessCollector::for_self();
         registry.register(Box::new(process)).expect("Unable to register process metrics");
 
         // Wrap the router with middleweres.
-        let metrics = MetricsMiddleware::new(
-            duration, errors, requests, self.context.logger.clone()
-        );
         let mut handler = Chain::new(router);
+        handler.link_after(RequestLogger::new(self.context.logger.clone()));
         handler.link(metrics.into_middleware());
 
         // Start the agent server.

@@ -74,7 +74,7 @@ impl Default for MongoDB {
 
 impl MongoDB {
     /// Default value for `bind` used by serde.
-    fn default_uri() -> String { String::from("mongodb://localhost:21017") }
+    fn default_uri() -> String { String::from("mongodb://localhost:27017") }
 }
 
 
