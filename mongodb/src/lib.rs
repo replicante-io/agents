@@ -88,11 +88,10 @@ pub fn run() -> Result<()> {
 
     // Configure the logger (from the agent context).
     let agent_config = config.agent.clone();
-    let agent_context = AgentContext::new(agent_config);
-    let logger = agent_context.logger.clone();
+    let logger = AgentContext::logger(&agent_config);
 
     // Setup and run the tracer.
-    let (tracer, mut extra) = tracer(config.agent.tracing.clone(), logger)
+    let (tracer, mut extra) = tracer(config.agent.tracing.clone(), logger.clone())
         .chain_err(|| "Unable to configure distributed tracer")?;
     match extra {
         TracerExtra::ReporterThread(ref mut reporter) => {
@@ -102,7 +101,8 @@ pub fn run() -> Result<()> {
     };
 
     // Setup and run the agent.
-    let agent = MongoDBAgent::new(config, agent_context.clone(), tracer)
+    let agent_context = AgentContext::new(agent_config, logger, tracer);
+    let agent = MongoDBAgent::new(config, agent_context.clone())
         .chain_err(|| "Failed to initialise MongoDB agent")?;
     let runner = AgentRunner::new(agent, agent_context);
     runner.run();

@@ -8,12 +8,10 @@ use mongodb::db::ThreadedDatabase;
 
 use opentracingrust::Log;
 use opentracingrust::Span;
-use opentracingrust::Tracer;
 use opentracingrust::utils::FailSpan;
 
 use prometheus::CounterVec;
 use prometheus::Opts;
-use prometheus::Registry;
 
 use replicante_agent::Agent;
 use replicante_agent::AgentContext;
@@ -43,12 +41,10 @@ pub struct MongoDBAgent {
 
     // Introspection.
     mongo_command_counts: CounterVec,
-    registry: Registry,
-    tracer: Tracer,
 }
 
 impl MongoDBAgent {
-    pub fn new(config: Config, context: AgentContext, tracer: Tracer) -> Result<MongoDBAgent> {
+    pub fn new(config: Config, context: AgentContext) -> Result<MongoDBAgent> {
         // Init metrics.
         let mongo_command_counts = CounterVec::new(
             Opts::new(
@@ -57,8 +53,7 @@ impl MongoDBAgent {
             ),
             &["command"]
         ).expect("Unable to configure commands counter");
-        let registry = Registry::new();
-        registry.register(Box::new(mongo_command_counts.clone()))
+        context.metrics.register(Box::new(mongo_command_counts.clone()))
             .expect("Unable to register commands counter");
 
         // Init agent.
@@ -69,8 +64,6 @@ impl MongoDBAgent {
 
             // Introspection.
             mongo_command_counts,
-            registry,
-            tracer,
         };
         agent.init_client()?;
         Ok(agent)
@@ -93,7 +86,7 @@ impl MongoDBAgent {
 
     /// Executes the buildInfo command against the DB.
     fn build_info(&self, parent: &mut Span) -> Result<OrderedDocument> {
-        let mut span = self.tracer().span("buildInfo").auto_finish();
+        let mut span = self.context.tracer.span("buildInfo").auto_finish();
         span.child_of(parent.context().clone());
         let mongo = self.client();
         span.log(Log::new().log("span.kind", "client-send"));
@@ -109,7 +102,7 @@ impl MongoDBAgent {
 
     /// Executes the replSetGetStatus command against the DB.
     fn repl_set_get_status(&self, parent: &mut Span) -> Result<OrderedDocument> {
-        let mut span = self.tracer().span("replSetGetStatus").auto_finish();
+        let mut span = self.context.tracer.span("replSetGetStatus").auto_finish();
         span.child_of(parent.context().clone());
         let mongo = self.client();
         span.log(Log::new().log("span.kind", "client-send"));
@@ -166,13 +159,5 @@ impl Agent for MongoDBAgent {
         };
         let shards = vec![Shard::new(name, role, lag, last_op)];
         Ok(Shards::new(shards))
-    }
-
-    fn metrics(&self) -> Registry {
-        self.registry.clone()
-    }
-
-    fn tracer(&self) -> &Tracer {
-        &self.tracer
     }
 }

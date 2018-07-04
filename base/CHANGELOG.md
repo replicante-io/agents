@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Logging support
 
 ### Changed
+- **BREAKING**: Move metrics from `Agent` trait to `AgentContext`
+- **BREAKING**: Move tracing from `Agent` trait to `AgentContext`
 - **BREAKING**: Rework configuration using [serde](https://docs.rs/serde)
 - **BREAKING**: Use [error_chain](https://docs.rs/error-chain) for errors
 

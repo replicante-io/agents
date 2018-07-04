@@ -32,13 +32,13 @@ impl AgentInfo {
 
 impl Handler for AgentInfo {
     fn handle(&self, request: &mut Request) -> IronResult<Response> {
-        let mut span = HeadersCarrier::child_of(
-            "agent-info", &mut request.headers, self.agent.tracer()
-        ).map_err(otr_to_iron)?.auto_finish();
+        let tracer = &self.context.tracer;
+        let mut span = HeadersCarrier::child_of("agent-info", &mut request.headers, tracer)
+            .map_err(otr_to_iron)?.auto_finish();
 
         let info = self.agent.agent_info(&mut span).fail_span(&mut span)?;
         let mut response = Response::new();
-        match HeadersCarrier::inject(span.context(), &mut response.headers, self.agent.tracer()) {
+        match HeadersCarrier::inject(span.context(), &mut response.headers, tracer) {
             Ok(_) => (),
             Err(error) => {
                 let error = format!("{:?}", error);
@@ -68,13 +68,12 @@ impl DatastoreInfo {
 
 impl Handler for DatastoreInfo {
     fn handle(&self, request: &mut Request) -> IronResult<Response> {
-        let mut span = HeadersCarrier::child_of(
-            "datastore-info", &mut request.headers, self.agent.tracer()
-        ).map_err(otr_to_iron)?.auto_finish();
-
+        let tracer = &self.context.tracer;
+        let mut span = HeadersCarrier::child_of("datastore-info", &mut request.headers, tracer)
+            .map_err(otr_to_iron)?.auto_finish();
         let info = self.agent.datastore_info(&mut span).fail_span(&mut span)?;
         let mut response = Response::new();
-        match HeadersCarrier::inject(span.context(), &mut response.headers, self.agent.tracer()) {
+        match HeadersCarrier::inject(span.context(), &mut response.headers, tracer) {
             Ok(_) => (),
             Err(error) => {
                 let error = format!("{:?}", error);
@@ -99,7 +98,6 @@ mod tests {
 
         use super::super::super::super::Agent;
         use super::super::super::super::AgentContext;
-        use super::super::super::super::config::Agent as AgentConfig;
         use super::super::super::super::testing::MockAgent;
         use super::super::AgentInfo;
 
@@ -107,21 +105,24 @@ mod tests {
         fn get<A>(agent: A) -> Result<String, IronError> 
             where A: Agent + 'static
         {
-            let context = AgentContext::new(AgentConfig::default());
+            let (context, extra) = AgentContext::mock();
             let handler = AgentInfo::make(Arc::new(agent), context);
-            request::get(
+            let response = request::get(
                 "http://localhost:3000/api/v1/info/agent",
                 Headers::new(), &handler
             )
             .map(|response| {
                 let body = response::extract_body_to_bytes(response);
                 String::from_utf8(body).unwrap()
-            })
+            });
+            drop(extra);
+            drop(handler);
+            response
         }
 
         #[test]
         fn returns_error() {
-            let (mut agent, _receiver) = MockAgent::new();
+            let mut agent = MockAgent::new();
             agent.agent_info = Err("Testing failure".into());
             let result = get(agent);
             assert!(result.is_err());
@@ -134,7 +135,7 @@ mod tests {
 
         #[test]
         fn returns_version() {
-            let (agent, _receiver) = MockAgent::new();
+            let agent = MockAgent::new();
             let result = get(agent).unwrap();
             let expected = r#"{"version":{"checkout":"dcd","number":"1.2.3","taint":"tainted"}}"#;
             assert_eq!(result, expected);
@@ -151,7 +152,6 @@ mod tests {
 
         use super::super::super::super::Agent;
         use super::super::super::super::AgentContext;
-        use super::super::super::super::config::Agent as AgentConfig;
         use super::super::super::super::testing::MockAgent;
         use super::super::DatastoreInfo;
 
@@ -159,21 +159,24 @@ mod tests {
         fn get<A>(agent: A) -> Result<String, IronError> 
             where A: Agent + 'static
         {
-            let context = AgentContext::new(AgentConfig::default());
+            let (context, extra) = AgentContext::mock();
             let handler = DatastoreInfo::make(Arc::new(agent), context);
-            request::get(
+            let response = request::get(
                 "http://localhost:3000/api/v1/info/datastore",
                 Headers::new(), &handler
             )
             .map(|response| {
                 let body = response::extract_body_to_bytes(response);
                 String::from_utf8(body).unwrap()
-            })
+            });
+            drop(extra);
+            drop(handler);
+            response
         }
 
         #[test]
         fn returns_error() {
-            let (mut agent, _receiver) = MockAgent::new();
+            let mut agent = MockAgent::new();
             agent.datastore_info = Err("Testing failure".into());
             let result = get(agent);
             assert!(result.is_err());
@@ -186,7 +189,7 @@ mod tests {
 
         #[test]
         fn returns_version() {
-            let (agent, _receiver) = MockAgent::new();
+            let agent = MockAgent::new();
             let result = get(agent).unwrap();
             let expected = r#"{"cluster":"cluster","kind":"DB","name":"mock","version":"1.2.3"}"#;
             assert_eq!(result, expected);

@@ -32,12 +32,12 @@ impl Shards {
 
 impl Handler for Shards {
     fn handle(&self, request: &mut Request) -> IronResult<Response> {
-        let mut span = HeadersCarrier::child_of(
-            "status", &mut request.headers, self.agent.tracer()
-        ).map_err(otr_to_iron)?.auto_finish();
+        let tracer = &self.context.tracer;
+        let mut span = HeadersCarrier::child_of("status", &mut request.headers, tracer)
+            .map_err(otr_to_iron)?.auto_finish();
         let shards = self.agent.shards(&mut span).fail_span(&mut span)?;
         let mut response = Response::new();
-        match HeadersCarrier::inject(span.context(), &mut response.headers, self.agent.tracer()) {
+        match HeadersCarrier::inject(span.context(), &mut response.headers, tracer) {
             Ok(_) => (),
             Err(error) => {
                 let error = format!("{:?}", error);
@@ -65,28 +65,30 @@ mod tests {
 
     use super::super::super::Agent;
     use super::super::super::AgentContext;
-    use super::super::super::config::Agent as AgentConfig;
     use super::super::super::testing::MockAgent;
     use super::Shards;
 
     fn request_get<A>(agent: A) -> Result<String, IronError> 
         where A: Agent + 'static
     {
-        let context = AgentContext::new(AgentConfig::default());
+        let (context, extra) = AgentContext::mock();
         let handler = Shards::make(Arc::new(agent), context);
-        request::get(
+        let response = request::get(
             "http://localhost:3000/api/v1/status",
             Headers::new(), &handler
         )
         .map(|response| {
             let body = response::extract_body_to_bytes(response);
             String::from_utf8(body).unwrap()
-        })
+        });
+        drop(extra);
+        drop(handler);
+        response
     }
 
     #[test]
     fn status_retruns_shards() {
-        let (mut agent, _receiver) = MockAgent::new();
+        let mut agent = MockAgent::new();
         agent.shards = Ok(ShardsModel::new(vec![
             Shard::new("test-shard", ShardRole::Primary, Some(1), 2)
         ]));
