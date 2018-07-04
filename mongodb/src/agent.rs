@@ -10,9 +10,6 @@ use opentracingrust::Log;
 use opentracingrust::Span;
 use opentracingrust::utils::FailSpan;
 
-use prometheus::CounterVec;
-use prometheus::Opts;
-
 use replicante_agent::Agent;
 use replicante_agent::AgentContext;
 use replicante_agent::Error;
@@ -25,9 +22,10 @@ use replicante_agent_models::Shard;
 use replicante_agent_models::Shards;
 use replicante_agent_models::ShardRole;
 
-use super::config::Config;
 use super::errors;
 use super::rs_status;
+use super::config::Config;
+use super::metrics::MONGO_COMMAND_COUNTS;
 
 
 /// Agent dealing with MongoDB 3.2+ Replica Sets.
@@ -38,32 +36,14 @@ pub struct MongoDBAgent {
     client: Option<Client>,
     config: Config,
     context: AgentContext,
-
-    // Introspection.
-    mongo_command_counts: CounterVec,
 }
 
 impl MongoDBAgent {
     pub fn new(config: Config, context: AgentContext) -> Result<MongoDBAgent> {
-        // Init metrics.
-        let mongo_command_counts = CounterVec::new(
-            Opts::new(
-                "replicante_mongodb_commands",
-                "Counts the commands executed against the MongoDB node"
-            ),
-            &["command"]
-        ).expect("Unable to configure commands counter");
-        context.metrics.register(Box::new(mongo_command_counts.clone()))
-            .expect("Unable to register commands counter");
-
-        // Init agent.
         let mut agent = MongoDBAgent {
             client: None,
             config,
             context,
-
-            // Introspection.
-            mongo_command_counts,
         };
         agent.init_client()?;
         Ok(agent)
@@ -90,7 +70,7 @@ impl MongoDBAgent {
         span.child_of(parent.context().clone());
         let mongo = self.client();
         span.log(Log::new().log("span.kind", "client-send"));
-        self.mongo_command_counts.with_label_values(&["buildInfo"]).inc();
+        MONGO_COMMAND_COUNTS.with_label_values(&["buildInfo"]).inc();
         let info = mongo.db("test").command(
             doc! {"buildInfo" => 1},
             CommandType::BuildInfo,
@@ -106,7 +86,7 @@ impl MongoDBAgent {
         span.child_of(parent.context().clone());
         let mongo = self.client();
         span.log(Log::new().log("span.kind", "client-send"));
-        self.mongo_command_counts.with_label_values(&["replSetGetStatus"]).inc();
+        MONGO_COMMAND_COUNTS.with_label_values(&["replSetGetStatus"]).inc();
         let status = mongo.db("admin").command(
             doc! {"replSetGetStatus" => 1},
             CommandType::IsMaster,

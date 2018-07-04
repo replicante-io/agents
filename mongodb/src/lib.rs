@@ -39,6 +39,7 @@ use replicante_util_tracing::tracer;
 mod agent;
 mod config;
 mod errors;
+mod metrics;
 mod rs_status;
 
 use agent::MongoDBAgent;
@@ -100,8 +101,12 @@ pub fn run() -> Result<()> {
         _ => ()
     };
 
-    // Setup and run the agent.
+    // Setup the agent context.
     let agent_context = AgentContext::new(agent_config, logger, tracer);
+    AgentRunner::register_metrics(&agent_context.logger, &agent_context.metrics);
+    metrics::register_metrics(&agent_context.logger, &agent_context.metrics);
+
+    // Setup and run the agent.
     let agent = MongoDBAgent::new(config, agent_context.clone())
         .chain_err(|| "Failed to initialise MongoDB agent")?;
     let runner = AgentRunner::new(agent, agent_context);

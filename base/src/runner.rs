@@ -118,6 +118,15 @@ impl AgentRunner {
         }
     }
 
+    /// Register all static metrics provided by the base agent.
+    pub fn register_metrics(logger: &Logger, registry: &Registry) {
+        let process = ProcessCollector::for_self();
+        if let Err(err) = registry.register(Box::new(process)) {
+            let error = format!("{:?}", err);
+            debug!(logger, "Failed to register process metrics"; "error" => error);
+        }
+    }
+
     /// Starts the Agent process and waits for it to terminate.
     ///
     /// # Panics
@@ -153,10 +162,6 @@ impl AgentRunner {
         let metrics = MetricsMiddleware::new(
             duration, errors, requests, self.context.logger.clone()
         );
-
-        // Setup process metrics.
-        let process = ProcessCollector::for_self();
-        registry.register(Box::new(process)).expect("Unable to register process metrics");
 
         // Wrap the router with middleweres.
         let mut handler = Chain::new(router);
