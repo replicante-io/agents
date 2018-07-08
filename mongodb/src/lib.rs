@@ -39,9 +39,8 @@ use replicante_util_tracing::tracer;
 mod agent;
 mod config;
 mod errors;
-mod interface;
 mod metrics;
-mod rs_status;
+mod version;
 
 use agent::MongoDBAgent;
 use config::Config;

@@ -1,17 +1,35 @@
 use prometheus::CounterVec;
+use prometheus::HistogramOpts;
+use prometheus::HistogramVec;
 use prometheus::Opts;
 use prometheus::Registry;
+
 use slog::Logger;
 
 
 lazy_static! {
-    pub static ref MONGO_COMMAND_COUNTS: CounterVec = CounterVec::new(
+    /// Counter for MongoDB operation errors.
+    pub static ref MONGODB_OP_ERRORS_COUNT: CounterVec = CounterVec::new(
         Opts::new(
-            "replicante_mongodb_commands",
-            "Counts the commands executed against the MongoDB node"
+            "replicante_agent_mongodb_operation_errors",
+            "Number of MongoDB operations failed"
+        ), &["operation"]
+    ).expect("Failed to create MONGODB_OP_ERRORS_COUNT counter");
+
+    /// Counter for MongoDB operations.
+    pub static ref MONGODB_OPS_COUNT: CounterVec = CounterVec::new(
+        Opts::new("replicante_agent_mongodb_operations", "Number of MongoDB operations issued"),
+        &["operation"]
+    ).expect("Failed to create MONGODB_OPS_COUNT counter");
+
+    /// Observe duration of MongoDB operations.
+    pub static ref MONGODB_OPS_DURATION: HistogramVec = HistogramVec::new(
+        HistogramOpts::new(
+            "replicante_agent_mongodb_operations_duration",
+            "Duration (in seconds) of MongoDB operations"
         ),
-        &["command"]
-    ).expect("Unable to configure commands counter");
+        &["operation"]
+    ).expect("Failed to create MONGODB_OPS_DURATION histogram");
 }
 
 
@@ -19,8 +37,16 @@ lazy_static! {
 ///
 /// Metrics that fail to register are logged and ignored.
 pub fn register_metrics(logger: &Logger, registry: &Registry) {
-    if let Err(err) = registry.register(Box::new(MONGO_COMMAND_COUNTS.clone())) {
+    if let Err(err) = registry.register(Box::new(MONGODB_OPS_COUNT.clone())) {
         let error = format!("{:?}", err);
-        debug!(logger, "Failed to register MONGO_COMMAND_COUNTS"; "error" => error);
+        debug!(logger, "Failed to register MONGODB_OPS_COUNT"; "error" => error);
+    }
+    if let Err(err) = registry.register(Box::new(MONGODB_OP_ERRORS_COUNT.clone())) {
+        let error = format!("{:?}", err);
+        debug!(logger, "Failed to register MONGODB_OP_ERRORS_COUNT"; "error" => error);
+    }
+    if let Err(err) = registry.register(Box::new(MONGODB_OPS_DURATION.clone())) {
+        let error = format!("{:?}", err);
+        debug!(logger, "Failed to register MONGODB_OPS_DURATION"; "error" => error);
     }
 }

@@ -1,13 +1,11 @@
-use mongodb;
+use std::fmt::Display;
 
 use replicante_agent::Error;
 
 
 #[cfg_attr(feature = "cargo-clippy", allow(needless_pass_by_value))]
-pub fn to_agent(error: mongodb::error::Error) -> Error {
-    match error {
-        _ => error.to_string().into()
-    }
+pub fn to_agent<E: Display>(error: E) -> Error {
+    error.to_string().into()
 }
 
 

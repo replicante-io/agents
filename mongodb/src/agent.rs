@@ -16,10 +16,10 @@ use replicante_agent_models::DatastoreInfo;
 use replicante_agent_models::Shards;
 
 use super::errors;
-use super::interface;
+use super::version;
 
 use super::config::Config;
-use super::interface::MongoDBInterface;
+use super::version::MongoDBInterface;
 
 
 /// Agent dealing with MongoDB 3.2+ Replica Sets.
@@ -39,7 +39,7 @@ impl MongoDBAgent {
             .map_err(errors::to_agent)?;
         // Start off with a reasonable default version of 3.2.
         // Let the automated version detection figure out the exact interface.
-        let interface = Arc::new(interface::mongodb_32::MongoClient::new(context.clone()));
+        let interface = Arc::new(version::v3_2::ReplicaSet::new(context.clone()));
         Ok(MongoDBAgent {
             client,
             interface,

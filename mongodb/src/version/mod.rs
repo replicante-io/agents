@@ -6,7 +6,7 @@ use replicante_agent_models::DatastoreInfo;
 use replicante_agent_models::Shards;
 
 
-pub mod mongodb_32;
+pub mod v3_2;
 
 
 /// Version dependent MongoDB agents.
