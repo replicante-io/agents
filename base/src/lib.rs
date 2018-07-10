@@ -57,5 +57,6 @@ pub use self::errors::Result;
 pub use self::runner::AgentContext;
 pub use self::runner::AgentRunner;
 pub use self::traits::Agent;
+pub use self::versioned::ActiveAgent;
 pub use self::versioned::AgentFactory;
 pub use self::versioned::VersionedAgent;

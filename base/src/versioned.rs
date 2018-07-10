@@ -28,11 +28,13 @@ impl ActiveAgent {
     ///   * `remake_on_error` to indicate that `AgentFactory::make` should be called on error.
     ///   * The `version_id` opaque string to be used by `AgentFactory::should_remake`
     ///     to determine the ID of the active agent version.
-    pub fn new(agent: Arc<Agent>, remake_on_error: bool, version_id: String) -> ActiveAgent {
+    pub fn new<S: Into<String>>(
+        agent: Arc<Agent>, remake_on_error: bool, version_id: S
+    ) -> ActiveAgent {
         ActiveAgent {
             agent,
             remake_on_error,
-            version_id,
+            version_id: version_id.into(),
         }
     }
 }
@@ -183,7 +185,7 @@ mod tests {
             let mut made = self.made.lock().unwrap();
             *made += 1;
             drop(made);
-            ActiveAgent::new(Arc::clone(&self.agent), self.remake_on_error, "test".into())
+            ActiveAgent::new(Arc::clone(&self.agent), self.remake_on_error, "test")
         }
 
         fn should_remake(&self, _: &ActiveAgent, _: &DatastoreInfo) -> bool {

@@ -32,18 +32,18 @@ use replicante_agent::AgentContext;
 use replicante_agent::AgentRunner;
 use replicante_agent::Result;
 use replicante_agent::ResultExt;
+use replicante_agent::VersionedAgent;
 
 use replicante_util_tracing::TracerExtra;
 use replicante_util_tracing::tracer;
 
-mod agent;
 mod config;
 mod errors;
 mod metrics;
 mod version;
 
-use agent::MongoDBAgent;
 use config::Config;
+use version::MongoDBFactory;
 
 
 lazy_static! {
@@ -107,9 +107,13 @@ pub fn run() -> Result<()> {
     metrics::register_metrics(&agent_context.logger, &agent_context.metrics);
 
     // Setup and run the agent.
-    let agent = MongoDBAgent::new(config, agent_context.clone())
-        .chain_err(|| "Failed to initialise MongoDB agent")?;
+    let factory = MongoDBFactory::new(config, agent_context.clone())
+        .chain_err(|| "Failed to initialise MongoDB agent factory")?;
+    let agent = VersionedAgent::new(factory);
     let runner = AgentRunner::new(agent, agent_context);
     runner.run();
+
+    // Cleanup tracer and exit.
+    drop(extra);
     Ok(())
 }

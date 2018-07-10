@@ -10,11 +10,13 @@ use opentracingrust::Log;
 use opentracingrust::Span;
 use opentracingrust::utils::FailSpan;
 
+use replicante_agent::Agent;
 use replicante_agent::AgentContext;
 use replicante_agent::Error;
 use replicante_agent::Result;
 use replicante_agent::ResultExt;
 
+use replicante_agent_models::AgentInfo;
 use replicante_agent_models::DatastoreInfo;
 use replicante_agent_models::Shard;
 use replicante_agent_models::Shards;
@@ -26,7 +28,7 @@ use super::super::metrics::MONGODB_OPS_COUNT;
 use super::super::metrics::MONGODB_OPS_DURATION;
 use super::super::metrics::MONGODB_OP_ERRORS_COUNT;
 
-use super::MongoDBInterface;
+use super::AGENT_VERSION;
 
 
 /// Section of the buildInfo command that we care about.
@@ -38,22 +40,26 @@ pub struct BuildInfo {
 
 /// MongoDB 3.2 client interface.
 pub struct ReplicaSet {
+    client: Client,
     context: AgentContext,
 }
 
 impl ReplicaSet {
-    pub fn new(context: AgentContext) -> ReplicaSet {
-        ReplicaSet { context, }
+    pub fn new(client: Client, context: AgentContext) -> ReplicaSet {
+        ReplicaSet { 
+            client,
+            context,
+        }
     }
 
     /// Executes the buildInfo command against the DB.
-    fn build_info(&self, parent: &mut Span, client: &Client) -> Result<BuildInfo> {
+    fn build_info(&self, parent: &mut Span) -> Result<BuildInfo> {
         let mut span = self.context.tracer.span("buildInfo").auto_finish();
         span.child_of(parent.context().clone());
         span.log(Log::new().log("span.kind", "client-send"));
         MONGODB_OPS_COUNT.with_label_values(&["buildInfo"]).inc();
         let timer = MONGODB_OPS_DURATION.with_label_values(&["buildInfo"]).start_timer();
-        let info = client.db("test").command(
+        let info = self.client.db("test").command(
             doc! {"buildInfo" => 1},
             CommandType::BuildInfo,
             None
@@ -70,13 +76,13 @@ impl ReplicaSet {
     }
 
     /// Executes the replSetGetStatus command against the DB.
-    fn repl_set_get_status(&self, parent: &mut Span, client: &Client) -> Result<ReplSetStatus> {
+    fn repl_set_get_status(&self, parent: &mut Span) -> Result<ReplSetStatus> {
         let mut span = self.context.tracer.span("replSetGetStatus").auto_finish();
         span.child_of(parent.context().clone());
         span.log(Log::new().log("span.kind", "client-send"));
         MONGODB_OPS_COUNT.with_label_values(&["replSetGetStatus"]).inc();
         let timer = MONGODB_OPS_DURATION.with_label_values(&["replSetGetStatus"]).start_timer();
-        let status = client.db("admin").command(
+        let status = self.client.db("admin").command(
             doc! {"replSetGetStatus" => 1},
             CommandType::IsMaster,
             None
@@ -93,17 +99,24 @@ impl ReplicaSet {
     }
 }
 
-impl MongoDBInterface for ReplicaSet {
-    fn datastore_info(&self, span: &mut Span, client: &Client) -> Result<DatastoreInfo> {
-        let info = self.build_info(span, client)?;
-        let status = self.repl_set_get_status(span, client)?;
+impl Agent for ReplicaSet {
+    fn agent_info(&self, span: &mut Span) -> Result<AgentInfo> {
+        span.log(Log::new().log("span.kind", "server-receive"));
+        let info = AgentInfo::new(AGENT_VERSION.clone());
+        span.log(Log::new().log("span.kind", "server-send"));
+        Ok(info)
+    }
+
+    fn datastore_info(&self, span: &mut Span) -> Result<DatastoreInfo> {
+        let info = self.build_info(span)?;
+        let status = self.repl_set_get_status(span)?;
         let node_name = status.node_name()?;
         let cluster = status.set;
         Ok(DatastoreInfo::new(cluster, "MongoDB", node_name, info.version))
     }
 
-    fn shards(&self, span: &mut Span, client: &Client) -> Result<Shards> {
-        let status = self.repl_set_get_status(span, client)?;
+    fn shards(&self, span: &mut Span) -> Result<Shards> {
+        let status = self.repl_set_get_status(span)?;
         let last_op = status.last_op()?;
         let role = status.role()?;
         let lag = match role {
