@@ -65,3 +65,7 @@ impl Agent for MongoDBAgent {
         self.interface.shards(span, &self.client)
     }
 }
+
+
+// TODO: MongoDBFactory that returns v3.2 and should never change.
+// TODO: replace MongoDBAgent with VersionedAgent and MongoDBFactory.

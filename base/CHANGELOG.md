@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [Unreleased]
 ### Added
 - Logging support
+- Versioned agents utilities
 
 ### Changed
 - **BREAKING**: Move metrics from `Agent` trait to `AgentContext`

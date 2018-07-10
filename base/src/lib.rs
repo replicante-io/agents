@@ -41,11 +41,12 @@ mod api;
 mod errors;
 mod runner;
 mod traits;
+mod versioned;
 
 pub mod config;
 pub mod util;
 
-#[cfg(test)]
+#[cfg(debug_assertions)]
 pub mod testing;
 
 pub use self::errors::Error;
@@ -56,3 +57,5 @@ pub use self::errors::Result;
 pub use self::runner::AgentContext;
 pub use self::runner::AgentRunner;
 pub use self::traits::Agent;
+pub use self::versioned::AgentFactory;
+pub use self::versioned::VersionedAgent;
