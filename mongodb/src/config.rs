@@ -62,12 +62,17 @@ pub struct MongoDB {
     /// MongoDB connection URI.
     #[serde(default = "MongoDB::default_uri")]
     pub uri: String,
+
+    /// Timeout (in milliseconds) for selecting an appropriate server for operations.
+    #[serde(default = "MongoDB::default_timeout")]
+    pub timeout: i64,
 }
 
 impl Default for MongoDB {
     fn default() -> Self {
         MongoDB {
             uri: Self::default_uri(),
+            timeout: Self::default_timeout(),
         }
     }
 }
@@ -75,6 +80,9 @@ impl Default for MongoDB {
 impl MongoDB {
     /// Default value for `bind` used by serde.
     fn default_uri() -> String { String::from("mongodb://localhost:27017") }
+
+    /// Default value for `bind` used by serde (as defined by the mongodb crate).
+    fn default_timeout() -> i64 { 30000 }
 }
 
 

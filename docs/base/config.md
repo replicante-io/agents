@@ -5,4 +5,4 @@ As agents are delveloped as independent tools, configuration options
 Official agents and those implemented using the base rust crate provide a set of standard
 configuration options:
 
-[import, lang:"yaml"](../../base/agent.example.yaml)
+[import, lang:"yaml"](../../agent.example.yaml)

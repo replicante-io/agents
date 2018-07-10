@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use mongodb::Client;
+use mongodb::ClientOptions;
 use mongodb::ThreadedClient;
 
 use replicante_agent::ActiveAgent;
@@ -33,7 +34,9 @@ pub struct MongoDBFactory {
 
 impl MongoDBFactory {
     pub fn new(config: Config, context: AgentContext) -> Result<MongoDBFactory> {
-        let client = Client::with_uri(&config.mongo.uri)
+        let mut options = ClientOptions::default();
+        options.server_selection_timeout_ms = config.mongo.timeout;
+        let client = Client::with_uri_and_options(&config.mongo.uri, options)
             .map_err(errors::to_agent)?;
         Ok(MongoDBFactory {
             client,

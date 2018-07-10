@@ -30,20 +30,7 @@ target/release/replicante-agent-mongodb
 
 
 ## Configuration
-```yaml
-# Common agents options described in `Configuration`.
-agent:
-  # ... snip ...
-
-
-# Mongo specific options.
-mongo:
-  # Hostname of the mongodb instance to connect to.
-  host: 'localhost'
-
-  # Port of the mongodb instance to connect to.
-  port: 27017
-```
+[import, lang:"yaml"](../../agent-mongodb.example.yaml)
 
 
 ## Upgrades notes

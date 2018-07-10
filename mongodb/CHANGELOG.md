@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 - Command line `--config` option
 - Logging support
+- Timeout configuration option
 
 ### Changed
 - **BREAKING**: Rename MongoDB Agent binary

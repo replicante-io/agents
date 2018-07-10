@@ -1,0 +1,12 @@
+# Common agents options described in the 
+agent: {}
+  # ... snip ...
+
+
+# MongoDB specific configuration.
+mongo:
+  # MongoDB connection URI.
+  uri: "mongodb://localhost:27017"
+
+  # Timeout (in milliseconds) for selecting an appropriate server for operations.
+  timeout: 30000
