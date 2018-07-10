@@ -216,7 +216,8 @@ pub struct RepliSetOptime {
 
 /// Placeholder sructure to deserialise BSON timestamps.
 ///
-/// Needed becuase the version pinned by the MongoDB driver does not have a Timestamp type.
+/// The `bson::TimeStamp` seems to decode the components incorrectly (at least on linux).
+/// Will avoid using it until a solution is found (Bug report? Am I using it wrong?).
 #[derive(Debug, Deserialize)]
 pub struct Timestamp {
     pub t: i32,
