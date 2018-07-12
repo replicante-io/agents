@@ -19,7 +19,7 @@ path = "src/main.rs"
 
 
 [dependencies]
-bson = "^0.12.1"
+bson = "^0.12.2"
 clap = "^2.32.0"
 error-chain = "^0.12.0"
 lazy_static = "^1.0.1"

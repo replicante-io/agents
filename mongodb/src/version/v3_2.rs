@@ -1,5 +1,6 @@
 use bson;
 use bson::Bson;
+use bson::TimeStamp;
 
 use mongodb::Client;
 use mongodb::CommandType;
@@ -210,18 +211,7 @@ pub struct ReplSetStatusMember {
 /// Section of replSetGetStatus optime information that we care about.
 #[derive(Debug, Deserialize)]
 pub struct RepliSetOptime {
-    pub ts: Timestamp,
-}
-
-
-/// Placeholder sructure to deserialise BSON timestamps.
-///
-/// The `bson::TimeStamp` seems to decode the components incorrectly (at least on linux).
-/// Will avoid using it until a solution is found (Bug report? Am I using it wrong?).
-#[derive(Debug, Deserialize)]
-pub struct Timestamp {
-    pub t: i32,
-    pub i: i32,
+    pub ts: TimeStamp,
 }
 
 
@@ -236,6 +226,18 @@ mod tests {
 
     use super::ReplSetStatus;
 
+    lazy_static! {
+        static ref MONGO_TIMESTAMP_ONE: Bson = {
+            let ts = 1514677701_u32.to_le();
+            Bson::TimeStamp((ts as i64) << 32)
+        };
+
+        static ref MONGO_TIMESTAMP_TWO: Bson = {
+            let ts = 1514677698_u32.to_le();
+            Bson::TimeStamp((ts as i64) << 32)
+        };
+    }
+
     fn make_rs() -> Bson {
         Bson::Document(doc! {
             "set": "test-rs",
@@ -243,7 +245,7 @@ mod tests {
                 "_id": 0,
                 "name": "host0",
                 "optime": {
-                    "ts": Bson::TimeStamp((1514677701 as i64) << 32)
+                    "ts": MONGO_TIMESTAMP_ONE.clone(),
                 },
                 "self": false,
                 "state": 1,
@@ -251,7 +253,7 @@ mod tests {
                 "_id": 1,
                 "name": "host1",
                 "optime": {
-                    "ts": Bson::TimeStamp((1514677698 as i64) << 32)
+                    "ts": MONGO_TIMESTAMP_TWO.clone(),
                 },
                 "self": true,
                 "state": 2,
@@ -275,7 +277,7 @@ mod tests {
                 "_id": 0,
                 "name": "host0",
                 "optime": {
-                    "ts": Bson::TimeStamp((1514677701 as i64) << 32)
+                    "ts": MONGO_TIMESTAMP_ONE.clone(),
                 },
                 "self": false,
                 "state": 2,
@@ -307,7 +309,7 @@ mod tests {
                 "_id": 0,
                 "name": "host0",
                 "optime": {
-                    "ts": Bson::TimeStamp((1514677701 as i64) << 32)
+                    "ts": MONGO_TIMESTAMP_ONE.clone(),
                 },
                 "self": false,
                 "state": 2,
@@ -339,7 +341,7 @@ mod tests {
                 "_id": 0,
                 "name": "host0",
                 "optime": {
-                    "ts": Bson::TimeStamp((1514677701 as i64) << 32)
+                    "ts": MONGO_TIMESTAMP_ONE.clone(),
                 },
                 "self": false,
                 "state": 2,
