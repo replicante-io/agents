@@ -951,6 +951,7 @@ dependencies = [
  "replicante_agent 0.2.0",
  "replicante_agent_models 0.1.1",
  "replicante_util_tracing 0.1.1",
+ "semver 0.8.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde 1.0.70 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde_derive 1.0.70 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde_yaml 0.7.5 (registry+https://github.com/rust-lang/crates.io-index)",

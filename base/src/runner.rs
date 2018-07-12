@@ -1,7 +1,7 @@
 use std::fmt;
 use std::sync::Arc;
 
-#[cfg(test)]
+#[cfg(debug_assertions)]
 use std::time::Duration;
 
 use iron::Chain;
@@ -12,7 +12,7 @@ use opentracingrust::Tracer;
 use prometheus::Registry;
 use prometheus::process_collector::ProcessCollector;
 
-#[cfg(test)]
+#[cfg(debug_assertions)]
 use slog::Discard;
 use slog::Logger;
 
@@ -20,7 +20,7 @@ use replicante_util_iron::MetricsHandler;
 use replicante_util_iron::MetricsMiddleware;
 use replicante_util_iron::RequestLogger;
 
-#[cfg(test)]
+#[cfg(debug_assertions)]
 use replicante_util_tracing::TracerExtra;
 
 use super::Agent;
@@ -80,7 +80,7 @@ impl AgentContext {
         ::replicante_logging::configure(config.logging.clone(), &logger_opts)
     }
 
-    #[cfg(test)]
+    #[cfg(debug_assertions)]
     pub fn mock() -> (AgentContext, TracerExtra) {
         let config = AgentConfig::default();
         let logger = Logger::root(Discard, o!());

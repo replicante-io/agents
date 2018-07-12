@@ -10,6 +10,7 @@ extern crate mongodb;
 extern crate opentracingrust;
 extern crate prometheus;
 
+extern crate semver;
 extern crate serde;
 #[macro_use]
 extern crate serde_derive;

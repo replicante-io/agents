@@ -37,6 +37,14 @@ impl ActiveAgent {
             version_id: version_id.into(),
         }
     }
+
+    pub fn remake_on_error(&self) -> bool {
+        self.remake_on_error
+    }
+
+    pub fn version_id(&self) -> &String {
+        &self.version_id
+    }
 }
 
 
