@@ -8,6 +8,7 @@ use mongodb::db::ThreadedDatabase;
 use semver::Version;
 
 use replicante_agent::ActiveAgent;
+use replicante_agent::Agent;
 use replicante_agent::AgentContext;
 use replicante_agent::AgentFactory;
 use replicante_agent::Error;
@@ -25,7 +26,8 @@ use super::metrics::MONGODB_OPS_DURATION;
 use super::metrics::MONGODB_OP_ERRORS_COUNT;
 
 
-pub mod v3_2;
+//mod v3_0;
+mod v3_2;
 
 
 lazy_static! {
@@ -55,6 +57,13 @@ impl MongoDBFactory {
 }
 
 impl MongoDBFactory {
+    /// Make an agent to be used when a version could not be detected.
+    fn default_agent(&self) -> (Arc<Agent>, &'static str, &'static str) {
+        let agent = v3_2::ReplicaSet::new(self.client.clone(), self.context.clone());
+        let agent = Arc::new(agent);
+        (agent, "3.2.0", "replica-set")
+    }
+
     /// Fetch the currently running version of MongoDB.
     fn mongo_version(&self) -> Result<Version> {
         MONGODB_OPS_COUNT.with_label_values(&["version"]).inc();
@@ -71,31 +80,54 @@ impl MongoDBFactory {
     ///
     /// If the version could not be determined returns a MongoDB 3.2 agent.
     fn make_agent(&self, version: Result<Version>) -> ActiveAgent {
-        debug!(self.context.logger, "Instantiating a new MongoDB agent ...");
         match version {
             Err(_) => {
-                warn!(self.context.logger, "Could not detect MongoDB version, using v3.2 agent");
-                let agent = v3_2::ReplicaSet::new(self.client.clone(), self.context.clone());
-                let agent = Arc::new(agent);
+                let (agent, agent_version, mode) = self.default_agent();
+                warn!(
+                    self.context.logger, "Could not detect MongoDB version, using default agent";
+                    "agent_version" => agent_version, "mode" => mode
+                );
                 ActiveAgent::new(agent, true, "unknown")
             },
             Ok(version) => {
-                let agent = v3_2::ReplicaSet::new(self.client.clone(), self.context.clone());
-                let agent = Arc::new(agent);
-                let version = version.to_string();
-                info!(
-                    self.context.logger, "Instantiating MongoDB v3.2 agent";
-                    "agent_version" => "v3.2", "mongo_version" => &version,
-                    "mode" => "replica-set"
-                );
-                ActiveAgent::new(agent, false, version)
+                let agent = self.make_rs(&version);
+                let mode = "replica-set";
+                agent.map(|(agent, agent_version)| {
+                    info!(
+                        self.context.logger, "Instantiated MongoDB agent";
+                        "agent_version" => agent_version, "mongo_version" => %version,
+                        "mode" => mode
+                    );
+                    ActiveAgent::new(agent, false, version.to_string())
+
+                // Failed to find a compatible version.
+                }).unwrap_or_else(|| {
+                    let (agent, agent_version, mode) = self.default_agent();
+                    warn!(
+                        self.context.logger, "Unsupported MongoDB version, using default agent";
+                        "agent_version" => agent_version, "mongo_version" => %version,
+                        "mode" => mode
+                    );
+                    ActiveAgent::new(agent, true, "unknown")
+                })
             }
+        }
+    }
+
+    /// Make a replica-set compatible agent, if versions allow it.
+    fn make_rs(&self, version: &Version) -> Option<(Arc<Agent>, &'static str)> {
+        if v3_2::REPLICA_SET_RANGE.matches(version) {
+            let agent = v3_2::ReplicaSet::new(self.client.clone(), self.context.clone());
+            Some((Arc::new(agent), "3.2.0"))
+        } else {
+            None
         }
     }
 }
 
 impl AgentFactory for MongoDBFactory {
     fn make(&self) -> ActiveAgent {
+        debug!(self.context.logger, "Instantiating a new MongoDB agent ...");
         let version = self.mongo_version();
         self.make_agent(version)
     }
