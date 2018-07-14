@@ -1,9 +1,13 @@
 use std::sync::Arc;
 
+use error_chain::ChainedError;
+
 use mongodb::Client;
 use mongodb::ClientOptions;
 use mongodb::ThreadedClient;
 use mongodb::db::ThreadedDatabase;
+use mongodb::topology::TopologyDescription;
+use mongodb::topology::TopologyType;
 
 use semver::Version;
 
@@ -14,8 +18,6 @@ use replicante_agent::AgentFactory;
 use replicante_agent::Error;
 use replicante_agent::Result;
 use replicante_agent::ResultExt;
-
-use replicante_agent_models::AgentVersion;
 use replicante_agent_models::DatastoreInfo;
 
 use super::config::Config;
@@ -26,15 +28,9 @@ use super::metrics::MONGODB_OPS_DURATION;
 use super::metrics::MONGODB_OP_ERRORS_COUNT;
 
 
-//mod v3_0;
+mod common;
+mod v3_0;
 mod v3_2;
-
-
-lazy_static! {
-    static ref AGENT_VERSION: AgentVersion = AgentVersion::new(
-        env!("GIT_BUILD_HASH"), env!("CARGO_PKG_VERSION"), env!("GIT_BUILD_TAINT")
-    );
-}
 
 
 /// An `AgentFactory` that returns a MongoDB 3.2+ Replica Set compatible agent.
@@ -47,8 +43,20 @@ impl MongoDBFactory {
     pub fn new(config: Config, context: AgentContext) -> Result<MongoDBFactory> {
         let mut options = ClientOptions::default();
         options.server_selection_timeout_ms = config.mongo.timeout;
-        let client = Client::with_uri_and_options(&config.mongo.uri, options)
+
+        // Create a MongoDB client out of a URI but explicitly setting the topology
+        // to single server to ensure the requested node is used.
+        let uri = ::mongodb::connstring::parse(&config.mongo.uri)
+            .chain_err(|| "Failed to parse mongo URI string")?;
+        let mut description = TopologyDescription::new(options.stream_connector.clone());
+        description.topology_type = TopologyType::Single;
+        let client = Client::with_config(uri, Some(options), Some(description))
             .map_err(errors::to_agent)?;
+        debug!(
+            context.logger, "MongoDB client created";
+            "uri" => &config.mongo.uri, "timeout" => &config.mongo.timeout
+        );
+
         Ok(MongoDBFactory {
             client,
             context,
@@ -81,11 +89,12 @@ impl MongoDBFactory {
     /// If the version could not be determined returns a MongoDB 3.2 agent.
     fn make_agent(&self, version: Result<Version>) -> ActiveAgent {
         match version {
-            Err(_) => {
+            Err(error) => {
                 let (agent, agent_version, mode) = self.default_agent();
+                let error = error.display_chain().to_string();
                 warn!(
                     self.context.logger, "Could not detect MongoDB version, using default agent";
-                    "agent_version" => agent_version, "mode" => mode
+                    "agent_version" => agent_version, "error" => error, "mode" => mode
                 );
                 ActiveAgent::new(agent, true, "unknown")
             },
@@ -119,6 +128,9 @@ impl MongoDBFactory {
         if v3_2::REPLICA_SET_RANGE.matches(version) {
             let agent = v3_2::ReplicaSet::new(self.client.clone(), self.context.clone());
             Some((Arc::new(agent), "3.2.0"))
+        } else if v3_0::REPLICA_SET_RANGE.matches(version) {
+            let agent = v3_0::ReplicaSet::new(self.client.clone(), self.context.clone());
+            Some((Arc::new(agent), "3.0.0"))
         } else {
             None
         }

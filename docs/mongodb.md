@@ -3,9 +3,10 @@
 
 
 ## Supported versions
-| Agent Version | MongoDB Version | MongoDB Mode |
-| ------------- | --------------- | ------------ |
-| 0.1.0+        | 3.2+            | Replica Set  |
+| Agent Version | MongoDB Version | MongoDB Mode            |
+| ------------- | --------------- | ----------------------- |
+| 0.2.0+        | 3.0+ / 3.2+     | Replica Set / Clustered |
+| 0.1.0+        | 3.2+            | Replica Set             |
 
 
 ## Installation from code
@@ -36,3 +37,6 @@ target/release/replicante-agent-mongodb
 ## Upgrades notes
 See the [full changelog](https://github.com/replicante-io/agents/blob/master/mongodb/CHANGELOG.md)
 for all details.
+
+### Upgrading to 0.2.0
+- The configuration format was changed and existing files may not work.

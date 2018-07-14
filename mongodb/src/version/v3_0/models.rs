@@ -4,13 +4,6 @@ use replicante_agent::Result;
 use replicante_agent_models::ShardRole;
 
 
-/// Section of the buildInfo command that we care about.
-#[derive(Deserialize)]
-pub struct BuildInfo {
-    pub version: String,
-}
-
-
 /// Section of the replSetGetStatus command that we care about.
 #[derive(Debug, Deserialize)]
 pub struct ReplSetStatus {
@@ -25,7 +18,7 @@ impl ReplSetStatus {
     pub fn last_op(&self) -> Result<i64> {
         for member in &self.members {
             if member.is_self {
-                return Ok(member.optime.ts.t as i64);
+                return Ok(member.optime.t as i64);
             }
         }
         Err("Unable to find self in members list".into())
@@ -45,7 +38,7 @@ impl ReplSetStatus {
     pub fn primary_optime(&self) -> Result<i64> {
         for member in &self.members {
             if member.state == 1 {
-                return Ok(member.optime.ts.t as i64);
+                return Ok(member.optime.t as i64);
             }
         }
         Err("Unable to find primary node in members list".into())
@@ -76,19 +69,12 @@ pub struct ReplSetStatusMember {
     #[serde(rename = "self", default = "ReplSetStatusMember::default_self")]
     pub is_self: bool,
     pub name: String,
-    pub optime: RepliSetOptime,
+    pub optime: TimeStamp,
     pub state: i32,
 }
 
 impl ReplSetStatusMember {
     fn default_self() -> bool { false }
-}
-
-
-/// Section of replSetGetStatus optime information that we care about.
-#[derive(Debug, Deserialize)]
-pub struct RepliSetOptime {
-    pub ts: TimeStamp,
 }
 
 
@@ -121,17 +107,13 @@ mod tests {
             "members": [{
                 "_id": 0,
                 "name": "host0",
-                "optime": {
-                    "ts": MONGO_TIMESTAMP_ONE.clone(),
-                },
+                "optime": MONGO_TIMESTAMP_ONE.clone(),
                 "self": false,
                 "state": 1,
             }, {
                 "_id": 1,
                 "name": "host1",
-                "optime": {
-                    "ts": MONGO_TIMESTAMP_TWO.clone(),
-                },
+                "optime": MONGO_TIMESTAMP_TWO.clone(),
                 "self": true,
                 "state": 2,
             }],
@@ -153,9 +135,7 @@ mod tests {
             "members": [{
                 "_id": 0,
                 "name": "host0",
-                "optime": {
-                    "ts": MONGO_TIMESTAMP_ONE.clone(),
-                },
+                "optime": MONGO_TIMESTAMP_ONE.clone(),
                 "self": false,
                 "state": 2,
             }],
@@ -185,9 +165,7 @@ mod tests {
             "members": [{
                 "_id": 0,
                 "name": "host0",
-                "optime": {
-                    "ts": MONGO_TIMESTAMP_ONE.clone(),
-                },
+                "optime": MONGO_TIMESTAMP_ONE.clone(),
                 "self": false,
                 "state": 2,
             }],
@@ -217,9 +195,7 @@ mod tests {
             "members": [{
                 "_id": 0,
                 "name": "host0",
-                "optime": {
-                    "ts": MONGO_TIMESTAMP_ONE.clone(),
-                },
+                "optime": MONGO_TIMESTAMP_ONE.clone(),
                 "self": false,
                 "state": 2,
             }],

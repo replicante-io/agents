@@ -34,7 +34,7 @@ use super::BuildInfo;
 use super::ReplSetStatus;
 
 
-/// MongoDB 3.2 replica set agent.
+/// MongoDB 3.0 replica set agent.
 pub struct ReplicaSet {
     client: Client,
     context: AgentContext,
