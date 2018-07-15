@@ -10,3 +10,19 @@ mongo:
 
   # Timeout (in milliseconds) for selecting an appropriate server for operations.
   timeout: 30000
+
+  # Configure the agent to operate in sharded cluster mode.
+  #
+  # This section is optional.
+  # If missing, sharding mode is disabled.
+  # If present, sharding mode is enabled by default but can be disabled.
+  sharding:
+    # The identifier of the MongoDB sharded cluster.
+    # *** Required ***
+    #
+    # In replica set mode the cluster name is detected as the replica set.
+    # In sharded mode this attribute cannot be auto-detected and must be specified.
+    cluster_name: 'user-defined-name'
+
+    # Enable or disable sharded mode.
+    enable: true

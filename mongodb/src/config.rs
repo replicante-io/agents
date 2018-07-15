@@ -63,6 +63,10 @@ pub struct MongoDB {
     #[serde(default = "MongoDB::default_uri")]
     pub uri: String,
 
+    /// Configure MongoDB sharding mode.
+    #[serde(default)]
+    pub sharding: Option<Sharding>,
+
     /// Timeout (in milliseconds) for selecting an appropriate server for operations.
     #[serde(default = "MongoDB::default_timeout")]
     pub timeout: i64,
@@ -72,17 +76,35 @@ impl Default for MongoDB {
     fn default() -> Self {
         MongoDB {
             uri: Self::default_uri(),
+            sharding: None,
             timeout: Self::default_timeout(),
         }
     }
 }
 
 impl MongoDB {
-    /// Default value for `bind` used by serde.
+    /// Default value for `uri` used by serde.
     fn default_uri() -> String { String::from("mongodb://localhost:27017") }
 
-    /// Default value for `bind` used by serde (as defined by the mongodb crate).
-    fn default_timeout() -> i64 { 30000 }
+    /// Default value for `timeout` used by serde.
+    fn default_timeout() -> i64 { 1000 }
+}
+
+
+/// Configure the agent to operate in sharded cluster mode.
+#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
+pub struct Sharding {
+    /// The identifier of the MongoDB sharded cluster.
+    pub cluster_name: String,
+
+    /// Enable or disable sharded mode.
+    #[serde(default = "Sharding::default_enable")]
+    pub enable: bool,
+}
+
+impl Sharding {
+    /// Default value for `enable` used by serde.
+    fn default_enable() -> bool { true }
 }
 
 

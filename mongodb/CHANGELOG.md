@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Command line `--config` option
 - Logging support
 - Support MongoDB 3.0 (replica set)
+- Support MongoDB 3.2+ (sharded mongo)
 - Timeout configuration option
 
 ### Changed
