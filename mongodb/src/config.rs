@@ -100,6 +100,13 @@ pub struct Sharding {
     /// Enable or disable sharded mode.
     #[serde(default = "Sharding::default_enable")]
     pub enable: bool,
+
+    /// Name of the `mongos` node name.
+    ///
+    /// If set, the node is expected to be a mongos instance.
+    /// If null (the default), the node is expected to be a mongod instance.
+    #[serde(default)]
+    pub mongos_node_name: Option<String>,
 }
 
 impl Sharding {

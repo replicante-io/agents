@@ -21,6 +21,7 @@ use replicante_agent::ResultExt;
 use replicante_agent_models::DatastoreInfo;
 
 use super::config::Config;
+use super::config::Sharding;
 use super::errors;
 
 use super::metrics::MONGODB_OPS_COUNT;
@@ -33,10 +34,16 @@ mod v3_0;
 mod v3_2;
 
 
+const MONGODB_MODE_RS: &'static str = "replica-set";
+const MONGODB_MODE_SHARDED: &'static str = "sharded-cluster";
+
+
 /// An `AgentFactory` that returns a MongoDB 3.2+ Replica Set compatible agent.
 pub struct MongoDBFactory {
     client: Client,
     context: AgentContext,
+    sharded_mode: bool,
+    sharding: Option<Sharding>,
 }
 
 impl MongoDBFactory {
@@ -57,9 +64,13 @@ impl MongoDBFactory {
             "uri" => &config.mongo.uri, "timeout" => &config.mongo.timeout
         );
 
+        let sharding = config.mongo.sharding;
+        let sharded_mode = sharding.is_some() && sharding.as_ref().unwrap().enable;
         Ok(MongoDBFactory {
             client,
             context,
+            sharded_mode,
+            sharding,
         })
     }
 }
@@ -67,9 +78,17 @@ impl MongoDBFactory {
 impl MongoDBFactory {
     /// Make an agent to be used when a version could not be detected.
     fn default_agent(&self) -> (Arc<Agent>, &'static str, &'static str) {
-        let agent = v3_2::ReplicaSet::new(self.client.clone(), self.context.clone());
-        let agent = Arc::new(agent);
-        (agent, "3.2.0", "replica-set")
+        if self.sharded_mode {
+            let agent = v3_2::Sharded::new(
+                self.sharding.as_ref().unwrap().clone(), self.client.clone(), self.context.clone()
+            );
+            let agent = Arc::new(agent);
+            (agent, "3.2.0", MONGODB_MODE_SHARDED)
+        } else {
+            let agent = v3_2::ReplicaSet::new(self.client.clone(), self.context.clone());
+            let agent = Arc::new(agent);
+            (agent, "3.2.0", MONGODB_MODE_RS)
+        }
     }
 
     /// Fetch the currently running version of MongoDB.
@@ -99,8 +118,11 @@ impl MongoDBFactory {
                 ActiveAgent::new(agent, true, "unknown")
             },
             Ok(version) => {
-                let agent = self.make_rs(&version);
-                let mode = "replica-set";
+                let (agent, mode) = if self.sharded_mode {
+                    (self.make_sharded(&version), MONGODB_MODE_SHARDED)
+                } else {
+                    (self.make_rs(&version), MONGODB_MODE_RS)
+                };
                 agent.map(|(agent, agent_version)| {
                     info!(
                         self.context.logger, "Instantiated MongoDB agent";
@@ -131,6 +153,18 @@ impl MongoDBFactory {
         } else if v3_0::REPLICA_SET_RANGE.matches(version) {
             let agent = v3_0::ReplicaSet::new(self.client.clone(), self.context.clone());
             Some((Arc::new(agent), "3.0.0"))
+        } else {
+            None
+        }
+    }
+
+    /// Make a sharded-cluster compatible agent, if versions allow it.
+    fn make_sharded(&self, version: &Version) -> Option<(Arc<Agent>, &'static str)> {
+        if v3_2::SHARDED_RANGE.matches(version) {
+            let agent = v3_2::Sharded::new(
+                self.sharding.as_ref().unwrap().clone(), self.client.clone(), self.context.clone()
+            );
+            Some((Arc::new(agent), "3.2.0"))
         } else {
             None
         }

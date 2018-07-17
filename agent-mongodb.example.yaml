@@ -26,3 +26,9 @@ mongo:
 
     # Enable or disable sharded mode.
     enable: true
+
+    # Name of the `mongos` node name.
+    #
+    # If set, the node is expected to be a mongos instance.
+    # If null (the default), the node is expected to be a mongod instance.
+    mongos_node_name: ~
