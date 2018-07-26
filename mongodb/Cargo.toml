@@ -5,10 +5,10 @@ authors = ["Stefano Pogliani <stefano@spogliani.net>"]
 build = "../base/build.rs"
 
 description = "Replicante agent for MongoDB"
-documentation = "https://docs.rs/replicante_agent_mongodb"
+documentation = "https://www.replicante.io/docs/"
 homepage = "https://www.replicante.io/"
-repository = "https://github.com/replicante-io/replicante-agents"
-readme = "Readme.md"
+repository = "https://github.com/replicante-io/agents"
+readme = "../README.md"
 keywords = ["automation", "datastore", "operations", "mongodb"]
 license = "MIT"
 

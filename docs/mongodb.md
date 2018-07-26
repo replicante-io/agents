@@ -26,12 +26,12 @@ cd agents
 cargo build --release
 
 # Ensure the built binaries work.
-target/release/replicante-agent-mongodb
+target/release/replicante-agent-mongodb --version
 ```
 
 
 ## Configuration
-[import, lang:"yaml"](../../agent-mongodb.example.yaml)
+[import, lang:"yaml"](../agent-mongodb.example.yaml)
 
 
 ## Upgrades notes

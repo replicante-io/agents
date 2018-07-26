@@ -7,7 +7,7 @@ build = "build.rs"
 description = "Replicante agent framework"
 documentation = "https://docs.rs/replicante_agent"
 homepage = "https://www.replicante.io/"
-repository = "https://github.com/replicante-io/replicante-agents"
+repository = "https://github.com/replicante-io/agents"
 keywords = ["automation", "datastore", "operations"]
 license = "MIT"
 
