@@ -3,6 +3,7 @@ members = [
     # Agent crates
     "base",
     "mongodb",
+    "zookeeper",
 
     # Common crates
     "common/logging",
