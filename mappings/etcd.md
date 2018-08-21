@@ -1,17 +1,18 @@
 ## Etcd
 * Administration:
+  * A cluster name shared by all nodes: user defined in agent configuration.
   * A cluster-unique name for the node: node name (extract node ID from `MemberListResponse.ResponseHeader.member_id` and map to a `MemberListResponse.Member`).
-  * Cluster name shared by all nodes: user defined in agent configuration.
   * Version information: `StatusResponse.version`.
 
 * Clustering: etcd processes.
 
-* Replication:
-  * For each node, which shards are on the node: the entire dataset.
-  * For each shard on each node, what the role of the node is: `StatusResponse.leader`.
-  * For each non-primary shard on each node, the replication lag for the node: `StatusResponse.raftIndex` (primary - node).
+* Sharding: (A shard is the entire dataset)
+  * A shard ID: the name of the cluster.
+  * [Optional] An indicator of when the last write operation happened (commit offset):
+    * A commit offset unit (i.e, seconds, commits, ...): offset
+    * A commit offset value (as a 64-bits integer): the `StatusResponse.raftIndex` raft offset.
 
-* Sharding:
-  * What is a shard: the entire dataset.
-  * What is a shard ID: the name of the cluster.
-  * For each shard, the time of the last operation: the `StatusResponse.raftIndex` raft offset.
+* Replication:
+  * Which shards are on the node: the entire dataset.
+  * For each shard, what the role on the node is: `StatusResponse.leader`.
+  * [Optional] For each non-primary shard, the replication lag: unavailable (need access to primary as well as local node).

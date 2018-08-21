@@ -11,19 +11,21 @@ to manage a replicated PostgreSQL cluster.
 
 
 * Administration:
+  * A cluster name shared by all nodes: user defined in agent configuration.
   * A cluster-unique name for the node: user defined in agent configuration.
-  * Cluster name shared by all nodes: user defined in agent configuration.
   * Version information: output of `SELECT version();`
 
-* Clustering: postgres server processes.
-  Different clustering tools (like stolon) may need to be monitored in the future.
+* Clustering:
+  * PostgreSQL server processes.
+  * Different clustering tools (like stolon) may need to be monitored in the future.
+
+* Sharding: (A shard is the entire database)
+  * A shard ID: the cluster name.
+  * [Optional] An indicator of when the last write operation happened (commit offset):
+    * A commit offset unit (i.e, seconds, commits, ...): offset.
+    * A commit offset value (as a 64-bits integer): `SELECT pg_last_wal_receive_lsn();`.
 
 * Replication:
-  * For each node, which shards are on the node: one (the database).
-  * For each shard on each node, what the role of the node is: `SELECT pg_last_wal_receive_lsn() == NULL` on primary.
-  * For each non-primary shard on each node, the replication lag for the node: `SELECT pg_current_wal_lsn() - SELECT pg_last_wal_receive_lsn()` (need access to the primary for this).
-
-* Sharding:
-  * What is a shard: the entire database.
-  * What is a shard ID: the cluster name.
-  * For each shard, the time of the last operation: unavailable.
+  * Which shards are on the node: one (the database).
+  * For each shard, what the role on the node is: `SELECT pg_last_wal_receive_lsn() == NULL` on primary.
+  * [Optional] For each non-primary shard, the replication lag: unavailable (need access to primary as well as local node).
