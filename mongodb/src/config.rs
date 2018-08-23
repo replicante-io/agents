@@ -118,19 +118,13 @@ impl Sharding {
 #[cfg(test)]
 mod tests {
     use std::io::Cursor;
-    use replicante_agent::Error;
-    use replicante_agent::ErrorKind;
-
     use super::Config;
 
     #[test]
+    #[should_panic(expected = "invalid type: string")]
     fn from_reader_error() {
         let cursor = Cursor::new("some other text");
-        match Config::from_reader(cursor) {
-            Err(Error(ErrorKind::YamlError(_), _)) => (),
-            Err(err) => panic!("Unexpected error: {:?}", err),
-            Ok(_) => panic!("Unexpected success!"),
-        };
+        Config::from_reader(cursor).unwrap();
     }
 
     #[test]

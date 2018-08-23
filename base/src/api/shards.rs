@@ -59,6 +59,7 @@ mod tests {
     use iron_test::request;
     use iron_test::response;
 
+    use replicante_agent_models::CommitOffset;
     use replicante_agent_models::Shard;
     use replicante_agent_models::Shards as ShardsModel;
     use replicante_agent_models::ShardRole;
@@ -90,9 +91,16 @@ mod tests {
     fn status_retruns_shards() {
         let mut agent = MockAgent::new();
         agent.shards = Ok(ShardsModel::new(vec![
-            Shard::new("test-shard", ShardRole::Primary, Some(1), 2)
+            Shard::new(
+                "test-shard", ShardRole::Primary, Some(CommitOffset::seconds(2)),
+                Some(CommitOffset::seconds(1))
+            )
         ]));
         let result = request_get(agent).unwrap();
-        assert_eq!(result, r#"{"shards":[{"id":"test-shard","role":"Primary","lag":1,"last_op":2}]}"#);
+        let expected = concat!(
+            r#"{"shards":[{"commit_offset":{"unit":"seconds","value":2},"id":"test-shard","#,
+            r#""lag":{"unit":"seconds","value":1},"role":"primary"}]}"#
+        );
+        assert_eq!(result, expected);
     }
 }

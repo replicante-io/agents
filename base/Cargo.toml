@@ -31,13 +31,13 @@ router = "^0.6.0"
 serde = "^1.0.25"
 serde_derive = "^1.0.25"
 serde_json = "^1.0.8"
-serde_yaml = "^0.7.5"
+serde_yaml = "^0.8.0"
 slog = "^2.2.3"
 
 opentracingrust = "^0.3.1"
 opentracingrust_zipkin = "^0.1.2"
 
-replicante_agent_models = { path = "../common/agent/models", version = "0.1.1" }
+replicante_agent_models = { path = "../common/agent/models", version = "0.2.0" }
 replicante_logging = { path = "../common/logging", version = "0.1.0" }
 replicante_util_iron = { path = "../common/util/iron", version = "0.1.1" }
 replicante_util_tracing = { path = "../common/util/tracing", version = "0.1.0" }

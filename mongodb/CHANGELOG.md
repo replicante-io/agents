@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Changed
 - **BREAKING**: Rename MongoDB Agent binary
 - **BREAKING**: Rework configuration using [serde](https://docs.rs/serde)
+- **BREAKING**: Update agent models to match latest specs
 - **BREAKING**: Use [error_chain](https://docs.rs/error-chain) for errors
 - Move MongoDB interactions into a trait
 

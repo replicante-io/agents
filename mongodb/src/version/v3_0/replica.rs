@@ -17,6 +17,7 @@ use replicante_agent::Result;
 use replicante_agent::ResultExt;
 
 use replicante_agent_models::AgentInfo;
+use replicante_agent_models::CommitOffset;
 use replicante_agent_models::DatastoreInfo;
 use replicante_agent_models::Shard;
 use replicante_agent_models::Shards;
@@ -116,9 +117,9 @@ impl Agent for ReplicaSet {
         let last_op = status.last_op()?;
         let role = status.role()?;
         let lag = match role {
-            ShardRole::Primary => Some(0),
+            ShardRole::Primary => None,
             _ => match status.primary_optime() {
-                Ok(head) => Some(head - last_op),
+                Ok(head) => Some(CommitOffset::seconds(head - last_op)),
                 Err(error) => {
                     error!(self.context.logger, "Failed to compute lag"; "error" => ?error);
                     span.tag("lag.error", format!("Failed lag computation: {:?}", error));
@@ -127,7 +128,7 @@ impl Agent for ReplicaSet {
             }
         };
         let name = status.set;
-        let shards = vec![Shard::new(name, role, lag, last_op)];
+        let shards = vec![Shard::new(name, role, Some(CommitOffset::seconds(last_op)), lag)];
         Ok(Shards::new(shards))
     }
 }

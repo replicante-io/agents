@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - **BREAKING**: Move metrics from `Agent` trait to `AgentContext`
 - **BREAKING**: Move tracing from `Agent` trait to `AgentContext`
 - **BREAKING**: Rework configuration using [serde](https://docs.rs/serde)
+- **BREAKING**: Update agent models to match latest specs
 - **BREAKING**: Use [error_chain](https://docs.rs/error-chain) for errors
 - Refactor metrics into lazy statics and registration methods
 
