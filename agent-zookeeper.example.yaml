@@ -1,0 +1,7 @@
+# Common agents options described in the 
+agent: {}
+  # ... snip ...
+
+
+# Zookeeper specific configuration.
+zookeeper: {}

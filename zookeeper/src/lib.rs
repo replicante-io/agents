@@ -1,16 +1,9 @@
-#[macro_use(bson, doc)]
-extern crate bson;
 extern crate clap;
-extern crate error_chain;
-
 #[macro_use]
 extern crate lazy_static;
-
-extern crate mongodb;
 extern crate opentracingrust;
 extern crate prometheus;
 
-extern crate semver;
 extern crate serde;
 #[macro_use]
 extern crate serde_derive;
@@ -33,18 +26,16 @@ use replicante_agent::AgentContext;
 use replicante_agent::AgentRunner;
 use replicante_agent::Result;
 use replicante_agent::ResultExt;
-use replicante_agent::VersionedAgent;
 
 use replicante_util_tracing::TracerExtra;
 use replicante_util_tracing::tracer;
 
+mod agent;
 mod config;
-mod errors;
 mod metrics;
-mod version;
 
+use agent::ZookeeperAgent;
 use config::Config;
-use version::MongoDBFactory;
 
 
 lazy_static! {
@@ -56,7 +47,7 @@ lazy_static! {
 }
 
 
-const DEFAULT_CONFIG_FILE: &'static str = "agent-mongodb.yaml";
+const DEFAULT_CONFIG_FILE: &'static str = "agent-zookeeper.yaml";
 
 
 /// Configure and start the agent.
@@ -108,9 +99,7 @@ pub fn run() -> Result<()> {
     metrics::register_metrics(&agent_context.logger, &agent_context.metrics);
 
     // Setup and run the agent.
-    let factory = MongoDBFactory::new(config, agent_context.clone())
-        .chain_err(|| "Failed to initialise MongoDB agent factory")?;
-    let agent = VersionedAgent::new(factory);
+    let agent = ZookeeperAgent::new();
     let runner = AgentRunner::new(agent, agent_context);
     runner.run();
 

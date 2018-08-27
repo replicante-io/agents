@@ -2,6 +2,7 @@
 **/*.rs.bk
 
 agent-mongodb.yaml
+agent-zookeeper.yaml
 
 /target/
 
