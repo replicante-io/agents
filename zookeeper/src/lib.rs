@@ -8,15 +8,13 @@ extern crate serde;
 #[macro_use]
 extern crate serde_derive;
 extern crate serde_yaml;
-
-#[macro_use]
 extern crate slog;
+extern crate zk_4lw;
 
 extern crate replicante_agent;
 extern crate replicante_agent_models;
 extern crate replicante_util_tracing;
 
-use std::path::Path;
 use std::time::Duration;
 
 use clap::App;
@@ -30,8 +28,10 @@ use replicante_agent::ResultExt;
 use replicante_util_tracing::TracerExtra;
 use replicante_util_tracing::tracer;
 
+mod zk4lw;
 mod agent;
 mod config;
+mod errors;
 mod metrics;
 
 use agent::ZookeeperAgent;
@@ -69,15 +69,8 @@ pub fn run() -> Result<()> {
     // Load configuration (default file is allowed to be missing).
     Config::override_defaults();
     let config_location = cli_args.value_of("config").unwrap();
-    let default_and_missing =
-        config_location == DEFAULT_CONFIG_FILE &&
-        !Path::new(DEFAULT_CONFIG_FILE).exists();
-    let config = if default_and_missing {
-        Config::default()
-    } else {
-        Config::from_file(config_location)
-            .chain_err(|| "Unable to load user configuration")?
-    };
+    let config = Config::from_file(config_location)
+        .chain_err(|| "Unable to load user configuration")?;
 
     // Configure the logger (from the agent context).
     let agent_config = config.agent.clone();
@@ -99,7 +92,7 @@ pub fn run() -> Result<()> {
     metrics::register_metrics(&agent_context.logger, &agent_context.metrics);
 
     // Setup and run the agent.
-    let agent = ZookeeperAgent::new();
+    let agent = ZookeeperAgent::new(config);
     let runner = AgentRunner::new(agent, agent_context);
     runner.run();
 

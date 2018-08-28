@@ -56,7 +56,7 @@ impl Config {
 }
 
 
-/// MongoDB rlated options.
+/// MongoDB related options.
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
 pub struct MongoDB {
     /// MongoDB connection URI.

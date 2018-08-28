@@ -15,14 +15,9 @@ pub struct Config {
     /// Common agent options.
     #[serde(default)]
     pub agent: Agent,
-}
 
-impl Default for Config {
-    fn default() -> Self {
-        Config {
-            agent: Agent::default(),
-        }
-    }
+    /// Zookeeper related options.
+    pub zookeeper: Zookeeper,
 }
 
 impl Config {
@@ -51,6 +46,24 @@ impl Config {
 }
 
 
+/// Zookeeper related options.
+#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
+pub struct Zookeeper {
+    /// Name of the zookeeper cluster.
+    pub cluster: String,
+
+    /// Host and port (in host:port format) of the zookeeper 4lw server.
+    #[serde(default = "Zookeeper::default_target")]
+    pub target: String,
+}
+
+impl Zookeeper {
+    pub fn default_target() -> String {
+        "localhost:2181".into()
+    }
+}
+
+
 #[cfg(test)]
 mod tests {
     use std::io::Cursor;
@@ -65,7 +78,7 @@ mod tests {
 
     #[test]
     fn from_reader_ok() {
-        let cursor = Cursor::new("{}");
+        let cursor = Cursor::new("{zookeeper: {cluster: test}}");
         Config::from_reader(cursor).unwrap();
     }
 }

@@ -4,4 +4,9 @@ agent: {}
 
 
 # Zookeeper specific configuration.
-zookeeper: {}
+zookeeper:
+  # Name of the zookeeper cluster.
+  #cluster: <CLUSTER_NAME>
+
+  # Host and port (in host:port format) of the zookeeper 4lw server.
+  target: "localhost:2181"

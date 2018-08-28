@@ -27,6 +27,7 @@ serde = "^1.0.25"
 serde_derive = "^1.0.25"
 serde_yaml = "^0.8.0"
 slog = "^2.2.3"
+zk-4lw = "^0.1.0"
 
 opentracingrust = "^0.3.1"
 
