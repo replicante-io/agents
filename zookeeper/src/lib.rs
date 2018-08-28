@@ -92,7 +92,7 @@ pub fn run() -> Result<()> {
     metrics::register_metrics(&agent_context.logger, &agent_context.metrics);
 
     // Setup and run the agent.
-    let agent = ZookeeperAgent::new(config);
+    let agent = ZookeeperAgent::new(config, agent_context.clone());
     let runner = AgentRunner::new(agent, agent_context);
     runner.run();
 

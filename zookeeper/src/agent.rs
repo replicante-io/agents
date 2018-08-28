@@ -1,9 +1,13 @@
 use opentracingrust::Log;
 use opentracingrust::Span;
+use opentracingrust::StartOptions;
+use opentracingrust::utils::FailSpan;
+
 use zk_4lw::Client;
 use zk_4lw::FourLetterWord;
 
 use replicante_agent::Agent;
+use replicante_agent::AgentContext;
 use replicante_agent::Result;
 
 use replicante_agent_models::AgentInfo;
@@ -41,26 +45,40 @@ fn to_semver(version: String) -> Result<String> {
 
 /// Zookeeper 3.3+ agent.
 pub struct ZookeeperAgent {
+    agent_context: AgentContext,
     cluster_name: String,
     zk_client: Client,
 }
 
 impl ZookeeperAgent {
-    pub fn new(config: Config) -> ZookeeperAgent {
+    pub fn new(config: Config, context: AgentContext) -> ZookeeperAgent {
         ZookeeperAgent {
+            agent_context: context,
             cluster_name: config.zookeeper.cluster,
             zk_client: Client::new(config.zookeeper.target),
         }
     }
 
     /// Executes the "conf" 4lw against the zookeeper server.
-    fn conf(&self) -> Result<<Conf as FourLetterWord>::Response> {
-        self.zk_client.exec::<Conf>().map_err(to_agent)
+    fn conf(&self, root: &Span) -> Result<<Conf as FourLetterWord>::Response> {
+        let mut span = self.agent_context.tracer.span_with_options(
+            "conf", StartOptions::default().child_of(root.context().clone())
+        ).auto_finish();
+        span.log(Log::new().log("span.kind", "client-send"));
+        let conf = self.zk_client.exec::<Conf>().map_err(to_agent).fail_span(&mut span);
+        span.log(Log::new().log("span.kind", "client-receive"));
+        conf
     }
 
     /// Executes the "conf" 4lw against the zookeeper server.
-    fn srvr(&self) -> Result<<Srvr as FourLetterWord>::Response> {
-        self.zk_client.exec::<Srvr>().map_err(to_agent)
+    fn srvr(&self, root: &Span) -> Result<<Srvr as FourLetterWord>::Response> {
+        let mut span = self.agent_context.tracer.span_with_options(
+            "srvr", StartOptions::default().child_of(root.context().clone())
+        ).auto_finish();
+        span.log(Log::new().log("span.kind", "client-send"));
+        let srvr = self.zk_client.exec::<Srvr>().map_err(to_agent).fail_span(&mut span);
+        span.log(Log::new().log("span.kind", "client-receive"));
+        srvr
     }
 }
 
@@ -74,8 +92,8 @@ impl Agent for ZookeeperAgent {
 
     fn datastore_info(&self, span: &mut Span) -> Result<DatastoreInfo> {
         span.log(Log::new().log("span.kind", "server-receive"));
-        let name = self.conf()?.zk_server_id;
-        let version = to_semver(self.srvr()?.zk_version)?;
+        let name = self.conf(span)?.zk_server_id;
+        let version = to_semver(self.srvr(span)?.zk_version)?;
         let info = DatastoreInfo::new(self.cluster_name.clone(), "Zookeeper", name, version);
         span.log(Log::new().log("span.kind", "server-send"));
         Ok(info)

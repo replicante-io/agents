@@ -6,6 +6,7 @@ members = [
     "zookeeper",
 
     # Common crates
+    "common/agent/models",
     "common/logging",
     "common/util/iron",
     "common/util/tracing"
