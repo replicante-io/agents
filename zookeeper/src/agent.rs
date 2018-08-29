@@ -12,7 +12,10 @@ use replicante_agent::Result;
 
 use replicante_agent_models::AgentInfo;
 use replicante_agent_models::AgentVersion;
+use replicante_agent_models::CommitOffset;
 use replicante_agent_models::DatastoreInfo;
+use replicante_agent_models::Shard;
+use replicante_agent_models::ShardRole;
 use replicante_agent_models::Shards;
 
 use super::Config;
@@ -99,8 +102,20 @@ impl Agent for ZookeeperAgent {
         Ok(info)
     }
 
-    fn shards(&self, _span: &mut Span) -> Result<Shards> {
-        Err("TODO".into())
+    fn shards(&self, span: &mut Span) -> Result<Shards> {
+        span.log(Log::new().log("span.kind", "server-receive"));
+        let srvr = self.srvr(span)?;
+        let role = match srvr.zk_mode.as_ref() {
+            "leader" => ShardRole::Primary,
+            "follower" => ShardRole::Secondary,
+            unkown => ShardRole::Unknown(unkown.into())
+        };
+        let commit_offset = CommitOffset::unit(srvr.zk_zxid, "zxid");
+        let commit_offset = Some(commit_offset);
+        let shard = Shard::new(self.cluster_name.clone(), role, commit_offset, None);
+        let shards = Shards::new(vec![shard]);
+        span.log(Log::new().log("span.kind", "server-send"));
+        Ok(shards)
     }
 }
 
