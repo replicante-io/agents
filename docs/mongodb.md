@@ -39,4 +39,5 @@ See the [full changelog](https://github.com/replicante-io/agents/blob/master/mon
 for all details.
 
 ### Upgrading to 0.2.0
+- The API format for `/api/v1/shards` has changed (this would be a breaking change afer the 1.0 release).
 - The configuration format was changed and existing files may not work.

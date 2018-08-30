@@ -9,6 +9,7 @@ use zk_4lw::FourLetterWord;
 use replicante_agent::Agent;
 use replicante_agent::AgentContext;
 use replicante_agent::Result;
+use replicante_agent::ResultExt;
 
 use replicante_agent_models::AgentInfo;
 use replicante_agent_models::AgentVersion;
@@ -68,7 +69,9 @@ impl ZookeeperAgent {
             "conf", StartOptions::default().child_of(root.context().clone())
         ).auto_finish();
         span.log(Log::new().log("span.kind", "client-send"));
-        let conf = self.zk_client.exec::<Conf>().map_err(to_agent).fail_span(&mut span);
+        let conf = self.zk_client.exec::<Conf>()
+            .map_err(to_agent).chain_err(|| "Failed to execute `conf` command")
+            .fail_span(&mut span);
         span.log(Log::new().log("span.kind", "client-receive"));
         conf
     }
@@ -79,7 +82,9 @@ impl ZookeeperAgent {
             "srvr", StartOptions::default().child_of(root.context().clone())
         ).auto_finish();
         span.log(Log::new().log("span.kind", "client-send"));
-        let srvr = self.zk_client.exec::<Srvr>().map_err(to_agent).fail_span(&mut span);
+        let srvr = self.zk_client.exec::<Srvr>()
+            .map_err(to_agent).chain_err(|| "Failed to execute `srvr` command")
+            .fail_span(&mut span);
         span.log(Log::new().log("span.kind", "client-receive"));
         srvr
     }
