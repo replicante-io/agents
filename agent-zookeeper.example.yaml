@@ -6,6 +6,7 @@ agent: {}
 # Zookeeper specific configuration.
 zookeeper:
   # Name of the zookeeper cluster.
+  # *** Required ***
   #cluster: <CLUSTER_NAME>
 
   # Host and port (in host:port format) of the zookeeper 4lw server.

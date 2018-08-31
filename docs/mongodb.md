@@ -3,30 +3,30 @@
 
 
 ## Supported versions
-| Agent Version | MongoDB Version | MongoDB Mode            |
-| ------------- | --------------- | ----------------------- |
-| 0.2.0+        | 3.0+ / 3.2+     | Replica Set / Clustered |
-| 0.1.0+        | 3.2+            | Replica Set             |
+| MongoDB Agent Version | MongoDB Version | MongoDB Mode            |
+| --------------------- | --------------- | ----------------------- |
+| 0.2.0+                | 3.0+ / 3.2+     | Replica Set / Clustered |
+| 0.1.0+                | 3.2+            | Replica Set             |
 
 
 ## Installation from code
-The following instructions where executed on a clean Fedora 28 install
-but should work for any Linux system:
+Follow the instructions in the [installation](base/install.md) page.
+Once the agent is available in `$PATH` check the usage:
+
 ```bash
-# Install needed tools and dependencies.
-dnf install cmake gcc git make openssl-devel
+$ replicante-agent-mongodb --help
+MongoDB Replicante Agent 0.2.0 [4cc413ece34e9492e2c61f46ed91243c7d4d57b4; working directory tainted]
+Replicante agent for MongoDB
 
-# Install rust and cargo with rustup.
-curl https://sh.rustup.rs -sSf | sh
-source $HOME/.cargo/env
+USAGE:
+    replicante-agent-mongodb [OPTIONS]
 
-# Get the code and compile replicante.
-git clone --recursive https://github.com/replicante-io/agents.git
-cd agents
-cargo build --release
+FLAGS:
+    -h, --help       Prints help information
+    -V, --version    Prints version information
 
-# Ensure the built binaries work.
-target/release/replicante-agent-mongodb --version
+OPTIONS:
+    -c, --config <FILE>    Specifies the configuration file to use [default: agent-mongodb.yaml]
 ```
 
 
