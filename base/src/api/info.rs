@@ -7,6 +7,7 @@ use iron::status;
 use iron_json_response::JsonResponse;
 use iron_json_response::JsonResponseMiddleware;
 
+use opentracingrust::Log;
 use opentracingrust::utils::FailSpan;
 
 use super::super::Agent;
@@ -36,7 +37,10 @@ impl Handler for AgentInfo {
         let mut span = HeadersCarrier::child_of("agent-info", &mut request.headers, tracer)
             .map_err(otr_to_iron)?.auto_finish();
 
+        span.log(Log::new().log("span.kind", "server-receive"));
         let info = self.agent.agent_info(&mut span).fail_span(&mut span)?;
+        span.log(Log::new().log("span.kind", "server-send"));
+
         let mut response = Response::new();
         match HeadersCarrier::inject(span.context(), &mut response.headers, tracer) {
             Ok(_) => (),
@@ -71,7 +75,11 @@ impl Handler for DatastoreInfo {
         let tracer = &self.context.tracer;
         let mut span = HeadersCarrier::child_of("datastore-info", &mut request.headers, tracer)
             .map_err(otr_to_iron)?.auto_finish();
+
+        span.log(Log::new().log("span.kind", "server-receive"));
         let info = self.agent.datastore_info(&mut span).fail_span(&mut span)?;
+        span.log(Log::new().log("span.kind", "server-send"));
+
         let mut response = Response::new();
         match HeadersCarrier::inject(span.context(), &mut response.headers, tracer) {
             Ok(_) => (),

@@ -57,8 +57,8 @@ pub struct AgentContext {
 impl fmt::Debug for AgentContext {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(
-            f, "AgentContext{{config:{:?},logger:{:?},tracer:Tracer}}",
-            self.config, self.logger
+            f, "AgentContext{{config:{:?},logger:{:?},metrics:Registry,tracer:Tracer}}",
+            self.config, self.logger,
         )
     }
 }

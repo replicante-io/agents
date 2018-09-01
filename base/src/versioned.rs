@@ -1,6 +1,7 @@
 use std::sync::Arc;
 use std::sync::RwLock;
 
+use opentracingrust::Log;
 use opentracingrust::Span;
 
 use replicante_agent_models::AgentInfo;
@@ -107,6 +108,19 @@ pub struct VersionedAgent<Factory>
 impl<Factory> VersionedAgent<Factory>
     where Factory: AgentFactory + 'static
 {
+    /// Replace the active agent with a newly made one.
+    fn remake_agent(&self, span: &mut Span) {
+        span.log(Log::new().log("message", "VersionedAgent remakes the agent"));
+        span.tag("agent.remade", true);
+        let new_active = self.factory.make();
+        let mut active = self.active.write().expect("ActiveAgent lock was poisoned");
+        *active = new_active;
+    }
+}
+
+impl<Factory> VersionedAgent<Factory>
+    where Factory: AgentFactory + 'static
+{
     pub fn new(context: AgentContext, factory: Factory) -> VersionedAgent<Factory> {
         let active = RwLock::new(factory.make());
         VersionedAgent {
@@ -114,13 +128,6 @@ impl<Factory> VersionedAgent<Factory>
             context,
             factory,
         }
-    }
-
-    /// Replace the active agent with a newly made one.
-    pub fn remake_agent(&self) {
-        let new_active = self.factory.make();
-        let mut active = self.active.write().expect("ActiveAgent lock was poisoned");
-        *active = new_active;
     }
 
     /// Check if the active agent should be replaced.
@@ -149,7 +156,7 @@ impl<Factory> VersionedAgent<Factory>
         // Remake the agent if needed.
         if should_remake {
             debug!(self.context.logger, "Remaking versioned agent");
-            self.remake_agent();
+            self.remake_agent(span);
             info!(self.context.logger, "Versioned agent re-made");
             return None;
         }

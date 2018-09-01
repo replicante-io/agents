@@ -7,6 +7,7 @@ use iron::status;
 use iron_json_response::JsonResponse;
 use iron_json_response::JsonResponseMiddleware;
 
+use opentracingrust::Log;
 use opentracingrust::utils::FailSpan;
 
 use super::super::Agent;
@@ -35,7 +36,11 @@ impl Handler for Shards {
         let tracer = &self.context.tracer;
         let mut span = HeadersCarrier::child_of("status", &mut request.headers, tracer)
             .map_err(otr_to_iron)?.auto_finish();
+
+        span.log(Log::new().log("span.kind", "server-receive"));
         let shards = self.agent.shards(&mut span).fail_span(&mut span)?;
+        span.log(Log::new().log("span.kind", "server-send"));
+
         let mut response = Response::new();
         match HeadersCarrier::inject(span.context(), &mut response.headers, tracer) {
             Ok(_) => (),

@@ -91,24 +91,19 @@ impl ZookeeperAgent {
 }
 
 impl Agent for ZookeeperAgent {
-    fn agent_info(&self, span: &mut Span) -> Result<AgentInfo> {
-        span.log(Log::new().log("span.kind", "server-receive"));
+    fn agent_info(&self, _: &mut Span) -> Result<AgentInfo> {
         let info = AgentInfo::new(AGENT_VERSION.clone());
-        span.log(Log::new().log("span.kind", "server-send"));
         Ok(info)
     }
 
     fn datastore_info(&self, span: &mut Span) -> Result<DatastoreInfo> {
-        span.log(Log::new().log("span.kind", "server-receive"));
         let name = self.conf(span)?.zk_server_id;
         let version = to_semver(self.srvr(span)?.zk_version)?;
         let info = DatastoreInfo::new(self.cluster_name.clone(), "Zookeeper", name, version);
-        span.log(Log::new().log("span.kind", "server-send"));
         Ok(info)
     }
 
     fn shards(&self, span: &mut Span) -> Result<Shards> {
-        span.log(Log::new().log("span.kind", "server-receive"));
         let srvr = self.srvr(span)?;
         let role = match srvr.zk_mode.as_ref() {
             "leader" => ShardRole::Primary,
@@ -119,7 +114,6 @@ impl Agent for ZookeeperAgent {
         let commit_offset = Some(commit_offset);
         let shard = Shard::new(self.cluster_name.clone(), role, commit_offset, None);
         let shards = Shards::new(vec![shard]);
-        span.log(Log::new().log("span.kind", "server-send"));
         Ok(shards)
     }
 }
