@@ -96,17 +96,18 @@ pub trait AgentFactory : Send + Sync {
 ///
 /// Agents applications can implement additional strategies by calling
 /// `VersionedAgent::validate_version`.
-pub struct VersionedAgent {
+pub struct VersionedAgent<Factory>
+    where Factory: AgentFactory + 'static
+{
     active: RwLock<ActiveAgent>,
     context: AgentContext,
-    factory: Box<AgentFactory>,
+    factory: Factory,
 }
 
-impl VersionedAgent {
-    pub fn new<F>(context: AgentContext, factory: F) -> VersionedAgent
-        where F: AgentFactory + 'static
-    {
-        let factory = Box::new(factory);
+impl<Factory> VersionedAgent<Factory>
+    where Factory: AgentFactory + 'static
+{
+    pub fn new(context: AgentContext, factory: Factory) -> VersionedAgent<Factory> {
         let active = RwLock::new(factory.make());
         VersionedAgent {
             active,
@@ -156,7 +157,9 @@ impl VersionedAgent {
     }
 }
 
-impl Agent for VersionedAgent {
+impl<Factory> Agent for VersionedAgent<Factory>
+    where Factory: AgentFactory + 'static
+{
     fn agent_info(&self, span: &mut Span) -> Result<AgentInfo> {
         let active = self.active.read().expect("ActiveAgent lock was poisoned");
         active.agent.agent_info(span)
