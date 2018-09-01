@@ -115,7 +115,7 @@ impl MongoDBFactory {
                     self.context.logger, "Could not detect MongoDB version, using default agent";
                     "agent_version" => agent_version, "error" => error, "mode" => mode
                 );
-                ActiveAgent::new(agent, true, "unknown")
+                ActiveAgent::new(agent, "unknown")
             },
             Ok(version) => {
                 let (agent, mode) = if self.sharded_mode {
@@ -129,7 +129,7 @@ impl MongoDBFactory {
                         "agent_version" => agent_version, "mongo_version" => %version,
                         "mode" => mode
                     );
-                    ActiveAgent::new(agent, false, version.to_string())
+                    ActiveAgent::new(agent, version.to_string())
 
                 // Failed to find a compatible version.
                 }).unwrap_or_else(|| {
@@ -139,7 +139,7 @@ impl MongoDBFactory {
                         "agent_version" => agent_version, "mongo_version" => %version,
                         "mode" => mode
                     );
-                    ActiveAgent::new(agent, true, "unknown")
+                    ActiveAgent::new(agent, "unknown")
                 })
             }
         }
@@ -182,6 +182,10 @@ impl AgentFactory for MongoDBFactory {
         let version = active.version_id();
         version == "unknown" || *version != info.version
     }
+
+    fn should_remake_on_error(&self, active: &ActiveAgent, _: &Error) -> bool {
+        active.version_id() == "unknown"
+    }
 }
 
 
@@ -203,10 +207,11 @@ mod tests {
         let config = Config::default();
         let factory = MongoDBFactory::new(config, context).unwrap();
         let active = factory.make_agent(Err("test on error".into()));
+        let remake_on_error = factory.should_remake_on_error(&active, &("test".into()));
         // Drop tracer before assertions to that panics don't lead to thread errors.
         drop(factory);
         drop(extra);
-        assert!(active.remake_on_error());
+        assert!(remake_on_error);
         assert_eq!(active.version_id(), "unknown");
     }
 
@@ -217,10 +222,11 @@ mod tests {
         let version = Version::parse("3.3.0").unwrap();
         let factory = MongoDBFactory::new(config, context).unwrap();
         let active = factory.make_agent(Ok(version));
+        let remake_on_error = factory.should_remake_on_error(&active, &("test".into()));
         // Drop tracer before assertions to that panics don't lead to thread errors.
         drop(factory);
         drop(extra);
-        assert!(!active.remake_on_error());
+        assert!(!remake_on_error);
         assert_eq!(active.version_id(), "3.3.0");
     }
 
@@ -231,10 +237,11 @@ mod tests {
         let version = Version::parse("3.2.0").unwrap();
         let factory = MongoDBFactory::new(config, context).unwrap();
         let active = factory.make_agent(Ok(version));
+        let remake_on_error = factory.should_remake_on_error(&active, &("test".into()));
         // Drop tracer before assertions to that panics don't lead to thread errors.
         drop(factory);
         drop(extra);
-        assert!(!active.remake_on_error());
+        assert!(!remake_on_error);
         assert_eq!(active.version_id(), "3.2.0");
     }
 

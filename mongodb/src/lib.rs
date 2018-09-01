@@ -110,7 +110,7 @@ pub fn run() -> Result<()> {
     // Setup and run the agent.
     let factory = MongoDBFactory::new(config, agent_context.clone())
         .chain_err(|| "Failed to initialise MongoDB agent factory")?;
-    let agent = VersionedAgent::new(factory);
+    let agent = VersionedAgent::new(agent_context.clone(), factory);
     let runner = AgentRunner::new(agent, agent_context);
     runner.run();
 
