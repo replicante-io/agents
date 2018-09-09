@@ -5,6 +5,9 @@ members = [
     "mongodb",
     "zookeeper",
 
+    # Official crates with complex dependencies are not in the workspace by default.
+    #"kafka",
+
     # Common crates
     "common/agent/models",
     "common/logging",

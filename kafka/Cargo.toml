@@ -1,0 +1,49 @@
+[package]
+name = "replicante_agent_kafka"
+version = "0.1.0"
+authors = ["Stefano Pogliani <stefano@spogliani.net>"]
+build = "../base/build.rs"
+
+description = "Replicante agent for Kafka"
+documentation = "https://www.replicante.io/docs/"
+homepage = "https://www.replicante.io/"
+repository = "https://github.com/replicante-io/agents"
+readme = "../README.md"
+keywords = ["automation", "datastore", "operations", "kafka"]
+license = "MIT"
+
+
+# Make this crate its own workspace so we can work on it without
+# polluting the root workspace with Java requirements
+[workspace]
+members = ["."]
+
+
+[[bin]]
+name = "replicante-agent-kafka"
+path = "src/main.rs"
+
+
+[dependencies]
+clap = "^2.32.0"
+error-chain = "^0.12.0"
+lazy_static = "^1.0.1"
+prometheus = "^0.4.1"
+serde = "^1.0.25"
+serde_derive = "^1.0.25"
+serde_yaml = "^0.8.0"
+slog = "^2.2.3"
+
+opentracingrust = "^0.3.1"
+
+replicante_agent = { path = "../base" }
+replicante_agent_models = { path = "../common/agent/models" }
+replicante_util_tracing = { path = "../common/util/tracing" }
+
+
+[build-dependencies]
+git2 = "^0.7.0"
+
+
+[features]
+journald = ["replicante_agent/journald"]

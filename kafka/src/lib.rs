@@ -9,7 +9,6 @@ extern crate serde;
 extern crate serde_derive;
 extern crate serde_yaml;
 extern crate slog;
-extern crate zk_4lw;
 
 extern crate replicante_agent;
 extern crate replicante_agent_models;
@@ -28,13 +27,12 @@ use replicante_agent::ResultExt;
 use replicante_util_tracing::TracerExtra;
 use replicante_util_tracing::tracer;
 
-mod zk4lw;
 mod agent;
 mod config;
-mod errors;
+//mod errors;
 mod metrics;
 
-use agent::ZookeeperAgent;
+use agent::KafkaAgent;
 use config::Config;
 
 
@@ -47,13 +45,13 @@ lazy_static! {
 }
 
 
-const DEFAULT_CONFIG_FILE: &'static str = "agent-zookeeper.yaml";
+const DEFAULT_CONFIG_FILE: &'static str = "agent-kafka.yaml";
 
 
 /// Configure and start the agent.
 pub fn run() -> Result<()> {
     // Command line parsing.
-    let cli_args = App::new("Zookeeper Replicante Agent")
+    let cli_args = App::new("Kafka Replicante Agent")
         .version(VERSION.as_ref())
         .about(env!("CARGO_PKG_DESCRIPTION"))
         .arg(Arg::with_name("config")
@@ -92,7 +90,7 @@ pub fn run() -> Result<()> {
     metrics::register_metrics(&agent_context.logger, &agent_context.metrics);
 
     // Setup and run the agent.
-    let agent = ZookeeperAgent::new(config, agent_context.clone());
+    let agent = KafkaAgent::new(config, agent_context.clone());
     let runner = AgentRunner::new(agent, agent_context);
     runner.run();
 
