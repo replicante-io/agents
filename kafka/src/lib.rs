@@ -1,4 +1,5 @@
 extern crate clap;
+extern crate jmx;
 #[macro_use]
 extern crate lazy_static;
 extern crate opentracingrust;
@@ -29,7 +30,7 @@ use replicante_util_tracing::tracer;
 
 mod agent;
 mod config;
-//mod errors;
+mod errors;
 mod metrics;
 
 use agent::KafkaAgent;
@@ -90,7 +91,7 @@ pub fn run() -> Result<()> {
     metrics::register_metrics(&agent_context.logger, &agent_context.metrics);
 
     // Setup and run the agent.
-    let agent = KafkaAgent::new(config, agent_context.clone());
+    let agent = KafkaAgent::new(config, agent_context.clone())?;
     let runner = AgentRunner::new(agent, agent_context);
     runner.run();
 

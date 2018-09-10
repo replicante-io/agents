@@ -41,7 +41,7 @@ impl Config {
 impl Config {
     /// Override the base agent default configuration options.
     pub fn override_defaults() {
-        APIConfig::set_default_bind("127.0.0.1:3181".into())
+        APIConfig::set_default_bind("127.0.0.1:10092".into())
     }
 }
 
@@ -52,16 +52,43 @@ pub struct Kafka {
     /// Name of the kafka cluster.
     pub cluster: String,
 
-    ///// Host and port (in host:port format) of the zookeeper 4lw server.
-    //#[serde(default = "Zookeeper::default_target")]
-    //pub target: String,
+    /// Addresses used to locate the kafka services.
+    #[serde(default)]
+    pub target: KafkaTarget,
 }
 
-//impl Kafka {
-//    pub fn default_target() -> String {
-//        "localhost:2181".into()
-//    }
-//}
+
+/// Kafka server listening locations.
+#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
+pub struct KafkaTarget {
+    /// Address "host:port" of the zafka broker.
+    #[serde(default = "KafkaTarget::default_broker")]
+    pub broker: String,
+
+    /// Address "host:port" of the JMX server.
+    #[serde(default = "KafkaTarget::default_jmx")]
+    pub jmx: String,
+
+    /// Addresses "host:port" of the zookeeper ensamble.
+    #[serde(default = "KafkaTarget::default_zookeeper")]
+    pub zookeeper: Vec<String>,
+}
+
+impl KafkaTarget {
+    fn default_broker() -> String { "localhost:9092".into() }
+    fn default_jmx() -> String { "localhost:9999".into() }
+    fn default_zookeeper() -> Vec<String> { vec!["localhost:2818".into()] }
+}
+
+impl Default for KafkaTarget {
+    fn default() -> Self {
+        KafkaTarget {
+            broker: KafkaTarget::default_broker(),
+            jmx: KafkaTarget::default_jmx(),
+            zookeeper: KafkaTarget::default_zookeeper(),
+        }
+    }
+}
 
 
 #[cfg(test)]

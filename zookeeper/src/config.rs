@@ -58,9 +58,7 @@ pub struct Zookeeper {
 }
 
 impl Zookeeper {
-    pub fn default_target() -> String {
-        "localhost:2181".into()
-    }
+    pub fn default_target() -> String { "localhost:2181".into() }
 }
 
 

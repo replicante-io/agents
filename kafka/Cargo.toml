@@ -27,6 +27,7 @@ path = "src/main.rs"
 [dependencies]
 clap = "^2.32.0"
 error-chain = "^0.12.0"
+jmx = { version ="^0.1.0", features = ["thread-support"] }
 lazy_static = "^1.0.1"
 prometheus = "^0.4.1"
 serde = "^1.0.25"

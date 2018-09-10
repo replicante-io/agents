@@ -48,10 +48,8 @@ impl CommonLogic {
     }
 
     /// Returns agent information.
-    pub fn agent_info(&self, span: &mut Span) -> Result<AgentInfo> {
-        span.log(Log::new().log("span.kind", "server-receive"));
+    pub fn agent_info(&self, _: &mut Span) -> Result<AgentInfo> {
         let info = AgentInfo::new(AGENT_VERSION.clone());
-        span.log(Log::new().log("span.kind", "server-send"));
         Ok(info)
     }
 

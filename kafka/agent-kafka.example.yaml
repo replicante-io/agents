@@ -1,0 +1,27 @@
+# Common agents options described in the 
+agent: {}
+  # ... snip ...
+
+
+# Kafka specific configuration.
+kafka:
+  # Name of the kafka cluster.
+  # *** Required ***
+  #cluster: <CLUSTER_NAME>
+
+  # Addresses used to locate the kafka services.
+  target:
+    # Address "host:port" of the zafka broker.
+    broker: 'localhost:9092'
+
+    # Address "host:port" of the JMX server.
+    #
+    # By default kafka does not expose the JMX server.
+    # To do so, set the `JMX_PORT` environment variable before starting the server.
+    # For additional options see:
+    #   https://github.com/apache/kafka/blob/1.1.1/bin/kafka-run-class.sh#L166-L174
+    jmx: 'localhost:9999'
+
+    # Addresses "host:port" of the zookeeper ensamble.
+    zookeeper:
+      - 'localhost:2181'
