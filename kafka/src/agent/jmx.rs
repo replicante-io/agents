@@ -7,61 +7,41 @@ use opentracingrust::Log;
 use opentracingrust::Span;
 use opentracingrust::utils::FailSpan;
 
-use replicante_agent::Agent;
 use replicante_agent::AgentContext;
 use replicante_agent::Result;
-//use replicante_agent::ResultExt;
 
-use replicante_agent_models::AgentInfo;
-use replicante_agent_models::AgentVersion;
-//use replicante_agent_models::CommitOffset;
-use replicante_agent_models::DatastoreInfo;
-//use replicante_agent_models::Shard;
-//use replicante_agent_models::ShardRole;
-use replicante_agent_models::Shards;
-
-use super::Config;
-use super::errors::to_agent;
+use super::super::errors::to_agent;
 
 
 const KAFKA_BROKER_ID_MBEAN_QUERY: &'static str = "kafka.server:type=app-info,id=*";
 const KAFKA_BROKER_VERSION: &'static str = "kafka.server:type=app-info";
 
-lazy_static! {
-    pub static ref AGENT_VERSION: AgentVersion = AgentVersion::new(
-        env!("GIT_BUILD_HASH"), env!("CARGO_PKG_VERSION"), env!("GIT_BUILD_TAINT")
-    );
-}
 
-
-/// Kafka 1.0+ agent.
-pub struct KafkaAgent {
-    cluster: String,
+pub struct KafkaJmx {
     context: AgentContext,
     jmx: MBeanThreadedClient,
 }
 
-impl KafkaAgent {
-    pub fn new(config: Config, context: AgentContext) -> Result<KafkaAgent> {
+impl KafkaJmx {
+    pub fn new(context: AgentContext, target: String) -> Result<KafkaJmx> {
         let jmx = MBeanThreadedClient::connect_with_options(
-            MBeanAddress::address(config.kafka.target.jmx),
+            MBeanAddress::address(target),
             MBeanThreadedClientOptions::default()
                 // Limit the number of pending JMX requests to avoid memory exhaustion.
                 .requests_buffer_size(1042)
         ).map_err(to_agent)?;
-        Ok(KafkaAgent {
-            cluster: config.kafka.cluster,
+        Ok(KafkaJmx {
             context,
             jmx,
         })
     }
-}
 
-impl KafkaAgent {
-    fn name(&self, parent: &mut Span) -> Result<String> {
+    /// Fetch the ID of the broker.
+    pub fn broker_name(&self, parent: &mut Span) -> Result<String> {
         let mut names = {
             let mut span = self.context.tracer.span("brokerName").auto_finish();
             span.child_of(parent.context().clone());
+            span.tag("service", "jmx");
             span.log(Log::new().log("span.kind", "client-send"));
             let names = self.jmx.query_names(KAFKA_BROKER_ID_MBEAN_QUERY, "")
                 .fail_span(&mut span)
@@ -96,32 +76,16 @@ impl KafkaAgent {
         Err(format!("Unable to extract broker id (from {})", name).into())
     }
 
-    fn version(&self, parent: &mut Span) -> Result<String> {
+    /// Fetch the version of the broker.
+    pub fn broker_version(&self, parent: &mut Span) -> Result<String> {
         let mut span = self.context.tracer.span("brokerVersion").auto_finish();
         span.child_of(parent.context().clone());
+        span.tag("service", "jmx");
         span.log(Log::new().log("span.kind", "client-send"));
         let version = self.jmx.get_attribute(KAFKA_BROKER_VERSION, "version")
             .fail_span(&mut span)
             .map_err(to_agent)?;
         span.log(Log::new().log("span.kind", "client-receive"));
         Ok(version)
-    }
-}
-
-impl Agent for KafkaAgent {
-    fn agent_info(&self, _: &mut Span) -> Result<AgentInfo> {
-        let info = AgentInfo::new(AGENT_VERSION.clone());
-        Ok(info)
-    }
-
-    fn datastore_info(&self, span: &mut Span) -> Result<DatastoreInfo> {
-        let name = self.name(span)?;
-        let cluster = self.cluster.clone();
-        let version = self.version(span)?;
-        Ok(DatastoreInfo::new(cluster, "Kafka", name, version))
-    }
-
-    fn shards(&self, _span: &mut Span) -> Result<Shards> {
-        Err("TODO".into())
     }
 }
