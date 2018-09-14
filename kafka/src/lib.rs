@@ -1,5 +1,6 @@
 extern crate clap;
 extern crate jmx;
+extern crate kafka;
 #[macro_use]
 extern crate lazy_static;
 extern crate opentracingrust;
@@ -8,8 +9,10 @@ extern crate prometheus;
 extern crate serde;
 #[macro_use]
 extern crate serde_derive;
+extern crate serde_json;
 extern crate serde_yaml;
 extern crate slog;
+extern crate zookeeper;
 
 extern crate replicante_agent;
 extern crate replicante_agent_models;

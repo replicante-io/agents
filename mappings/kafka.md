@@ -15,8 +15,8 @@
     * A commit offset value (as a 64-bits integer): [topic offsets](https://docs.rs/kafka/0.7.0/kafka/client/struct.KafkaClient.html#method.fetch_offsets)
 
 * Replication:
-  * Which shards are on the node: need to consult each topic's partition map zookeeper node (`/brokers/topics/PARTITION`).
-  * For each shard, what the role on the node is: need to consult each topic's partition map zookeeper node (`/brokers/topics/PARTITION`).
+  * Which shards are on the node: need to consult each topic's partition map zookeeper node (`/brokers/topics/TOPIC`).
+  * For each shard, what the role on the node is: need to consult each topic's partition map zookeeper node (`/brokers/topics/TOPIC/partitions/PARTITION/state`).
   * [Optional] For each non-primary shard, the replication lag:
     * The replication lag unit (i.e, seconds, commits, ...): number of messages.
     * The replication lag value (as a 64-bits integer): value of the [`kafka.server:type=FetcherLagMetrics,name=ConsumerLag,clientId=ReplicaFetcherThread-0-LEADER_ID,topic=TOPIC,partition=PARTITON_ID`](https://kafka.apache.org/documentation/#monitoring) JMX MBean.

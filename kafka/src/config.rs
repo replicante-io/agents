@@ -61,31 +61,83 @@ pub struct Kafka {
 /// Kafka server listening locations.
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
 pub struct KafkaTarget {
-    /// Address "host:port" of the zafka broker.
-    #[serde(default = "KafkaTarget::default_broker")]
-    pub broker: String,
+    /// Kafka broker configuration.
+    #[serde(default)]
+    pub broker: BrokerTarget,
 
     /// Address "host:port" of the JMX server.
     #[serde(default = "KafkaTarget::default_jmx")]
     pub jmx: String,
 
-    /// Addresses "host:port" of the zookeeper ensamble.
-    #[serde(default = "KafkaTarget::default_zookeeper")]
-    pub zookeeper: Vec<String>,
+    /// Zookeeper ensamble for the Kafka cluster.
+    #[serde(default)]
+    pub zookeeper: ZookeeperTarget,
 }
 
 impl KafkaTarget {
-    fn default_broker() -> String { "localhost:9092".into() }
     fn default_jmx() -> String { "localhost:9999".into() }
-    fn default_zookeeper() -> Vec<String> { vec!["localhost:2818".into()] }
 }
 
 impl Default for KafkaTarget {
     fn default() -> Self {
         KafkaTarget {
-            broker: KafkaTarget::default_broker(),
+            broker: BrokerTarget::default(),
             jmx: KafkaTarget::default_jmx(),
-            zookeeper: KafkaTarget::default_zookeeper(),
+            zookeeper: ZookeeperTarget::default(),
+        }
+    }
+}
+
+
+/// Kafka server location.
+#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
+pub struct BrokerTarget {
+    /// Addresses "host:port" of the zookeeper ensamble.
+    #[serde(default = "BrokerTarget::default_uri")]
+    pub uri: String,
+
+    /// Network timeout for requests to Kafka.
+    #[serde(default = "BrokerTarget::default_timeout")]
+    pub timeout: u64,
+}
+
+impl BrokerTarget {
+    fn default_uri() -> String { "localhost:9092".into() }
+    fn default_timeout() -> u64 { 10 }
+}
+
+impl Default for BrokerTarget {
+    fn default() -> Self {
+        BrokerTarget {
+            uri: BrokerTarget::default_uri(),
+            timeout: BrokerTarget::default_timeout(),
+        }
+    }
+}
+
+
+/// Kafka's cluster Zookeeper server location.
+#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
+pub struct ZookeeperTarget {
+    /// Addresses "host:port" of the zookeeper ensamble.
+    #[serde(default = "ZookeeperTarget::default_uri")]
+    pub uri: String,
+
+    /// Zookeeper session timeout.
+    #[serde(default = "ZookeeperTarget::default_timeout")]
+    pub timeout: u64,
+}
+
+impl ZookeeperTarget {
+    fn default_uri() -> String { "localhost:2818".into() }
+    fn default_timeout() -> u64 { 10 }
+}
+
+impl Default for ZookeeperTarget {
+    fn default() -> Self {
+        ZookeeperTarget {
+            uri: ZookeeperTarget::default_uri(),
+            timeout: ZookeeperTarget::default_timeout(),
         }
     }
 }

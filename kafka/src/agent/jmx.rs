@@ -15,8 +15,11 @@ use super::super::errors::to_agent;
 
 const KAFKA_BROKER_ID_MBEAN_QUERY: &'static str = "kafka.server:type=app-info,id=*";
 const KAFKA_BROKER_VERSION: &'static str = "kafka.server:type=app-info";
+const KAFKA_LAG_PREFIX: &'static str =
+    "kafka.server:type=FetcherLagMetrics,name=ConsumerLag,clientId=ReplicaFetcherThread-0-";
 
 
+/// Kafka specifics that rely on JMX.
 pub struct KafkaJmx {
     context: AgentContext,
     jmx: MBeanThreadedClient,
@@ -87,5 +90,23 @@ impl KafkaJmx {
             .map_err(to_agent)?;
         span.log(Log::new().log("span.kind", "client-receive"));
         Ok(version)
+    }
+
+    /// Fetch replica lag information.
+    pub fn replica_lag(
+        &self, topic: &str, partition: i32, leader: i32, parent: &mut Span
+    ) -> Result<i64> {
+        let mut span = self.context.tracer.span("replicaLag").auto_finish();
+        span.child_of(parent.context().clone());
+        span.tag("service", "jmx");
+        let key = format!(
+            "{}{},topic={},partition={}", KAFKA_LAG_PREFIX, leader, topic, partition
+        );
+        span.log(Log::new().log("span.kind", "client-send"));
+        let lag = self.jmx.get_attribute(key, "Value")
+            .fail_span(&mut span)
+            .map_err(to_agent)?;
+        span.log(Log::new().log("span.kind", "client-receive"));
+        Ok(lag)
     }
 }

@@ -28,12 +28,15 @@ path = "src/main.rs"
 clap = "^2.32.0"
 error-chain = "^0.12.0"
 jmx = { version ="^0.1.0", features = ["thread-support"] }
+kafka = "^0.7.0"
 lazy_static = "^1.0.1"
 prometheus = "^0.4.1"
 serde = "^1.0.25"
 serde_derive = "^1.0.25"
+serde_json = "^1.0.0"
 serde_yaml = "^0.8.0"
 slog = "^2.2.3"
+zookeeper = "^0.5.4"
 
 opentracingrust = "^0.3.1"
 

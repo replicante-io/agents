@@ -11,8 +11,13 @@ kafka:
 
   # Addresses used to locate the kafka services.
   target:
-    # Address "host:port" of the zafka broker.
-    broker: 'localhost:9092'
+    # Kafka broker configuration.
+    broker:
+      # Addresses "host:port" of the kafka broker.
+      uri: 'localhost:9092'
+
+      # Network timeout for requests to Kafka.
+      timeout: 10
 
     # Address "host:port" of the JMX server.
     #
@@ -22,6 +27,10 @@ kafka:
     #   https://github.com/apache/kafka/blob/1.1.1/bin/kafka-run-class.sh#L166-L174
     jmx: 'localhost:9999'
 
-    # Addresses "host:port" of the zookeeper ensamble.
+    # Zookeeper ensamble for the Kafka cluster.
     zookeeper:
-      - 'localhost:2181'
+      # Addresses "host:port" of the zookeeper ensamble.
+      uri: 'localhost:2181'
+
+      # Zookeeper session timeout.
+      timeout: 10
