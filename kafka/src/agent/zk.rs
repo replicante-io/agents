@@ -1,12 +1,18 @@
 use std::collections::HashMap;
+use std::sync::Arc;
+use std::sync::Mutex;
+use std::sync::atomic::AtomicBool;
+use std::sync::atomic::Ordering;
 use std::time::Duration;
 
 use serde_json;
+use slog::Logger;
 
 use opentracingrust::Log;
 use opentracingrust::Span;
 use opentracingrust::utils::FailSpan;
 
+use zookeeper::ZkState;
 use zookeeper::ZooKeeper;
 
 use replicante_agent::AgentContext;
@@ -22,16 +28,20 @@ const TOPICS_PATH: &'static str = "/brokers/topics";
 /// Kafka specifics that rely on Zookeeper.
 pub struct KafkaZoo {
     context: AgentContext,
-    keeper: ZooKeeper,
+    session: Mutex<ZookeeperSession>,
+    target: String,
+    timeout: Duration,
 }
 
 impl KafkaZoo {
     pub fn new(context: AgentContext, target: String, timeout: u64) -> Result<KafkaZoo> {
         let timeout = Duration::from_secs(timeout);
-        let keeper = ZooKeeper::connect(&target, timeout, |_| {}).map_err(to_agent)?;
+        let session = ZookeeperSession::new(&target, timeout.clone(), context.logger.clone())?;
         Ok(KafkaZoo {
             context,
-            keeper,
+            session: Mutex::new(session),
+            target,
+            timeout,
         })
     }
 
@@ -44,7 +54,8 @@ impl KafkaZoo {
         span.tag("service", "zookeeper");
         span.log(Log::new().log("span.kind", "client-send"));
         let path = format!("{}/{}", TOPICS_PATH, topic);
-        let (meta, _) = self.keeper.get_data(&path, false)
+        let keeper = self.keeper(&mut span).fail_span(&mut span)?;
+        let (meta, _) = keeper.get_data(&path, false)
             .fail_span(&mut span)
             .map_err(to_agent)?;
         span.log(Log::new().log("span.kind", "client-receive"));
@@ -72,11 +83,29 @@ impl KafkaZoo {
         span.child_of(parent.context().clone());
         span.tag("service", "zookeeper");
         span.log(Log::new().log("span.kind", "client-send"));
-        let topics = self.keeper.get_children(TOPICS_PATH, false)
+        let keeper = self.keeper(&mut span).fail_span(&mut span)?;
+        let topics = keeper.get_children(TOPICS_PATH, false)
             .fail_span(&mut span)
             .map_err(to_agent)?;
         span.log(Log::new().log("span.kind", "client-receive"));
         Ok(topics)
+    }
+}
+
+impl KafkaZoo {
+    /// Grab a zookeeper session, re-creating it if needed.
+    fn keeper(&self, span: &mut Span) -> Result<Arc<ZooKeeper>> {
+        let mut session = self.session.lock().expect("Zookeeper session lock was poisoned");
+        if !session.active() {
+            debug!(self.context.logger, "Creating new zookeeper session");
+            span.log(Log::new().log("action", "zookeeper.connect"));
+            let new_session = ZookeeperSession::new(
+                &self.target, self.timeout.clone(), self.context.logger.clone()
+            )?;
+            *session = new_session;
+            info!(self.context.logger, "New zookeeper session ready");
+        }
+        Ok(session.client())
     }
 }
 
@@ -101,4 +130,74 @@ struct PartitionsMap {
 
     /// Metadata version? Expected to be 1.
     pub version: i32,
+}
+
+
+/// Container for a zookeeper session.
+struct ZookeeperSession {
+    active: Arc<AtomicBool>,
+    client: Arc<ZooKeeper>,
+}
+
+impl ZookeeperSession {
+    /// Create a new zookeeper session.
+    pub fn new(connection: &str, timeout: Duration, logger: Logger) -> Result<ZookeeperSession> {
+        let client = ZooKeeper::connect(connection, timeout, |_| {})
+            .map_err(to_agent)?;
+        let active = Arc::new(AtomicBool::new(true));
+        let notify_close = Arc::clone(&active);
+        client.add_listener(move |state| {
+            let reset = match state {
+                ZkState::AuthFailed => {
+                    error!(logger, "Zookeeper authentication error");
+                    false
+                },
+                ZkState::Closed => {
+                    warn!(logger, "Zookeeper session closed");
+                    true
+                },
+                ZkState::Connected => {
+                    info!(logger, "Zookeeper connection successfull");
+                    false
+                },
+                ZkState::ConnectedReadOnly => {
+                    warn!(logger, "Zookeeper connection is read-only");
+                    false
+                },
+                ZkState::Connecting => {
+                    debug!(logger, "Zookeeper session connecting");
+                    false
+                },
+                event => {
+                    debug!(logger, "Ignoring deprecated zookeeper event"; "event" => ?event);
+                    false
+                },
+            };
+            if reset {
+                notify_close.store(false, Ordering::Relaxed);
+                debug!(logger, "Zookeeper session marked as not active");
+            }
+        });
+        let client = Arc::new(client);
+        Ok(ZookeeperSession {
+            active,
+            client,
+        })
+    }
+
+    /// Checks if the session is active.
+    ///
+    /// A session is active if the connection to ZooKeper is intact.
+    ///
+    /// There may be some time while the connection is broken but the session is marked as
+    /// active while the client tries to re-establish the connection.
+    /// If this cannot be done, the session is marked as not active.
+    pub fn active(&self) -> bool {
+        self.active.load(Ordering::Relaxed)
+    }
+
+    /// Get a reference to the ZooKeeper client for this session.
+    pub fn client(&self) -> Arc<ZooKeeper> {
+        Arc::clone(&self.client)
+    }
 }
