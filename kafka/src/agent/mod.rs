@@ -21,6 +21,9 @@ use replicante_agent_models::Shards;
 
 use super::Config;
 use super::errors::to_agent;
+use super::metrics::OPS_COUNT;
+use super::metrics::OPS_DURATION;
+use super::metrics::OP_ERRORS_COUNT;
 
 
 mod jmx;
@@ -98,7 +101,13 @@ impl KafkaAgent {
     /// Return the latest partition offsets for all partitions in the topic.
     fn topic_offsets(&self, topic: &str, _span: &mut Span) -> Result<HashMap<i32, i64>> {
         let mut client = self.kafka.lock().expect("Kafka client lock was poisoned");
-        client.load_metadata(&[topic]).map_err(to_agent)?;
+        OPS_COUNT.with_label_values(&["kafka", "loadMetadata"]).inc();
+        let timer = OPS_DURATION.with_label_values(&["kafka", "loadMetadata"]).start_timer();
+        client.load_metadata(&[topic]).map_err(|error| {
+            OP_ERRORS_COUNT.with_label_values(&["kafka", "loadMetadata"]).inc();
+            to_agent(error)
+        })?;
+        timer.observe_duration();
         let offsets = client.fetch_offsets(&[topic], FetchOffset::Latest).map_err(to_agent)?;
         let offsets = offsets.get(topic).ok_or_else(|| Error::from("Unable to find offsets"))?;
         Ok(offsets.iter().map(|item| (item.partition, item.offset)).collect())

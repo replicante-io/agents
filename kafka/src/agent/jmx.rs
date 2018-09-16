@@ -14,6 +14,10 @@ use replicante_agent::AgentContext;
 use replicante_agent::Result;
 
 use super::super::errors::to_agent;
+use super::super::metrics::OPS_COUNT;
+use super::super::metrics::OPS_DURATION;
+use super::super::metrics::OP_ERRORS_COUNT;
+use super::super::metrics::RECONNECT_COUNT;
 
 
 const KAFKA_BROKER_ID_MBEAN_QUERY: &'static str = "kafka.server:type=app-info,id=*";
@@ -57,9 +61,15 @@ impl KafkaJmx {
             span.tag("service", "jmx");
             self.reconnect_if_needed(&mut span).fail_span(&mut span)?;
             span.log(Log::new().log("span.kind", "client-send"));
+            OPS_COUNT.with_label_values(&["jmx", "queryNames"]).inc();
+            let timer = OPS_DURATION.with_label_values(&["jmx", "queryNames"]).start_timer();
             let names = self.jmx.query_names(KAFKA_BROKER_ID_MBEAN_QUERY, "")
                 .fail_span(&mut span)
-                .map_err(to_agent);
+                .map_err(|error| {
+                    OP_ERRORS_COUNT.with_label_values(&["jmx", "queryNames"]).inc();
+                    to_agent(error)
+                });
+            timer.observe_duration();
             span.log(Log::new().log("span.kind", "client-receive"));
             let names = self.check_jmx_response(names)?;
             names
@@ -98,9 +108,15 @@ impl KafkaJmx {
         span.tag("service", "jmx");
         self.reconnect_if_needed(&mut span).fail_span(&mut span)?;
         span.log(Log::new().log("span.kind", "client-send"));
+        OPS_COUNT.with_label_values(&["jmx", "getAttribute"]).inc();
+        let timer = OPS_DURATION.with_label_values(&["jmx", "getAttribute"]).start_timer();
         let version = self.jmx.get_attribute(KAFKA_BROKER_VERSION, "version")
             .fail_span(&mut span)
-            .map_err(to_agent);
+            .map_err(|error| {
+                OP_ERRORS_COUNT.with_label_values(&["jmx", "getAttribute"]).inc();
+                to_agent(error)
+            });
+        timer.observe_duration();
         span.log(Log::new().log("span.kind", "client-receive"));
         let version = self.check_jmx_response(version)?;
         Ok(version)
@@ -118,9 +134,15 @@ impl KafkaJmx {
         );
         self.reconnect_if_needed(&mut span).fail_span(&mut span)?;
         span.log(Log::new().log("span.kind", "client-send"));
+        OPS_COUNT.with_label_values(&["jmx", "getAttribute"]).inc();
+        let timer = OPS_DURATION.with_label_values(&["jmx", "getAttribute"]).start_timer();
         let lag = self.jmx.get_attribute(key, "Value")
             .fail_span(&mut span)
-            .map_err(to_agent);
+            .map_err(|error| {
+                OP_ERRORS_COUNT.with_label_values(&["jmx", "getAttribute"]).inc();
+                to_agent(error)
+            });
+        timer.observe_duration();
         span.log(Log::new().log("span.kind", "client-receive"));
         let lag = self.check_jmx_response(lag)?;
         Ok(lag)
@@ -143,6 +165,7 @@ impl KafkaJmx {
         if self.reconnect.load(Ordering::Relaxed) {
             debug!(self.context.logger, "Reconnecting to JMX server");
             span.log(Log::new().log("action", "jmx.connect"));
+            RECONNECT_COUNT.with_label_values(&["jmx"]).inc();
             self.jmx.reconnect_with_options(
                 self.reconnect_address.clone(), self.reconnect_options.clone()
             ).map_err(to_agent)?;

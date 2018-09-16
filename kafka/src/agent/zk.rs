@@ -20,6 +20,10 @@ use replicante_agent::Error;
 use replicante_agent::Result;
 
 use super::super::errors::to_agent;
+use super::super::metrics::OPS_COUNT;
+use super::super::metrics::OPS_DURATION;
+use super::super::metrics::OP_ERRORS_COUNT;
+use super::super::metrics::RECONNECT_COUNT;
 
 
 const CLUSTER_ID_PATH: &'static str = "/cluster/id";
@@ -63,9 +67,15 @@ impl KafkaZoo {
         span.tag("service", "zookeeper");
         span.log(Log::new().log("span.kind", "client-send"));
         let keeper = self.keeper(&mut span).fail_span(&mut span)?;
+        OPS_COUNT.with_label_values(&["zookeeper", "getData"]).inc();
+        let timer = OPS_DURATION.with_label_values(&["zookeeper", "getData"]).start_timer();
         let (id, _) = keeper.get_data(CLUSTER_ID_PATH, false)
             .fail_span(&mut span)
-            .map_err(to_agent)?;
+            .map_err(|error| {
+                OP_ERRORS_COUNT.with_label_values(&["zookeeper", "getData"]).inc();
+                to_agent(error)
+            })?;
+        timer.observe_duration();
         span.log(Log::new().log("span.kind", "client-receive"));
         let id: ClusterId = serde_json::from_slice(&id).map_err(to_agent)?;
         Ok(id.id)
@@ -81,9 +91,15 @@ impl KafkaZoo {
         span.log(Log::new().log("span.kind", "client-send"));
         let path = format!("{}/{}", TOPICS_PATH, topic);
         let keeper = self.keeper(&mut span).fail_span(&mut span)?;
+        OPS_COUNT.with_label_values(&["zookeeper", "getData"]).inc();
+        let timer = OPS_DURATION.with_label_values(&["zookeeper", "getData"]).start_timer();
         let (meta, _) = keeper.get_data(&path, false)
             .fail_span(&mut span)
-            .map_err(to_agent)?;
+            .map_err(|error| {
+                OP_ERRORS_COUNT.with_label_values(&["zookeeper", "getData"]).inc();
+                to_agent(error)
+            })?;
+        timer.observe_duration();
         span.log(Log::new().log("span.kind", "client-receive"));
         let mut partitions = Vec::new();
         let meta: PartitionsMap = serde_json::from_slice(&meta).map_err(to_agent)?;
@@ -110,9 +126,15 @@ impl KafkaZoo {
         span.tag("service", "zookeeper");
         span.log(Log::new().log("span.kind", "client-send"));
         let keeper = self.keeper(&mut span).fail_span(&mut span)?;
+        OPS_COUNT.with_label_values(&["zookeeper", "getChildren"]).inc();
+        let timer = OPS_DURATION.with_label_values(&["zookeeper", "getChildren"]).start_timer();
         let topics = keeper.get_children(TOPICS_PATH, false)
             .fail_span(&mut span)
-            .map_err(to_agent)?;
+            .map_err(|error| {
+                OP_ERRORS_COUNT.with_label_values(&["zookeeper", "getData"]).inc();
+                to_agent(error)
+            })?;
+        timer.observe_duration();
         span.log(Log::new().log("span.kind", "client-receive"));
         Ok(topics)
     }
@@ -125,6 +147,7 @@ impl KafkaZoo {
         if !session.active() {
             debug!(self.context.logger, "Creating new zookeeper session");
             span.log(Log::new().log("action", "zookeeper.connect"));
+            RECONNECT_COUNT.with_label_values(&["zookeeper"]).inc();
             let new_session = ZookeeperSession::new(
                 &self.target, self.timeout.clone(), self.context.logger.clone()
             )?;
