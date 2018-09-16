@@ -39,7 +39,6 @@ lazy_static! {
 
 /// Kafka 1.0+ agent.
 pub struct KafkaAgent {
-    cluster: String,
     jmx: KafkaJmx,
     kafka: Mutex<KafkaClient>,
     zoo: KafkaZoo,
@@ -58,7 +57,6 @@ impl KafkaAgent {
             config.kafka.target.zookeeper.uri, config.kafka.target.zookeeper.timeout
         )?;
         Ok(KafkaAgent {
-            cluster: config.kafka.cluster,
             jmx,
             kafka: Mutex::new(kafka),
             zoo,
@@ -114,7 +112,7 @@ impl Agent for KafkaAgent {
     }
 
     fn datastore_info(&self, span: &mut Span) -> Result<DatastoreInfo> {
-        let cluster = self.cluster.clone();
+        let cluster = self.zoo.cluster_id(span)?;
         let name = self.jmx.broker_name(span)?;
         let version = self.jmx.broker_version(span)?;
         Ok(DatastoreInfo::new(cluster, "Kafka", name, version))

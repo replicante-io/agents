@@ -10,13 +10,14 @@ use replicante_agent::config::APIConfig;
 
 
 /// Kafka Agent configuration
-#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
+#[derive(Clone, Default, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
 pub struct Config {
     /// Common agent options.
     #[serde(default)]
     pub agent: Agent,
 
     /// Kafka related options.
+    #[serde(default)]
     pub kafka: Kafka,
 }
 
@@ -47,11 +48,8 @@ impl Config {
 
 
 /// Kafka related options.
-#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
+#[derive(Clone, Default, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
 pub struct Kafka {
-    /// Name of the kafka cluster.
-    pub cluster: String,
-
     /// Addresses used to locate the kafka services.
     #[serde(default)]
     pub target: KafkaTarget,

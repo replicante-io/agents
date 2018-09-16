@@ -5,10 +5,6 @@ agent: {}
 
 # Kafka specific configuration.
 kafka:
-  # Name of the kafka cluster.
-  # *** Required ***
-  #cluster: <CLUSTER_NAME>
-
   # Addresses used to locate the kafka services.
   target:
     # Kafka broker configuration.

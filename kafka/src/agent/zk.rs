@@ -22,7 +22,18 @@ use replicante_agent::Result;
 use super::super::errors::to_agent;
 
 
+const CLUSTER_ID_PATH: &'static str = "/cluster/id";
 const TOPICS_PATH: &'static str = "/brokers/topics";
+
+
+#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
+struct ClusterId {
+    /// Id of the kafka cluster.
+    pub id: String,
+
+    /// Metadata version? Expected to be 1.
+    pub version: String,
+}
 
 
 /// Kafka specifics that rely on Zookeeper.
@@ -43,6 +54,21 @@ impl KafkaZoo {
             target,
             timeout,
         })
+    }
+
+    /// Fetch the ID of the cluster.
+    pub fn cluster_id(&self, parent: &mut Span) -> Result<String> {
+        let mut span = self.context.tracer.span("clusterId").auto_finish();
+        span.child_of(parent.context().clone());
+        span.tag("service", "zookeeper");
+        span.log(Log::new().log("span.kind", "client-send"));
+        let keeper = self.keeper(&mut span).fail_span(&mut span)?;
+        let (id, _) = keeper.get_data(CLUSTER_ID_PATH, false)
+            .fail_span(&mut span)
+            .map_err(to_agent)?;
+        span.log(Log::new().log("span.kind", "client-receive"));
+        let id: ClusterId = serde_json::from_slice(&id).map_err(to_agent)?;
+        Ok(id.id)
     }
 
     /// Fetch partitions metadata for the topic that are on the given broker.
