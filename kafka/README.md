@@ -13,8 +13,7 @@ To execute the agent only `LD_LIBRARY_PATH` is required.
 
 ```bash
 # Fedora 28
-dnf install java-1.8.0-openjdk-devel \
-  cyrus-sasl-devel # Needed for rdkafka.
+dnf install java-1.8.0-openjdk-devel
 export JAVA_HOME="/usr/lib/jvm/java-1.8.0-openjdk-1.8.0.181-7.b13.fc28.x86_64"
 export LD_LIBRARY_PATH="${JAVA_HOME}/jre/lib/amd64/server:$LD_LIBRARY_PATH"
 cargo test

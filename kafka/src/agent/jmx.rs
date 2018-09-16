@@ -1,3 +1,6 @@
+use std::sync::atomic::AtomicBool;
+use std::sync::atomic::Ordering;
+
 use jmx::MBeanAddress;
 use jmx::MBeanClientTrait;
 use jmx::MBeanThreadedClient;
@@ -23,19 +26,26 @@ const KAFKA_LAG_PREFIX: &'static str =
 pub struct KafkaJmx {
     context: AgentContext,
     jmx: MBeanThreadedClient,
+    reconnect: AtomicBool,
+    reconnect_address: MBeanAddress,
+    reconnect_options: MBeanThreadedClientOptions,
 }
 
 impl KafkaJmx {
     pub fn new(context: AgentContext, target: String) -> Result<KafkaJmx> {
+        let address = MBeanAddress::address(target);
+        let options = MBeanThreadedClientOptions::default()
+            // Limit the number of pending JMX requests to avoid memory exhaustion.
+            .requests_buffer_size(1042);
         let jmx = MBeanThreadedClient::connect_with_options(
-            MBeanAddress::address(target),
-            MBeanThreadedClientOptions::default()
-                // Limit the number of pending JMX requests to avoid memory exhaustion.
-                .requests_buffer_size(1042)
+            address.clone(), options.clone()
         ).map_err(to_agent)?;
         Ok(KafkaJmx {
             context,
             jmx,
+            reconnect: AtomicBool::new(false),
+            reconnect_address: address,
+            reconnect_options: options,
         })
     }
 
@@ -45,11 +55,13 @@ impl KafkaJmx {
             let mut span = self.context.tracer.span("brokerName").auto_finish();
             span.child_of(parent.context().clone());
             span.tag("service", "jmx");
+            self.reconnect_if_needed(&mut span).fail_span(&mut span)?;
             span.log(Log::new().log("span.kind", "client-send"));
             let names = self.jmx.query_names(KAFKA_BROKER_ID_MBEAN_QUERY, "")
                 .fail_span(&mut span)
-                .map_err(to_agent)?;
+                .map_err(to_agent);
             span.log(Log::new().log("span.kind", "client-receive"));
+            let names = self.check_jmx_response(names)?;
             names
         };
         let name: String = match names.len() {
@@ -84,11 +96,13 @@ impl KafkaJmx {
         let mut span = self.context.tracer.span("brokerVersion").auto_finish();
         span.child_of(parent.context().clone());
         span.tag("service", "jmx");
+        self.reconnect_if_needed(&mut span).fail_span(&mut span)?;
         span.log(Log::new().log("span.kind", "client-send"));
         let version = self.jmx.get_attribute(KAFKA_BROKER_VERSION, "version")
             .fail_span(&mut span)
-            .map_err(to_agent)?;
+            .map_err(to_agent);
         span.log(Log::new().log("span.kind", "client-receive"));
+        let version = self.check_jmx_response(version)?;
         Ok(version)
     }
 
@@ -102,11 +116,39 @@ impl KafkaJmx {
         let key = format!(
             "{}{},topic={},partition={}", KAFKA_LAG_PREFIX, leader, topic, partition
         );
+        self.reconnect_if_needed(&mut span).fail_span(&mut span)?;
         span.log(Log::new().log("span.kind", "client-send"));
         let lag = self.jmx.get_attribute(key, "Value")
             .fail_span(&mut span)
-            .map_err(to_agent)?;
+            .map_err(to_agent);
         span.log(Log::new().log("span.kind", "client-receive"));
+        let lag = self.check_jmx_response(lag)?;
         Ok(lag)
+    }
+}
+
+impl KafkaJmx {
+    /// Check if JMX responded with an error.
+    ///
+    /// If so, flag the need to reconnect so it can be done prior to the next request.
+    fn check_jmx_response<T>(&self, result: Result<T>) -> Result<T> {
+        if result.is_err() {
+            self.reconnect.store(true, Ordering::Relaxed);
+        }
+        result
+    }
+
+    /// If there was an error in a past connection to the JMX server reconnect.
+    fn reconnect_if_needed(&self, span: &mut Span) -> Result<()> {
+        if self.reconnect.load(Ordering::Relaxed) {
+            debug!(self.context.logger, "Reconnecting to JMX server");
+            span.log(Log::new().log("action", "jmx.connect"));
+            self.jmx.reconnect_with_options(
+                self.reconnect_address.clone(), self.reconnect_options.clone()
+            ).map_err(to_agent)?;
+            self.reconnect.store(false, Ordering::Relaxed);
+            info!(self.context.logger, "Reconnected to JMX server");
+        }
+        Ok(())
     }
 }
