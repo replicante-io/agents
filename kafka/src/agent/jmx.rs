@@ -42,12 +42,14 @@ impl KafkaJmx {
             // Limit the number of pending JMX requests to avoid memory exhaustion.
             .requests_buffer_size(1042);
         let jmx = MBeanThreadedClient::connect_with_options(
-            address.clone(), options.clone()
+            address.clone(),
+            // Skip connecting the first time around.
+            options.clone().skip_connect(true)
         ).map_err(to_agent)?;
         Ok(KafkaJmx {
             context,
             jmx,
-            reconnect: AtomicBool::new(false),
+            reconnect: AtomicBool::new(true),
             reconnect_address: address,
             reconnect_options: options,
         })
