@@ -14,6 +14,7 @@ If you know of a community developed agent not listed below please open an
 
 Below is a list of knows agents:
 
+  * [Kafka](./kafka.md) (official)
   * [MongoDB](./mongodb.md) (official)
   * [Zookeeper](./zookeeper.md) (official)
 

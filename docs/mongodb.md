@@ -3,10 +3,10 @@
 
 
 ## Supported versions
-| MongoDB Agent Version | MongoDB Version | MongoDB Mode            |
-| --------------------- | --------------- | ----------------------- |
-| 0.2.0+                | 3.0+ / 3.2+     | Replica Set / Clustered |
-| 0.1.0+                | 3.2+            | Replica Set             |
+| Agent Version | MongoDB Version | MongoDB Mode            |
+| ------------- | --------------- | ----------------------- |
+| 0.2.0+        | 3.0+ / 3.2+     | Replica Set / Clustered |
+| 0.1.0+        | 3.2+            | Replica Set             |
 
 
 ## Installation from code

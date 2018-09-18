@@ -4,9 +4,9 @@ information, naming, providing distributed synchronization, and providing group 
 
 
 ## Supported versions
-| Zookeeper Agent Version | Zookeeper Version |
-| ----------------------- | ----------------- |
-| 0.1.0+                  | 3.3+              |
+| Agent Version | Zookeeper Version |
+| ------------- | ----------------- |
+| 0.1.0+        | 3.3+              |
 
 
 ## Installation from code
@@ -15,7 +15,7 @@ Once the agent is available in `$PATH` check the usage:
 
 ```bash
 $ replicante-agent-zookeeper --help
-MongoDB Replicante Agent 0.1.0 [4cc413ece34e9492e2c61f46ed91243c7d4d57b4; working directory tainted]
+Zookeeper Replicante Agent 0.1.0 [01c4992a74a7331810e92a808b5cc3fec2b02635; working directory tainted]
 Replicante agent for Zookeeper
 
 USAGE:

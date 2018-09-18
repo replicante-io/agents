@@ -9,5 +9,6 @@
 
 ### Official Agents
 
+* [Kafka](kafka.md)
 * [MongoDB](mongodb.md)
 * [Zookeeper](zookeeper.md)
