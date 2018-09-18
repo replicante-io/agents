@@ -21,6 +21,9 @@ use replicante_agent_models::Shards;
 
 use super::Config;
 use super::errors::to_agent;
+use super::metrics::OP_ERRORS_COUNT;
+use super::metrics::OPS_COUNT;
+use super::metrics::OPS_DURATION;
 use super::zk4lw::Conf;
 use super::zk4lw::Srvr;
 
@@ -69,9 +72,16 @@ impl ZookeeperAgent {
             "conf", StartOptions::default().child_of(root.context().clone())
         ).auto_finish();
         span.log(Log::new().log("span.kind", "client-send"));
+        OPS_COUNT.with_label_values(&["conf"]).inc();
+        let timer = OPS_DURATION.with_label_values(&["conf"]).start_timer();
         let conf = self.zk_client.exec::<Conf>()
-            .map_err(to_agent).chain_err(|| "Failed to execute `conf` command")
+            .map_err(|error| {
+                OP_ERRORS_COUNT.with_label_values(&["conf"]).inc();
+                to_agent(error)
+            })
+            .chain_err(|| "Failed to execute `conf` command")
             .fail_span(&mut span);
+        timer.observe_duration();
         span.log(Log::new().log("span.kind", "client-receive"));
         conf
     }
@@ -82,9 +92,16 @@ impl ZookeeperAgent {
             "srvr", StartOptions::default().child_of(root.context().clone())
         ).auto_finish();
         span.log(Log::new().log("span.kind", "client-send"));
+        OPS_COUNT.with_label_values(&["srvr"]).inc();
+        let timer = OPS_DURATION.with_label_values(&["srvr"]).start_timer();
         let srvr = self.zk_client.exec::<Srvr>()
-            .map_err(to_agent).chain_err(|| "Failed to execute `srvr` command")
+            .map_err(|error| {
+                OP_ERRORS_COUNT.with_label_values(&["srvr"]).inc();
+                to_agent(error)
+            })
+            .chain_err(|| "Failed to execute `srvr` command")
             .fail_span(&mut span);
+        timer.observe_duration();
         span.log(Log::new().log("span.kind", "client-receive"));
         srvr
     }
