@@ -22,7 +22,7 @@ path = "src/main.rs"
 clap = "^2.32.0"
 error-chain = "^0.12.0"
 lazy_static = "^1.0.1"
-prometheus = "^0.4.1"
+prometheus = "^0.5.0"
 serde = "^1.0.25"
 serde_derive = "^1.0.25"
 serde_yaml = "^0.8.0"
@@ -37,7 +37,7 @@ replicante_util_tracing = { path = "../common/util/tracing" }
 
 
 [build-dependencies]
-git2 = "^0.7.0"
+git2 = "^0.8.0"
 
 
 [features]

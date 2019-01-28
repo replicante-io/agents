@@ -26,7 +26,7 @@ error-chain = "^0.12.0"
 iron = "^0.6.0"
 iron-json-response = "^0.6.0"
 lazy_static = "^1.0.1"
-prometheus = { version = "^0.4.1", features = ["process"] }
+prometheus = { version = "^0.5.0", features = ["process"] }
 router = "^0.6.0"
 serde = "^1.0.25"
 serde_derive = "^1.0.25"
@@ -44,7 +44,7 @@ replicante_util_tracing = { path = "../common/util/tracing", version = "0.1.0" }
 
 
 [build-dependencies]
-git2 = "^0.7.0"
+git2 = "^0.8.0"
 
 
 [dev-dependencies]
