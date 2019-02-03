@@ -1,4 +1,9 @@
-# Security considerations
+---
+id: intro-security
+title: Security Considerations
+sidebar_label: Security Considerations
+---
+
 This page focuses on security considerations of running agents.
 
 The security considerations for the overall Replicante ecosystem design are documented in the

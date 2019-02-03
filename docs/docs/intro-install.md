@@ -1,4 +1,9 @@
-# Installation
+---
+id: intro-install
+title: Installation
+sidebar_label: Installation
+---
+
 Official agents can be installed from code as described below.
 This is currently the only officially supported method.
 

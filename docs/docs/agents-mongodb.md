@@ -1,4 +1,9 @@
-# MongoDB
+---
+id: agents-mongodb
+title: MongoDB
+sidebar_label: MongoDB
+---
+
 [MongoDB](https://www.mongodb.com/) is a felxible document NoSQL database.
 
 
@@ -10,7 +15,7 @@
 
 
 ## Installation from code
-Follow the instructions in the [installation](base/install.md) page.
+Follow the instructions in the [installation](intro-install.md) page.
 Once the agent is available in `$PATH` check the usage:
 
 ```bash
@@ -31,7 +36,42 @@ OPTIONS:
 
 
 ## Configuration
-[import, lang:"yaml"](../agent-mongodb.example.yaml)
+```yaml
+# Common agents options described in agent.example.yaml
+agent: {}
+  # ... snip ...
+
+
+# MongoDB specific configuration.
+mongo:
+  # MongoDB connection URI.
+  uri: "mongodb://localhost:27017"
+
+  # Timeout (in milliseconds) for selecting an appropriate server for operations.
+  timeout: 30000
+
+  # Configure the agent to operate in sharded cluster mode.
+  #
+  # This section is optional.
+  # If missing, sharding mode is disabled.
+  # If present, sharding mode is enabled by default but can be disabled.
+  sharding:
+    # The identifier of the MongoDB sharded cluster.
+    # *** Required ***
+    #
+    # In replica set mode the cluster name is detected as the replica set.
+    # In sharded mode this attribute cannot be auto-detected and must be specified.
+    cluster_name: 'user-defined-name'
+
+    # Enable or disable sharded mode.
+    enable: true
+
+    # Name of the `mongos` node name.
+    #
+    # If set, the node is expected to be a mongos instance.
+    # If null (the default), the node is expected to be a mongod instance.
+    mongos_node_name: ~
+```
 
 
 ## Upgrades notes

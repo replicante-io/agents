@@ -1,4 +1,9 @@
-# Zookeeper
+---
+id: agents-zookeeper
+title: Zookeeper
+sidebar_label: Zookeeper
+---
+
 [Zookeeper](https://zookeeper.apache.org/) is a centralized service for maintaining configuration
 information, naming, providing distributed synchronization, and providing group services.
 
@@ -10,7 +15,7 @@ information, naming, providing distributed synchronization, and providing group 
 
 
 ## Installation from code
-Follow the instructions in the [installation](base/install.md) page.
+Follow the instructions in the [installation](intro-install.md) page.
 Once the agent is available in `$PATH` check the usage:
 
 ```bash
@@ -30,7 +35,21 @@ OPTIONS:
 ```
 
 ## Configuration
-[import, lang:"yaml"](../agent-zookeeper.example.yaml)
+```yaml
+# Common agents options described in agent.example.yaml
+agent: {}
+  # ... snip ...
+
+
+# Zookeeper specific configuration.
+zookeeper:
+  # Name of the zookeeper cluster.
+  # *** Required ***
+  #cluster: <CLUSTER_NAME>
+
+  # Host and port (in host:port format) of the zookeeper 4lw server.
+  target: "localhost:2181"
+```
 
 
 ## Upgrades notes

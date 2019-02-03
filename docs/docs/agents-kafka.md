@@ -1,4 +1,9 @@
-# Kafka
+---
+id: agents-kafka
+title: Kafka
+sidebar_label: Kafka
+---
+
 [Kafka](https://kafka.apache.org/) is a distributed streaming platform.
 
 
@@ -53,7 +58,40 @@ OPTIONS:
 ```
 
 ## Configuration
-[import, lang:"yaml"](../kafka/agent-kafka.example.yaml)
+```yaml
+# Common agents options described in agent.example.yaml
+agent: {}
+  # ... snip ...
+
+
+# Kafka specific configuration.
+kafka:
+  # Addresses used to locate the kafka services.
+  target:
+    # Kafka broker configuration.
+    broker:
+      # Addresses "host:port" of the kafka broker.
+      uri: 'localhost:9092'
+
+      # Network timeout for requests to Kafka.
+      timeout: 10
+
+    # Address "host:port" of the JMX server.
+    #
+    # By default kafka does not expose the JMX server.
+    # To do so, set the `JMX_PORT` environment variable before starting the server.
+    # For additional options see:
+    #   https://github.com/apache/kafka/blob/1.1.1/bin/kafka-run-class.sh#L166-L174
+    jmx: 'localhost:9999'
+
+    # Zookeeper ensamble for the Kafka cluster.
+    zookeeper:
+      # Addresses "host:port" of the zookeeper ensamble.
+      uri: 'localhost:2181'
+
+      # Zookeeper session timeout.
+      timeout: 10
+```
 
 
 ## Upgrades notes

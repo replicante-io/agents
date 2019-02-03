@@ -1,4 +1,4 @@
-# Common agents options described in the 
+# Common agents options described in agent.example.yaml
 agent: {}
   # ... snip ...
 

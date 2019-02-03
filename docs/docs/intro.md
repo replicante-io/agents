@@ -1,4 +1,9 @@
-# Introduction
+---
+id: intro
+title: Introduction
+sidebar_label: Introduction
+---
+
 Agents are the part of the replicante ecosystem that ensure datastores compliance with the model.
 
 Beside the task of exporting datastores metrics in the correct format,
@@ -14,9 +19,9 @@ If you know of a community developed agent not listed below please open an
 
 Below is a list of knows agents:
 
-  * [Kafka](./kafka.md) (official)
-  * [MongoDB](./mongodb.md) (official)
-  * [Zookeeper](./zookeeper.md) (official)
+  * [Kafka](agents-kafka.md) (official)
+  * [MongoDB](agents-mongodb.md) (official)
+  * [Zookeeper](agents-zookeeper.md) (official)
 
 
 ## Developing community agents
@@ -31,7 +36,7 @@ Using a shared base crate also mean that:
   * Operational logic (logging, metrics, tracing, ...) is provided.
   * Many more features and tools ...
 
-If you are looking to build a new agent in [rust](https://www.rust-lang.org/en-US/) there is also
+If you are looking to build a new agent in [rust](https://www.rust-lang.org/) there is also
 another advantage: you can use the `replicante_agent` base crate to speed up the development.
 
 Find more details in the [crate documentation](https://docs.rs/replicante_agent).
