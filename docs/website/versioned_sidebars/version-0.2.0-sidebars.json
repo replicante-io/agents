@@ -1,0 +1,16 @@
+{
+  "version-0.2.0-docs": {
+    "Introduction": [
+      "version-0.2.0-intro",
+      "version-0.2.0-intro-install",
+      "version-0.2.0-intro-config",
+      "version-0.2.0-intro-security"
+    ],
+    "Official Agents": [
+      "version-0.2.0-agents",
+      "version-0.2.0-agents-kafka",
+      "version-0.2.0-agents-mongodb",
+      "version-0.2.0-agents-zookeeper"
+    ]
+  }
+}
