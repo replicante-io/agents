@@ -1,18 +1,10 @@
-**/*.swp
+*.swp
 **/*.rs.bk
+
+agent-mongodb.yaml
+agent-zookeeper.yaml
+
+**/node_modules/
 **/target/
 
-ci/
-docs/
-mappings/
-
-*.yaml
-*.md
-.dockerignore
-Dockerfile
-
-kafka/*.yaml
-kafka/*.md
-
-# Ensure git is available for the commit status check.
-!.git*
+kafka/agent-kafka.yaml

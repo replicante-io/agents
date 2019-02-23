@@ -8,15 +8,15 @@ FROM rust:$RUST_VERSION as builder
 COPY . /code
 
 # Compile agents.
-RUN cd /code/mongodb && cargo build --release \
-    && cd /code/zookeeper && cargo build --release
+RUN cd /code/mongodb && cargo build --release --locked \
+    && cd /code/zookeeper && cargo build --release --locked
 
 # Install Java and build kafka agent.
 RUN DEBIAN_FRONTEND=noninteractive apt-get update \
     && apt-get install -y default-jdk \
     && export JAVA_HOME="/usr/lib/jvm/java-8-openjdk-amd64" \
     && export LD_LIBRARY_PATH="${JAVA_HOME}/jre/lib/amd64/server:$LD_LIBRARY_PATH" \
-    && cd /code/kafka && cargo build --release
+    && cd /code/kafka && cargo build --release --locked
 
 
 #######################################
