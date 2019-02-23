@@ -4,7 +4,6 @@
 agent-mongodb.yaml
 agent-zookeeper.yaml
 
-_book/
 node_modules/
 target/
 

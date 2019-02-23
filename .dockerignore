@@ -1,0 +1,18 @@
+**/*.swp
+**/*.rs.bk
+**/target/
+
+ci/
+docs/
+mappings/
+
+*.yaml
+*.md
+.dockerignore
+Dockerfile
+
+kafka/*.yaml
+kafka/*.md
+
+# Ensure git is available for the commit status check.
+!.git*
