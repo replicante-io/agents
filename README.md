@@ -30,3 +30,18 @@ those that need them.
 The following is a list of agents that have extra dependencies:
 
   * `kafka`: required Java (to act as a JMX client).
+
+
+## Docker image
+A docker image including all agents in this repo can be built with the following command:
+```bash
+docker build --force-rm --tag replicanteio/agents:latest --tag replicanteio/agents:v$VERSION .
+```
+
+The image can be used to run any of the agents as long as a configration file is provided:
+```bash
+docker run --rm -it \
+  -v "$PWD/agent-mongodb.example.yaml:/home/replicante/agent-mongodb.yaml" \
+  -w /home/replicante replicanteio/agents:v0.2.0 \
+  replicante-agent-mongodb
+```

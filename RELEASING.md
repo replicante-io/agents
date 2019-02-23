@@ -7,7 +7,9 @@ Agents release steps:
 - [ ] Bump the version number of all crates that need it
 - [ ] Update changelogs with version and date
 - [ ] Version documents
+- [ ] Ensure docker image builds correctly
 - [ ] Git commit and tag release
+- [ ] Build and push docker image
 - [ ] Publish base cargo crate
 - [ ] Release documentation
 

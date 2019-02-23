@@ -24,14 +24,24 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update \
 #######################################
 FROM debian:stretch-slim
 
+# Create a replicante user to avoid using root.
+ARG REPLI_GID=1616
+ARG REPLI_GNAME=replicante
+ARG REPLI_UID=1616
+ARG REPLI_UNAME=replicante
+RUN addgroup --gid $REPLI_GID $REPLI_GNAME \
+    && adduser --disabled-login --disabled-password --system --uid $REPLI_UID --gid $REPLI_GID $REPLI_UNAME
+
 # Install needed runtime dependencies.
 RUN DEBIAN_FRONTEND=noninteractive apt-get update \
     && apt-get install -y libssl1.1 \
     && apt-get clean all
 
-# Set up runtime environment as needed.
-#  Add libjvm for the kafka agent.
-ENV LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/usr/lib/jvm/java-8-openjdk-amd64/jre/lib/amd64/server
+# Install tini supervisor
+ARG TINI_VERSION=v0.18.0
+ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini /tini
+RUN chmod +x /tini
+ENTRYPOINT ["/tini", "--"]
 
 # Copy binaries from builder to smaller image.
 COPY --from=builder /code/target/release/replicante-agent-mongodb /opt/replicante/bin/replicante-agent-mongodb
@@ -40,13 +50,10 @@ COPY --from=builder /code/target/release/replicante-agent-zookeeper /opt/replica
 COPY --from=builder /usr/lib/jvm/java-8-openjdk-amd64/jre/lib/amd64/server/libjvm.so /usr/lib/jvm/java-8-openjdk-amd64/jre/lib/amd64/server/libjvm.so
 COPY --from=builder /code/kafka/target/release/replicante-agent-kafka /opt/replicante/bin/replicante-agent-kafka
 
-# Create a replicante user to avoid using root.
-ARG REPLI_GID=1616
-ARG REPLI_GNAME=replicante
-ARG REPLI_UID=1616
-ARG REPLI_UNAME=replicante
-RUN addgroup --gid $REPLI_GID $REPLI_GNAME \
-    && adduser --disabled-login --disabled-password --system --uid $REPLI_UID --gid $REPLI_GID $REPLI_UNAME
+# Set up runtime environment as needed.
+#  Add libjvm for the kafka agent.
+ENV LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/usr/lib/jvm/java-8-openjdk-amd64/jre/lib/amd64/server
+ENV PATH=/opt/replicante/bin:$PATH
 USER $REPLI_UNAME
 
 # Validate binaries.
