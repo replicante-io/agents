@@ -3,13 +3,19 @@ Releasing agents
 Agents release steps:
 
 - [ ] Ensure dependences are up to date
+  - [ ] For the main workspace
+  - [ ] For the Kafka workspace
 - [ ] Ensure tests and CI checks pass
 - [ ] Bump the version number of all crates that need it
 - [ ] Update changelogs with version and date
 - [ ] Version documents
 - [ ] Ensure docker image builds correctly
+  - [ ] For the main workspace
+  - [ ] For the Kafka workspace
 - [ ] Git commit and tag release
-- [ ] Build and push docker image
+- [ ] Build and push docker images
+  - [ ] For the main workspace
+  - [ ] For the Kafka workspace
 - [ ] Publish base cargo crate
 - [ ] Release documentation
 

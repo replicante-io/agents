@@ -20,6 +20,23 @@ cargo test
 ```
 
 
+## Docker image
+Since Kafka requires Java at runtime, a dedicated image is provided to limit the impact
+of the Java requirements on users that will not need it.
+
+To build the Kafka agent image, from the root of the repo:
+```bash
+docker build --force-rm -f kafka/Dockerfile --tag replicanteio/agent-kafka:v$VERSION .
+```
+
+The image can be used as long as a configration file is provided:
+```bash
+docker run --rm -it \
+  -v "$PWD/kafka/agent-kafka.example.yaml:/home/replicante/agent-kafka.yaml" \
+  -w /home/replicante replicanteio/agent-kafka:v0.2
+```
+
+
 ## Playground DNS resolution
 Kafka provides an internal service discovery based on broadcast of host names.
 The playground nodes broadcast themselves as `node1`, `node2`, and `node3`.

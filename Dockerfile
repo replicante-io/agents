@@ -1,6 +1,6 @@
-########################
-# Build all the agents #
-########################
+####################
+# Build the agents #
+####################
 ARG RUST_VERSION=1.32.0
 FROM rust:$RUST_VERSION as builder
 
@@ -10,13 +10,6 @@ COPY . /code
 # Compile agents.
 RUN cd /code/mongodb && cargo build --release --locked \
     && cd /code/zookeeper && cargo build --release --locked
-
-# Install Java and build kafka agent.
-RUN DEBIAN_FRONTEND=noninteractive apt-get update \
-    && apt-get install -y default-jdk \
-    && export JAVA_HOME="/usr/lib/jvm/java-8-openjdk-amd64" \
-    && export LD_LIBRARY_PATH="${JAVA_HOME}/jre/lib/amd64/server:$LD_LIBRARY_PATH" \
-    && cd /code/kafka && cargo build --release --locked
 
 
 #######################################
@@ -47,16 +40,10 @@ ENTRYPOINT ["/tini", "--"]
 COPY --from=builder /code/target/release/replicante-agent-mongodb /opt/replicante/bin/replicante-agent-mongodb
 COPY --from=builder /code/target/release/replicante-agent-zookeeper /opt/replicante/bin/replicante-agent-zookeeper
 
-COPY --from=builder /usr/lib/jvm/java-8-openjdk-amd64/jre/lib/amd64/server/libjvm.so /usr/lib/jvm/java-8-openjdk-amd64/jre/lib/amd64/server/libjvm.so
-COPY --from=builder /code/kafka/target/release/replicante-agent-kafka /opt/replicante/bin/replicante-agent-kafka
-
 # Set up runtime environment as needed.
-#  Add libjvm for the kafka agent.
-ENV LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/usr/lib/jvm/java-8-openjdk-amd64/jre/lib/amd64/server
 ENV PATH=/opt/replicante/bin:$PATH
 USER $REPLI_UNAME
 
 # Validate binaries.
-RUN /opt/replicante/bin/replicante-agent-kafka --version \
-    && /opt/replicante/bin/replicante-agent-mongodb --version \
+RUN /opt/replicante/bin/replicante-agent-mongodb --version \
     && /opt/replicante/bin/replicante-agent-zookeeper --version

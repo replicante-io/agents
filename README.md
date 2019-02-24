@@ -33,10 +33,15 @@ The following is a list of agents that have extra dependencies:
 
 
 ## Docker image
-A docker image including all agents in this repo can be built with the following command:
+A docker image including most agents in this repo can be built with the following command:
 ```bash
-docker build --force-rm --tag replicanteio/agents:latest --tag replicanteio/agents:v$VERSION .
+docker build --force-rm --tag replicanteio/agents:v$VERSION .
 ```
+
+Agents that require external dependencies or large runtimes, for example Java, are provided
+as separate images:
+
+  * For kafka use `replicanteio/agent-kafka:vVERSION`
 
 The image can be used to run any of the agents as long as a configration file is provided:
 ```bash
