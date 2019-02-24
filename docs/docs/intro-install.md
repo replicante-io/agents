@@ -8,7 +8,9 @@ Official agents can be installed from code as described below.
 This is currently the only officially supported method.
 
 
-## 1. Installing from code
+## 1. Install
+
+### From code
 The following instructions where executed on a clean Fedora 28 install
 but should work for any Linux system:
 ```bash
@@ -34,3 +36,16 @@ target/release/replicante-agent-zookeeper --version
 ```
 
 You can now install the desired agents by copying the build target to your preferred location.
+
+
+### With Docker
+A docker image with the officail agents pre-compiled is also available:
+https://hub.docker.com/r/replicanteio/agents
+
+To check the image works as expected:
+```bash
+docker pull replicanteio/agents:v0
+docker run --rm -it replicanteio/agents:v0 replicante-agent-kafka --version
+docker run --rm -it replicanteio/agents:v0 replicante-agent-mongodb --version
+docker run --rm -it replicanteio/agents:v0 replicante-agent-zookeeper --version
+```

@@ -1,5 +1,5 @@
 # Overview
-[Replicante](https://www.replicante.io/) is a centralised monitoring and managment tool.
+[Replicante](https://www.replicante.io/) is a centralised monitoring and management tool.
 
 Agents are the interface between the centralised platform and each datastore.
 
@@ -35,5 +35,5 @@ The possible values of `SOFTWARE` are the supported datastores:
 For more information, the following links may be useful:
 
   * [Official website](https://www.replicante.io/)
-  * [GitHub repo](https://www.replicante.io/docs/agents/docs/intro/)
-  * [Full documentation](https://github.com/replicante-io/agents)
+  * [GitHub repo](https://github.com/replicante-io/agents)
+  * [Full documentation](https://www.replicante.io/docs/agents/docs/intro/)
