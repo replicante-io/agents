@@ -11,7 +11,11 @@ dist: xenial
 
 # Configure the build jobs.
 language: rust
-cache: cargo
+cache:
+  cargo: true
+  directories:
+    - kafka/target
+
 rust:
   - stable   # Target rust version.
   - 1.32.0   # Earliest supported rust version.
