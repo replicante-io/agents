@@ -8,7 +8,7 @@ case "$1" in
     case "$2" in
       audit) ci/travis/audit-install.sh;;
       clippy) ci/travis/clippy-install.sh;;
-      test) ci/travis/test-install.sh;;
+      test) ;;
 
       *)
         echo "Unsupported install task '$2' received"
