@@ -8,11 +8,11 @@ use iron_json_response::JsonResponse;
 use iron_json_response::JsonResponseMiddleware;
 
 use opentracingrust::Log;
-use opentracingrust::utils::FailSpan;
 
 use super::super::Agent;
 use super::super::AgentContext;
-use super::super::errors::otr_to_iron;
+use super::super::error::fail_span;
+use super::super::error::otr_to_iron;
 use super::super::util::tracing::HeadersCarrier;
 
 
@@ -38,7 +38,7 @@ impl Handler for AgentInfo {
             .map_err(otr_to_iron)?.auto_finish();
 
         span.log(Log::new().log("span.kind", "server-receive"));
-        let info = self.agent.agent_info(&mut span).fail_span(&mut span)?;
+        let info = self.agent.agent_info(&mut span).map_err(|error| fail_span(error, &mut span))?;
         span.log(Log::new().log("span.kind", "server-send"));
 
         let mut response = Response::new();
@@ -77,7 +77,8 @@ impl Handler for DatastoreInfo {
             .map_err(otr_to_iron)?.auto_finish();
 
         span.log(Log::new().log("span.kind", "server-receive"));
-        let info = self.agent.datastore_info(&mut span).fail_span(&mut span)?;
+        let info = self.agent.datastore_info(&mut span)
+            .map_err(|error| fail_span(error, &mut span))?;
         span.log(Log::new().log("span.kind", "server-send"));
 
         let mut response = Response::new();
@@ -137,7 +138,7 @@ mod tests {
             if let Some(result) = result.err() {
                 let body = response::extract_body_to_bytes(result.response);
                 let body = String::from_utf8(body).unwrap();
-                assert_eq!(body, r#"{"error":"Error: Testing failure\n"}"#);
+                assert_eq!(body, r#"{"cause":null,"error":"Testing failure","layers":1,"trace":null}"#);
             }
         }
 
@@ -191,7 +192,7 @@ mod tests {
             if let Some(result) = result.err() {
                 let body = response::extract_body_to_bytes(result.response);
                 let body = String::from_utf8(body).unwrap();
-                assert_eq!(body, r#"{"error":"Error: Testing failure\n"}"#);
+                assert_eq!(body, r#"{"cause":null,"error":"Testing failure","layers":1,"trace":null}"#);
             }
         }
 

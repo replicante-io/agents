@@ -27,7 +27,7 @@ impl APIConfig {
     /// Default value for `bind` used by serde.
     fn default_bind() -> String {
         DEFAULT_BIND.read().unwrap()
-            .as_ref().map(|d| d.clone())
+            .as_ref().map(Clone::clone)
             .unwrap_or_else(|| String::from("127.0.0.1:8000"))
     }
 }

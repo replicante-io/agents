@@ -88,11 +88,8 @@ impl AgentContext {
             ::replicante_util_tracing::Config::Noop, logger.clone()
         ).unwrap();
         let context = AgentContext::new(config, logger, tracer);
-        match extra {
-            TracerExtra::ReporterThread(ref mut reporter) => {
-                reporter.stop_delay(Duration::from_millis(2));
-            },
-            _ => ()
+        if let TracerExtra::ReporterThread(ref mut reporter) = extra {
+            reporter.stop_delay(Duration::from_millis(2));
         };
         (context, extra)
     }
@@ -135,7 +132,7 @@ impl AgentRunner {
     ///
     ///   * It fails to configure or register the metrics.
     ///   * It fails to bind to the configured port.
-    pub fn run(&self) -> () {
+    pub fn run(&self) {
         // Create and configure API handlers.
         let mut router = Router::new();
         let agent_info = api::AgentInfo::make(Arc::clone(&self.agent), self.context.clone());

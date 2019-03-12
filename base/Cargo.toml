@@ -1,6 +1,6 @@
 [package]
 name = "replicante_agent"
-version = "0.2.0" # remember to update html_root_url
+version = "0.3.0" # remember to update html_root_url
 authors = ["Stefano Pogliani <stefano@spogliani.net>"]
 build = "build.rs"
 
@@ -22,7 +22,8 @@ maintenance = { status = "actively-developed" }
 
 
 [dependencies]
-error-chain = "^0.12.0"
+failure = "^0.1.5"
+failure_derive = "^0.1.5"
 iron = "^0.6.0"
 iron-json-response = "^0.6.0"
 lazy_static = "^1.0.1"
