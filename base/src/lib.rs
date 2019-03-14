@@ -51,6 +51,7 @@ pub mod testing;
 pub use self::error::Error;
 pub use self::error::ErrorKind;
 pub use self::error::Result;
+pub use self::error::fail_span;
 
 pub use self::runner::AgentContext;
 pub use self::runner::AgentRunner;

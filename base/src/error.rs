@@ -88,7 +88,7 @@ pub enum ErrorKind {
     #[fail(display = "I/O error on file {}", _0)]
     Io(String),
 
-    #[fail(display = "could not decode {} response from store for operation '{}'", _0, _1)]
+    #[fail(display = "could not decode {} response from store for '{}' operation", _0, _1)]
     ResponseDecode(&'static str, &'static str),
 
     #[fail(display = "datastore operation '{}' failed", _0)]

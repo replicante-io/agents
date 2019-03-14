@@ -1,15 +1,15 @@
 use opentracingrust::Log;
 use opentracingrust::Span;
 use opentracingrust::StartOptions;
-use opentracingrust::utils::FailSpan;
 
+use failure::ResultExt;
 use zk_4lw::Client;
 use zk_4lw::FourLetterWord;
 
 use replicante_agent::Agent;
 use replicante_agent::AgentContext;
 use replicante_agent::Result;
-use replicante_agent::ResultExt;
+use replicante_agent::fail_span;
 
 use replicante_agent_models::AgentInfo;
 use replicante_agent_models::AgentVersion;
@@ -20,7 +20,7 @@ use replicante_agent_models::ShardRole;
 use replicante_agent_models::Shards;
 
 use super::Config;
-use super::errors::to_agent;
+use super::error::ErrorKind;
 use super::metrics::OP_ERRORS_COUNT;
 use super::metrics::OPS_COUNT;
 use super::metrics::OPS_DURATION;
@@ -38,14 +38,14 @@ lazy_static! {
 /// Converts a Zookeeper version into a Semver compatible string.
 ///
 /// In particular it reformats the commit hash as metadata.
-fn to_semver(version: String) -> Result<String> {
+fn to_semver(version: &str) -> Result<String> {
     let ver = version.split(',').next()
         .expect("splitting version string returned no elements");
     let mut iter = ver.split('-');
     match (iter.next().map(|s| s.trim()), iter.next().map(|s| s.trim())) {
         (Some(version), Some(hash)) => Ok(format!("{}+{}", version, hash)),
         (Some(version), None) => Ok(version.into()),
-        _ => Err(format!("Unable to parse version: {}", version).into())
+        _ => Err(ErrorKind::VersionParse.into())
     }
 }
 
@@ -77,13 +77,12 @@ impl ZookeeperAgent {
         let conf = self.zk_client.exec::<Conf>()
             .map_err(|error| {
                 OP_ERRORS_COUNT.with_label_values(&["conf"]).inc();
-                to_agent(error)
+                fail_span(error, &mut span)
             })
-            .chain_err(|| "Failed to execute `conf` command")
-            .fail_span(&mut span);
+            .with_context(|_| ErrorKind::StoreOpFailed("conf"))?;
         timer.observe_duration();
         span.log(Log::new().log("span.kind", "client-receive"));
-        conf
+        Ok(conf)
     }
 
     /// Executes the "conf" 4lw against the zookeeper server.
@@ -97,13 +96,12 @@ impl ZookeeperAgent {
         let srvr = self.zk_client.exec::<Srvr>()
             .map_err(|error| {
                 OP_ERRORS_COUNT.with_label_values(&["srvr"]).inc();
-                to_agent(error)
+                fail_span(error, &mut span)
             })
-            .chain_err(|| "Failed to execute `srvr` command")
-            .fail_span(&mut span);
+            .with_context(|_| ErrorKind::StoreOpFailed("srvr"))?;
         timer.observe_duration();
         span.log(Log::new().log("span.kind", "client-receive"));
-        srvr
+        Ok(srvr)
     }
 }
 
@@ -115,7 +113,7 @@ impl Agent for ZookeeperAgent {
 
     fn datastore_info(&self, span: &mut Span) -> Result<DatastoreInfo> {
         let name = self.conf(span)?.zk_server_id;
-        let version = to_semver(self.srvr(span)?.zk_version)?;
+        let version = to_semver(&self.srvr(span)?.zk_version)?;
         let info = DatastoreInfo::new(self.cluster_name.clone(), "Zookeeper", name, version);
         Ok(info)
     }

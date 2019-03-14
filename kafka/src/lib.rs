@@ -28,7 +28,6 @@ use clap::Arg;
 use replicante_agent::AgentContext;
 use replicante_agent::AgentRunner;
 use replicante_agent::Result;
-use replicante_agent::ResultExt;
 
 use replicante_util_tracing::TracerExtra;
 use replicante_util_tracing::tracer;

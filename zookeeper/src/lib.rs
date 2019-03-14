@@ -1,4 +1,5 @@
 extern crate clap;
+extern crate failure;
 #[macro_use]
 extern crate lazy_static;
 extern crate opentracingrust;
@@ -24,7 +25,6 @@ use clap::Arg;
 use replicante_agent::AgentContext;
 use replicante_agent::AgentRunner;
 use replicante_agent::Result;
-use replicante_agent::ResultExt;
 
 use replicante_util_tracing::TracerExtra;
 use replicante_util_tracing::tracer;
@@ -32,11 +32,12 @@ use replicante_util_tracing::tracer;
 mod zk4lw;
 mod agent;
 mod config;
-mod errors;
+mod error;
 mod metrics;
 
 use agent::ZookeeperAgent;
 use config::Config;
+use error::ErrorKind;
 
 
 lazy_static! {
@@ -48,7 +49,7 @@ lazy_static! {
 }
 
 
-const DEFAULT_CONFIG_FILE: &'static str = "agent-zookeeper.yaml";
+const DEFAULT_CONFIG_FILE: &str = "agent-zookeeper.yaml";
 
 
 /// Configure and start the agent.
@@ -70,8 +71,7 @@ pub fn run() -> Result<()> {
     // Load configuration (default file is allowed to be missing).
     Config::override_defaults();
     let config_location = cli_args.value_of("config").unwrap();
-    let config = Config::from_file(config_location)
-        .chain_err(|| "Unable to load user configuration")?;
+    let config = Config::from_file(config_location)?;
 
     // Configure the logger (from the agent context).
     let agent_config = config.agent.clone();
@@ -79,13 +79,13 @@ pub fn run() -> Result<()> {
 
     // Setup and run the tracer.
     let (tracer, mut extra) = tracer(config.agent.tracing.clone(), logger.clone())
-        .chain_err(|| "Unable to configure distributed tracer")?;
-    match extra {
-        TracerExtra::ReporterThread(ref mut reporter) => {
-            reporter.stop_delay(Duration::from_secs(2));
-        },
-        _ => ()
-    };
+        .map_err(|error| {
+            let error = format!("tracer configuration failed: {:?}", error);
+            ErrorKind::Initialisation(error)
+        })?;
+    if let TracerExtra::ReporterThread(ref mut reporter) = extra {
+        reporter.stop_delay(Duration::from_secs(2));
+    }
 
     // Setup the agent context.
     let agent_context = AgentContext::new(agent_config, logger, tracer);
