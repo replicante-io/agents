@@ -1,7 +1,7 @@
 #[macro_use(bson, doc)]
 extern crate bson;
 extern crate clap;
-extern crate error_chain;
+extern crate failure;
 
 #[macro_use]
 extern crate lazy_static;
@@ -21,6 +21,7 @@ extern crate slog;
 
 extern crate replicante_agent;
 extern crate replicante_agent_models;
+extern crate replicante_util_failure;
 extern crate replicante_util_tracing;
 
 use std::path::Path;
@@ -32,18 +33,18 @@ use clap::Arg;
 use replicante_agent::AgentContext;
 use replicante_agent::AgentRunner;
 use replicante_agent::Result;
-use replicante_agent::ResultExt;
 use replicante_agent::VersionedAgent;
 
 use replicante_util_tracing::TracerExtra;
 use replicante_util_tracing::tracer;
 
 mod config;
-mod errors;
+mod error;
 mod metrics;
 mod version;
 
 use config::Config;
+use error::ErrorKind;
 use version::MongoDBFactory;
 
 
@@ -56,7 +57,7 @@ lazy_static! {
 }
 
 
-const DEFAULT_CONFIG_FILE: &'static str = "agent-mongodb.yaml";
+const DEFAULT_CONFIG_FILE: &str = "agent-mongodb.yaml";
 
 
 /// Configure and start the agent.
@@ -84,8 +85,7 @@ pub fn run() -> Result<()> {
     let config = if default_and_missing {
         Config::default()
     } else {
-        Config::from_file(config_location)
-            .chain_err(|| "Unable to load user configuration")?
+        Config::from_file(config_location)?
     };
 
     // Configure the logger (from the agent context).
@@ -94,13 +94,13 @@ pub fn run() -> Result<()> {
 
     // Setup and run the tracer.
     let (tracer, mut extra) = tracer(config.agent.tracing.clone(), logger.clone())
-        .chain_err(|| "Unable to configure distributed tracer")?;
-    match extra {
-        TracerExtra::ReporterThread(ref mut reporter) => {
-            reporter.stop_delay(Duration::from_secs(2));
-        },
-        _ => ()
-    };
+        .map_err(|error| {
+            let error = format!("tracer configuration failed: {:?}", error);
+            ErrorKind::Initialisation(error)
+        })?;
+    if let TracerExtra::ReporterThread(ref mut reporter) = extra {
+        reporter.stop_delay(Duration::from_secs(2));
+    }
 
     // Setup the agent context.
     let agent_context = AgentContext::new(agent_config, logger, tracer);
@@ -108,8 +108,7 @@ pub fn run() -> Result<()> {
     metrics::register_metrics(&agent_context.logger, &agent_context.metrics);
 
     // Setup and run the agent.
-    let factory = MongoDBFactory::new(config, agent_context.clone())
-        .chain_err(|| "Failed to initialise MongoDB agent factory")?;
+    let factory = MongoDBFactory::with_config(config, agent_context.clone())?;
     let agent = VersionedAgent::new(agent_context.clone(), factory);
     let runner = AgentRunner::new(agent, agent_context);
     runner.run();

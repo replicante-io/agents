@@ -28,18 +28,6 @@ impl Error {
     }
 }
 
-impl From<Context<ErrorKind>> for Error {
-    fn from(inner: Context<ErrorKind>) -> Error {
-        Error(inner)
-    }
-}
-
-impl From<ErrorKind> for Error {
-    fn from(kind: ErrorKind) -> Error {
-        Error(Context::new(kind))
-    }
-}
-
 impl Fail for Error {
     fn cause(&self) -> Option<&Fail> {
         self.0.cause()
@@ -56,13 +44,55 @@ impl fmt::Display for Error {
     }
 }
 
+impl From<ErrorKind> for Error {
+    fn from(kind: ErrorKind) -> Error {
+        Error(Context::new(kind))
+    }
+}
+
+// Support conversion from custom ErrorKind to allow agents to define their own kinds that
+// can be converted into base agent error kinds and wrapped in an error.
+// See the MongoDB agent code for an example of this.
+impl<E> From<Context<E>> for Error
+    where E: Into<ErrorKind> + fmt::Display + Sync + Send
+{
+    fn from(context: Context<E>) -> Error {
+        let context = context.map(|e| e.into());
+        Error(context)
+    }
+}
+
 
 /// Exhaustive list of possible errors emitted by this crate.
 #[derive(Debug, Fail)]
 pub enum ErrorKind {
+    #[fail(display = "unable to load configuration")]
+    ConfigLoad,
+
+    #[fail(display = "invalid configuration for option {}", _0)]
+    ConfigOption(&'static str),
+
+    #[fail(display = "connection error to {} with address '{}'", _0, _1)]
+    Connection(&'static str, String),
+
     /// Generic context agents can use if provided contexts are not enough.
     #[fail(display = "{}", _0)]
     FreeForm(String),
+
+    #[fail(display = "agent initialisation error: {}", _0)]
+    Initialisation(String),
+
+    #[fail(display = "invalid datastore state: {}", _0)]
+    InvalidStoreState(String),
+
+    #[fail(display = "I/O error on file {}", _0)]
+    Io(String),
+
+    #[fail(display = "could not decode {} response from store for operation '{}'", _0, _1)]
+    ResponseDecode(&'static str, &'static str),
+
+    #[fail(display = "datastore operation '{}' failed", _0)]
+    StoreOpFailed(&'static str),
 }
 
 

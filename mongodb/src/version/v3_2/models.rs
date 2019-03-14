@@ -3,6 +3,7 @@ use bson::TimeStamp;
 use replicante_agent::Result;
 use replicante_agent_models::ShardRole;
 
+use super::super::super::error::ErrorKind;
 
 /// Section of the buildInfo command that we care about.
 #[derive(Deserialize)]
@@ -25,10 +26,10 @@ impl ReplSetStatus {
     pub fn last_op(&self) -> Result<i64> {
         for member in &self.members {
             if member.is_self {
-                return Ok(member.optime.ts.t as i64);
+                return Ok(i64::from(member.optime.ts.t));
             }
         }
-        Err("Unable to find self in members list".into())
+        Err(ErrorKind::MembersNoSelf.into())
     }
 
     /// Extracts the node's name from the output of replSetGetStatus.
@@ -38,17 +39,17 @@ impl ReplSetStatus {
                 return Ok(member.name.clone());
             }
         }
-        Err("Unable to find self in members list".into())
+        Err(ErrorKind::MembersNoSelf.into())
     }
 
     /// Extracts the optime (in seconds) of the primary.
     pub fn primary_optime(&self) -> Result<i64> {
         for member in &self.members {
             if member.state == 1 {
-                return Ok(member.optime.ts.t as i64);
+                return Ok(i64::from(member.optime.ts.t));
             }
         }
-        Err("Unable to find primary node in members list".into())
+        Err(ErrorKind::MembersNoPrimary.into())
     }
 
     /// Extracts the node's role in the Replica Set.
@@ -64,7 +65,7 @@ impl ReplSetStatus {
             8 => Ok(ShardRole::Unknown(String::from("DOWN"))),
             9 => Ok(ShardRole::Unknown(String::from("ROLLBACK"))),
             10 => Ok(ShardRole::Unknown(String::from("REMOVED"))),
-            _ => Err("Unkown MongoDB node state".into())
+            state => Err(ErrorKind::UnsupportedSateId(state).into())
         }
     }
 }
@@ -97,7 +98,6 @@ mod tests {
     use bson;
     use bson::Bson;
 
-    use replicante_agent::Error;
     use replicante_agent::ErrorKind;
     use replicante_agent_models::ShardRole;
 
@@ -163,10 +163,12 @@ mod tests {
         });
         let rs: ReplSetStatus = bson::from_bson(rs).unwrap();
         match rs.last_op() {
-            Err(Error(ErrorKind::Msg(ref msg), _)) => assert_eq!(
-                "Unable to find self in members list", msg
-            ),
-            Err(error) => panic!("Unexpected error {:?}", error),
+            Err(error) => match error.kind() {
+                &ErrorKind::InvalidStoreState(ref msg) => assert_eq!(
+                    "self not in members list", msg.to_string()
+                ),
+                _ => panic!("Unexpected error {:?}", error),
+            },
             Ok(result) => panic!("Unexpected success {:?}", result),
         };
     }
@@ -195,10 +197,12 @@ mod tests {
         });
         let rs: ReplSetStatus = bson::from_bson(rs).unwrap();
         match rs.node_name() {
-            Err(Error(ErrorKind::Msg(ref msg), _)) => assert_eq!(
-                "Unable to find self in members list", msg
-            ),
-            Err(error) => panic!("Unexpected error {:?}", error),
+            Err(error) => match error.kind() {
+                &ErrorKind::InvalidStoreState(ref msg) => assert_eq!(
+                    "self not in members list", msg.to_string()
+                ),
+                _ => panic!("Unexpected error {:?}", error),
+            },
             Ok(result) => panic!("Unexpected success {:?}", result),
         };
     }
@@ -227,10 +231,12 @@ mod tests {
         });
         let rs: ReplSetStatus = bson::from_bson(rs).unwrap();
         match rs.primary_optime() {
-            Err(Error(ErrorKind::Msg(ref msg), _)) => assert_eq!(
-                "Unable to find primary node in members list", msg
-            ),
-            Err(error) => panic!("Unexpected error {:?}", error),
+            Err(error) => match error.kind() {
+                &ErrorKind::InvalidStoreState(ref msg) => assert_eq!(
+                    "primary node not in members list", msg.to_string()
+                ),
+                _ => panic!("Unexpected error {:?}", error),
+            },
             Ok(result) => panic!("Unexpected success {:?}", result),
         };
     }
@@ -256,10 +262,12 @@ mod tests {
         });
         let rs: ReplSetStatus = bson::from_bson(rs).unwrap();
         match rs.role() {
-            Err(Error(ErrorKind::Msg(ref msg), _)) => assert_eq!(
-                "Unkown MongoDB node state", msg
-            ),
-            Err(error) => panic!("Unexpected error {:?}", error),
+            Err(error) => match error.kind() {
+                &ErrorKind::InvalidStoreState(ref msg) => assert_eq!(
+                    "unsupported node state 22", msg.to_string()
+                ),
+                _ => panic!("Unexpected error {:?}", error),
+            },
             Ok(result) => panic!("Unexpected success {:?}", result),
         };
     }

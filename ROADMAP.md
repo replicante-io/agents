@@ -1,3 +1,3 @@
-## 0.2.1 - Internal refactor
+## 0.3.0 - Internal refactor
 - Replace `error-chain` with `failure`.
 - Update logging.

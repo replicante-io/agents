@@ -1,7 +1,6 @@
 use std::sync::Arc;
 
-use error_chain::ChainedError;
-
+use failure::ResultExt;
 use mongodb::Client;
 use mongodb::ClientOptions;
 use mongodb::ThreadedClient;
@@ -17,12 +16,12 @@ use replicante_agent::AgentContext;
 use replicante_agent::AgentFactory;
 use replicante_agent::Error;
 use replicante_agent::Result;
-use replicante_agent::ResultExt;
 use replicante_agent_models::DatastoreInfo;
+use replicante_util_failure::failure_info;
 
 use super::config::Config;
 use super::config::Sharding;
-use super::errors;
+use super::error::ErrorKind;
 
 use super::metrics::MONGODB_OPS_COUNT;
 use super::metrics::MONGODB_OPS_DURATION;
@@ -34,8 +33,8 @@ mod v3_0;
 mod v3_2;
 
 
-const MONGODB_MODE_RS: &'static str = "replica-set";
-const MONGODB_MODE_SHARDED: &'static str = "sharded-cluster";
+const MONGODB_MODE_RS: &str = "replica-set";
+const MONGODB_MODE_SHARDED: &str = "sharded-cluster";
 
 
 /// An `AgentFactory` that returns a MongoDB 3.2+ Replica Set compatible agent.
@@ -47,18 +46,18 @@ pub struct MongoDBFactory {
 }
 
 impl MongoDBFactory {
-    pub fn new(config: Config, context: AgentContext) -> Result<MongoDBFactory> {
+    pub fn with_config(config: Config, context: AgentContext) -> Result<MongoDBFactory> {
         let mut options = ClientOptions::default();
         options.server_selection_timeout_ms = config.mongo.timeout;
 
         // Create a MongoDB client out of a URI but explicitly setting the topology
         // to single server to ensure the requested node is used.
         let uri = ::mongodb::connstring::parse(&config.mongo.uri)
-            .chain_err(|| "Failed to parse mongo URI string")?;
+            .with_context(|_| ErrorKind::ConfigOption("mongo.uri"))?;
         let mut description = TopologyDescription::new(options.stream_connector.clone());
         description.topology_type = TopologyType::Single;
         let client = Client::with_config(uri, Some(options), Some(description))
-            .map_err(errors::to_agent)?;
+            .with_context(|_| ErrorKind::Connection("mongodb", config.mongo.uri.clone()))?;
         debug!(
             context.logger, "MongoDB client created";
             "uri" => &config.mongo.uri, "timeout" => &config.mongo.timeout
@@ -97,8 +96,8 @@ impl MongoDBFactory {
         let timer = MONGODB_OPS_DURATION.with_label_values(&["version"]).start_timer();
         let version = self.client.db("test").version().map_err(|error| {
             MONGODB_OP_ERRORS_COUNT.with_label_values(&["version"]).inc();
-            errors::to_agent(error)
-        }).chain_err(|| Error::from("Failed to detect version"))?;
+            error
+        }).with_context(|_| ErrorKind::StoreOpFailed("version"))?;
         timer.observe_duration();
         Ok(version)
     }
@@ -110,10 +109,9 @@ impl MongoDBFactory {
         match version {
             Err(error) => {
                 let (agent, agent_version, mode) = self.default_agent();
-                let error = error.display_chain().to_string();
                 warn!(
                     self.context.logger, "Could not detect MongoDB version, using default agent";
-                    "agent_version" => agent_version, "error" => error, "mode" => mode
+                    "agent_version" => agent_version, "mode" => mode, failure_info(&error)
                 );
                 ActiveAgent::new(agent, "unknown")
             },
@@ -198,6 +196,7 @@ mod tests {
     use replicante_agent_models::DatastoreInfo;
 
     use super::Config;
+    use super::ErrorKind;
     use super::MongoDBFactory;
 
 
@@ -205,9 +204,10 @@ mod tests {
     fn make_from_error() {
         let (context, extra) = AgentContext::mock();
         let config = Config::default();
-        let factory = MongoDBFactory::new(config, context).unwrap();
-        let active = factory.make_agent(Err("test on error".into()));
-        let remake_on_error = factory.should_remake_on_error(&active, &("test".into()));
+        let factory = MongoDBFactory::with_config(config, context).unwrap();
+        let active = factory.make_agent(Err(ErrorKind::MembersNoPrimary.into()));
+        let error = ErrorKind::MembersNoPrimary.into();
+        let remake_on_error = factory.should_remake_on_error(&active, &error);
         // Drop tracer before assertions to that panics don't lead to thread errors.
         drop(factory);
         drop(extra);
@@ -220,9 +220,10 @@ mod tests {
         let (context, extra) = AgentContext::mock();
         let config = Config::default();
         let version = Version::parse("3.3.0").unwrap();
-        let factory = MongoDBFactory::new(config, context).unwrap();
+        let factory = MongoDBFactory::with_config(config, context).unwrap();
         let active = factory.make_agent(Ok(version));
-        let remake_on_error = factory.should_remake_on_error(&active, &("test".into()));
+        let error = ErrorKind::MembersNoPrimary.into();
+        let remake_on_error = factory.should_remake_on_error(&active, &error);
         // Drop tracer before assertions to that panics don't lead to thread errors.
         drop(factory);
         drop(extra);
@@ -235,9 +236,10 @@ mod tests {
         let (context, extra) = AgentContext::mock();
         let config = Config::default();
         let version = Version::parse("3.2.0").unwrap();
-        let factory = MongoDBFactory::new(config, context).unwrap();
+        let factory = MongoDBFactory::with_config(config, context).unwrap();
         let active = factory.make_agent(Ok(version));
-        let remake_on_error = factory.should_remake_on_error(&active, &("test".into()));
+        let error = ErrorKind::MembersNoPrimary.into();
+        let remake_on_error = factory.should_remake_on_error(&active, &error);
         // Drop tracer before assertions to that panics don't lead to thread errors.
         drop(factory);
         drop(extra);
@@ -250,8 +252,8 @@ mod tests {
         let (context, extra) = AgentContext::mock();
         let config = Config::default();
         let info = DatastoreInfo::new("test", "MongoDB", "name", "unknown");
-        let factory = MongoDBFactory::new(config, context).unwrap();
-        let active = factory.make_agent(Err("test".into()));
+        let factory = MongoDBFactory::with_config(config, context).unwrap();
+        let active = factory.make_agent(Err(ErrorKind::MembersNoPrimary.into()));
         let remake = factory.should_remake(&active, &info);
         // Drop tracer before assertions to that panics don't lead to thread errors.
         drop(factory);
@@ -265,7 +267,7 @@ mod tests {
         let config = Config::default();
         let info = DatastoreInfo::new("test", "MongoDB", "name", "3.6.0");
         let version = Version::parse("3.3.0").unwrap();
-        let factory = MongoDBFactory::new(config, context).unwrap();
+        let factory = MongoDBFactory::with_config(config, context).unwrap();
         let active = factory.make_agent(Ok(version));
         let remake = factory.should_remake(&active, &info);
         // Drop tracer before assertions to that panics don't lead to thread errors.
@@ -280,7 +282,7 @@ mod tests {
         let config = Config::default();
         let info = DatastoreInfo::new("test", "MongoDB", "name", "3.3.0");
         let version = Version::parse("3.3.0").unwrap();
-        let factory = MongoDBFactory::new(config, context).unwrap();
+        let factory = MongoDBFactory::with_config(config, context).unwrap();
         let active = factory.make_agent(Ok(version));
         let remake = factory.should_remake(&active, &info);
         // Drop tracer before assertions to that panics don't lead to thread errors.

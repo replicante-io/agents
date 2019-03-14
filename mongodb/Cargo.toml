@@ -1,6 +1,6 @@
 [package]
 name = "replicante_agent_mongodb"
-version = "0.2.0"
+version = "0.3.0"
 authors = ["Stefano Pogliani <stefano@spogliani.net>"]
 build = "../base/build.rs"
 
@@ -21,7 +21,7 @@ path = "src/main.rs"
 [dependencies]
 bson = "^0.13.0"  # Limited by MongoDB crate.
 clap = "^2.32.0"
-error-chain = "^0.12.0"
+failure = "^0.1.5"
 lazy_static = "^1.0.1"
 mongodb = "^0.3.12"
 prometheus = "^0.5.0"
@@ -35,6 +35,7 @@ opentracingrust = "^0.3.1"
 
 replicante_agent = { path = "../base" }
 replicante_agent_models = { path = "../common/agent/models" }
+replicante_util_failure = { path = "../common/util/failure" }
 replicante_util_tracing = { path = "../common/util/tracing" }
 
 

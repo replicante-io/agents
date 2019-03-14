@@ -1,5 +1,6 @@
 use bson;
 use bson::Bson;
+use failure::ResultExt;
 
 use mongodb::Client;
 use mongodb::CommandType;
@@ -11,18 +12,16 @@ use opentracingrust::Span;
 use opentracingrust::utils::FailSpan;
 
 use replicante_agent::AgentContext;
-use replicante_agent::Error;
 use replicante_agent::Result;
-use replicante_agent::ResultExt;
 
 use replicante_agent_models::AgentInfo;
 use replicante_agent_models::CommitOffset;
 use replicante_agent_models::Shard;
 use replicante_agent_models::Shards;
 use replicante_agent_models::ShardRole;
+use replicante_util_failure::failure_info;
 
-use super::super::super::errors;
-
+use super::super::super::error::ErrorKind;
 use super::super::super::metrics::MONGODB_OPS_COUNT;
 use super::super::super::metrics::MONGODB_OPS_DURATION;
 use super::super::super::metrics::MONGODB_OP_ERRORS_COUNT;
@@ -66,13 +65,12 @@ impl CommonLogic {
             None
         ).fail_span(&mut span).map_err(|error| {
             MONGODB_OP_ERRORS_COUNT.with_label_values(&["buildInfo"]).inc();
-            errors::to_agent(error)
-        }).chain_err(|| Error::from("BuildInfo command failed"))?;
+            error
+        }).with_context(|_| ErrorKind::StoreOpFailed("buildInfo"))?;
         timer.observe_duration();
         span.log(Log::new().log("span.kind", "client-receive"));
         let info = bson::from_bson(Bson::Document(info))
-            .map_err(errors::to_agent)
-            .chain_err(|| Error::from("Unable to parse buildInfo response"))?;
+            .with_context(|_| ErrorKind::BsonDecode("buildInfo"))?;
         Ok(info)
     }
 
@@ -89,13 +87,12 @@ impl CommonLogic {
             None
         ).fail_span(&mut span).map_err(|error| {
             MONGODB_OP_ERRORS_COUNT.with_label_values(&["replSetGetStatus"]).inc();
-            errors::to_agent(error)
-        }).chain_err(|| Error::from("ReplSetGetStatus command failed"))?;
+            error
+        }).with_context(|_| ErrorKind::StoreOpFailed("replSetGetStatus"))?;
         timer.observe_duration();
         span.log(Log::new().log("span.kind", "client-receive"));
         let status = bson::from_bson(Bson::Document(status))
-            .map_err(errors::to_agent)
-            .chain_err(|| Error::from("Unable to parse replSetGetStatus response"))?;
+            .with_context(|_| ErrorKind::BsonDecode("replSetGetStatus"))?;
         Ok(status)
     }
 
@@ -109,7 +106,7 @@ impl CommonLogic {
             _ => match status.primary_optime() {
                 Ok(head) => Some(CommitOffset::seconds(head - last_op)),
                 Err(error) => {
-                    error!(self.context.logger, "Failed to compute lag"; "error" => ?error);
+                    error!(self.context.logger, "Failed to compute lag"; failure_info(&error));
                     span.tag("lag.error", format!("Failed lag computation: {:?}", error));
                     None
                 }
