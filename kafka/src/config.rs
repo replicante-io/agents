@@ -2,11 +2,14 @@ use std::fs::File;
 use std::io::Read;
 use std::path::Path;
 
+use failure::ResultExt;
 use serde_yaml;
 
 use replicante_agent::Result;
 use replicante_agent::config::Agent;
 use replicante_agent::config::APIConfig;
+
+use super::error::ErrorKind;
 
 
 /// Kafka Agent configuration
@@ -26,7 +29,8 @@ impl Config {
     ///
     /// [`std::fs::File`]: https://doc.rust-lang.org/std/fs/struct.File.html
     pub fn from_file<P: AsRef<Path>>(path: P) -> Result<Config> {
-        let config = File::open(path)?;
+        let path_for_error = path.as_ref().to_str().unwrap_or("<utf8 error>").to_string();
+        let config = File::open(path).with_context(|_| ErrorKind::Io(path_for_error))?;
         Config::from_reader(config)
     }
 
@@ -34,7 +38,7 @@ impl Config {
     ///
     /// [`std::io::Read`]: https://doc.rust-lang.org/std/io/trait.Read.html
     pub fn from_reader<R: Read>(reader: R) -> Result<Config> {
-        let conf = serde_yaml::from_reader(reader)?;
+        let conf = serde_yaml::from_reader(reader).with_context(|_| ErrorKind::ConfigLoad)?;
         Ok(conf)
     }
 }

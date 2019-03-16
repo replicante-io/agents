@@ -5,29 +5,29 @@ use std::sync::atomic::AtomicBool;
 use std::sync::atomic::Ordering;
 use std::time::Duration;
 
+use failure::ResultExt;
 use serde_json;
 use slog::Logger;
 
 use opentracingrust::Log;
 use opentracingrust::Span;
-use opentracingrust::utils::FailSpan;
 
 use zookeeper::ZkState;
 use zookeeper::ZooKeeper;
 
 use replicante_agent::AgentContext;
-use replicante_agent::Error;
 use replicante_agent::Result;
+use replicante_agent::fail_span;
 
-use super::super::errors::to_agent;
+use super::super::error::ErrorKind;
 use super::super::metrics::OPS_COUNT;
 use super::super::metrics::OPS_DURATION;
 use super::super::metrics::OP_ERRORS_COUNT;
 use super::super::metrics::RECONNECT_COUNT;
 
 
-const CLUSTER_ID_PATH: &'static str = "/cluster/id";
-const TOPICS_PATH: &'static str = "/brokers/topics";
+const CLUSTER_ID_PATH: &str = "/cluster/id";
+const TOPICS_PATH: &str = "/brokers/topics";
 
 
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
@@ -49,9 +49,9 @@ pub struct KafkaZoo {
 }
 
 impl KafkaZoo {
-    pub fn new(context: AgentContext, target: String, timeout: u64) -> Result<KafkaZoo> {
+    pub fn connect(context: AgentContext, target: String, timeout: u64) -> Result<KafkaZoo> {
         let timeout = Duration::from_secs(timeout);
-        let session = ZookeeperSession::new(&target, timeout.clone(), context.logger.clone())?;
+        let session = ZookeeperSession::connect(&target, timeout, context.logger.clone())?;
         Ok(KafkaZoo {
             context,
             session: Mutex::new(session),
@@ -66,18 +66,19 @@ impl KafkaZoo {
         span.child_of(parent.context().clone());
         span.tag("service", "zookeeper");
         span.log(Log::new().log("span.kind", "client-send"));
-        let keeper = self.keeper(&mut span).fail_span(&mut span)?;
+        let keeper = self.keeper(&mut span).map_err(|error| fail_span(error, &mut span))?;
         OPS_COUNT.with_label_values(&["zookeeper", "getData"]).inc();
         let timer = OPS_DURATION.with_label_values(&["zookeeper", "getData"]).start_timer();
         let (id, _) = keeper.get_data(CLUSTER_ID_PATH, false)
-            .fail_span(&mut span)
             .map_err(|error| {
                 OP_ERRORS_COUNT.with_label_values(&["zookeeper", "getData"]).inc();
-                to_agent(error)
-            })?;
+                fail_span(error, &mut span)
+            })
+            .with_context(|_| ErrorKind::StoreOpFailed("<zookeeper>.cluster_id"))?;
         timer.observe_duration();
         span.log(Log::new().log("span.kind", "client-receive"));
-        let id: ClusterId = serde_json::from_slice(&id).map_err(to_agent)?;
+        let id: ClusterId = serde_json::from_slice(&id)
+            .with_context(|_| ErrorKind::JsonDecode("<zookeeper>.cluster_id"))?;
         Ok(id.id)
     }
 
@@ -90,29 +91,31 @@ impl KafkaZoo {
         span.tag("service", "zookeeper");
         span.log(Log::new().log("span.kind", "client-send"));
         let path = format!("{}/{}", TOPICS_PATH, topic);
-        let keeper = self.keeper(&mut span).fail_span(&mut span)?;
+        let keeper = self.keeper(&mut span).map_err(|error| fail_span(error, &mut span))?;
         OPS_COUNT.with_label_values(&["zookeeper", "getData"]).inc();
         let timer = OPS_DURATION.with_label_values(&["zookeeper", "getData"]).start_timer();
         let (meta, _) = keeper.get_data(&path, false)
-            .fail_span(&mut span)
             .map_err(|error| {
                 OP_ERRORS_COUNT.with_label_values(&["zookeeper", "getData"]).inc();
-                to_agent(error)
-            })?;
+                fail_span(error, &mut span)
+            })
+            .with_context(|_| ErrorKind::StoreOpFailed("<zookeeper>.partitions"))?;
         timer.observe_duration();
         span.log(Log::new().log("span.kind", "client-receive"));
         let mut partitions = Vec::new();
-        let meta: PartitionsMap = serde_json::from_slice(&meta).map_err(to_agent)?;
+        let meta: PartitionsMap = serde_json::from_slice(&meta)
+            .with_context(|_| ErrorKind::JsonDecode("<zookeeper>.partitions"))?;
         for (partition, brokers) in meta.partitions {
             if !brokers.contains(&broker) {
                 continue;
             }
-            let leader = brokers.first().ok_or_else(
-                || Error::from(format!("Partition {} has no brokers", partition))
-            )?.clone();
+            let leader = *(brokers.first()
+                .ok_or_else(|| ErrorKind::PartitionNoBrokers(partition.clone()))?);
+            let partition = partition.parse::<i32>()
+                .with_context(|_| ErrorKind::JsonDecode("<zookeeper>.partitions"))?;
             partitions.push(PartitionMeta {
                 leader,
-                partition: partition.parse().map_err(to_agent)?,
+                partition,
                 replicas: brokers,
             });
         }
@@ -125,15 +128,15 @@ impl KafkaZoo {
         span.child_of(parent.context().clone());
         span.tag("service", "zookeeper");
         span.log(Log::new().log("span.kind", "client-send"));
-        let keeper = self.keeper(&mut span).fail_span(&mut span)?;
+        let keeper = self.keeper(&mut span).map_err(|error| fail_span(error, &mut span))?;
         OPS_COUNT.with_label_values(&["zookeeper", "getChildren"]).inc();
         let timer = OPS_DURATION.with_label_values(&["zookeeper", "getChildren"]).start_timer();
         let topics = keeper.get_children(TOPICS_PATH, false)
-            .fail_span(&mut span)
             .map_err(|error| {
                 OP_ERRORS_COUNT.with_label_values(&["zookeeper", "getData"]).inc();
-                to_agent(error)
-            })?;
+                fail_span(error, &mut span)
+            })
+            .with_context(|_| ErrorKind::StoreOpFailed("<zookeeper>.topics"))?;
         timer.observe_duration();
         span.log(Log::new().log("span.kind", "client-receive"));
         Ok(topics)
@@ -148,8 +151,8 @@ impl KafkaZoo {
             debug!(self.context.logger, "Creating new zookeeper session");
             span.log(Log::new().log("action", "zookeeper.connect"));
             RECONNECT_COUNT.with_label_values(&["zookeeper"]).inc();
-            let new_session = ZookeeperSession::new(
-                &self.target, self.timeout.clone(), self.context.logger.clone()
+            let new_session = ZookeeperSession::connect(
+                &self.target, self.timeout, self.context.logger.clone()
             )?;
             *session = new_session;
             info!(self.context.logger, "New zookeeper session ready");
@@ -190,9 +193,11 @@ struct ZookeeperSession {
 
 impl ZookeeperSession {
     /// Create a new zookeeper session.
-    pub fn new(connection: &str, timeout: Duration, logger: Logger) -> Result<ZookeeperSession> {
+    pub fn connect(
+        connection: &str, timeout: Duration, logger: Logger
+    ) -> Result<ZookeeperSession> {
         let client = ZooKeeper::connect(connection, timeout, |_| {})
-            .map_err(to_agent)?;
+            .with_context(|_| ErrorKind::ZookeeperConnection(connection.to_string()))?;
         let active = Arc::new(AtomicBool::new(true));
         let notify_close = Arc::clone(&active);
         client.add_listener(move |state| {

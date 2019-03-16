@@ -9,7 +9,7 @@ kafka:
   target:
     # Kafka broker configuration.
     broker:
-      # Addresses "host:port" of the kafka broker.
+      # Address "host:port" of the kafka broker.
       uri: 'localhost:9092'
 
       # Network timeout for requests to Kafka.

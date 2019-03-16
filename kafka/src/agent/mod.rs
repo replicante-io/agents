@@ -2,13 +2,14 @@ use std::collections::HashMap;
 use std::sync::Mutex;
 use std::time::Duration;
 
+use failure::ResultExt;
+use failure::SyncFailure;
 use kafka::client::FetchOffset;
 use kafka::client::KafkaClient;
 use opentracingrust::Span;
 
 use replicante_agent::Agent;
 use replicante_agent::AgentContext;
-use replicante_agent::Error;
 use replicante_agent::Result;
 
 use replicante_agent_models::AgentInfo;
@@ -20,7 +21,7 @@ use replicante_agent_models::ShardRole;
 use replicante_agent_models::Shards;
 
 use super::Config;
-use super::errors::to_agent;
+use super::error::ErrorKind;
 use super::metrics::OPS_COUNT;
 use super::metrics::OPS_DURATION;
 use super::metrics::OP_ERRORS_COUNT;
@@ -48,14 +49,16 @@ pub struct KafkaAgent {
 }
 
 impl KafkaAgent {
-    pub fn new(config: Config, context: AgentContext) -> Result<KafkaAgent> {
-        let jmx = KafkaJmx::new(context.clone(), config.kafka.target.jmx)?;
+    pub fn with_config(config: Config, context: AgentContext) -> Result<KafkaAgent> {
+        let jmx = KafkaJmx::with_context(context.clone(), config.kafka.target.jmx)?;
         let kafka_timeout = Duration::from_secs(config.kafka.target.broker.timeout);
         let mut kafka = KafkaClient::new(vec![config.kafka.target.broker.uri]);
         kafka.set_client_id("replicante-kafka-agent".into());
-        kafka.set_fetch_max_wait_time(kafka_timeout.clone()).map_err(to_agent)?;
+        kafka.set_fetch_max_wait_time(kafka_timeout)
+            .map_err(SyncFailure::new)
+            .with_context(|_| ErrorKind::ConfigOption("kafka.target.broker.timeout"))?;
         kafka.set_connection_idle_timeout(kafka_timeout);
-        let zoo = KafkaZoo::new(
+        let zoo = KafkaZoo::connect(
             context,
             config.kafka.target.zookeeper.uri, config.kafka.target.zookeeper.timeout
         )?;
@@ -105,11 +108,14 @@ impl KafkaAgent {
         let timer = OPS_DURATION.with_label_values(&["kafka", "loadMetadata"]).start_timer();
         client.load_metadata(&[topic]).map_err(|error| {
             OP_ERRORS_COUNT.with_label_values(&["kafka", "loadMetadata"]).inc();
-            to_agent(error)
-        })?;
+            SyncFailure::new(error)
+        }).with_context(|_| ErrorKind::StoreOpFailed("loadMetadata"))?;
         timer.observe_duration();
-        let offsets = client.fetch_offsets(&[topic], FetchOffset::Latest).map_err(to_agent)?;
-        let offsets = offsets.get(topic).ok_or_else(|| Error::from("Unable to find offsets"))?;
+        let offsets = client.fetch_offsets(&[topic], FetchOffset::Latest)
+            .map_err(SyncFailure::new)
+            .with_context(|_| ErrorKind::StoreOpFailed("fetch_offsets"))?;
+        let offsets = offsets.get(topic)
+            .ok_or_else(|| ErrorKind::TopicNoOffsets(topic.to_string()))?;
         Ok(offsets.iter().map(|item| (item.partition, item.offset)).collect())
     }
 }
@@ -129,7 +135,8 @@ impl Agent for KafkaAgent {
 
     fn shards(&self, span: &mut Span) -> Result<Shards> {
         let name = self.jmx.broker_name(span)?;
-        let broker_id: i32 = name.parse().map_err(to_agent)?;
+        let broker_id: i32 = name.parse::<i32>()
+            .with_context(|_| ErrorKind::BrokerIdFormat(name))?;
         let mut shards = Vec::new();
         for topic in self.zoo.topics(span)? {
             self.push_shard(&mut shards, broker_id, &topic, span)?;
