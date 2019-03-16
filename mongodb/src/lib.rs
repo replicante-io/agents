@@ -29,6 +29,7 @@ use std::time::Duration;
 
 use clap::App;
 use clap::Arg;
+use failure::ResultExt;
 
 use replicante_agent::AgentContext;
 use replicante_agent::AgentRunner;
@@ -94,10 +95,7 @@ pub fn run() -> Result<()> {
 
     // Setup and run the tracer.
     let (tracer, mut extra) = tracer(config.agent.tracing.clone(), logger.clone())
-        .map_err(|error| {
-            let error = format!("tracer configuration failed: {:?}", error);
-            ErrorKind::Initialisation(error)
-        })?;
+        .with_context(|_| ErrorKind::Initialisation("tracer configuration failed".into()))?;
     if let TracerExtra::ReporterThread(ref mut reporter) = extra {
         reporter.stop_delay(Duration::from_secs(2));
     }
