@@ -10,10 +10,19 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update \
 
 # Add and compile the code.
 COPY . /code
-RUN export JAVA_HOME="/usr/lib/jvm/java-8-openjdk-amd64" \
-    && export LD_LIBRARY_PATH="${JAVA_HOME}/jre/lib/amd64/server:$LD_LIBRARY_PATH" \
-    && cd /code/kafka \
-    && cargo build --release --locked
+RUN cd /code/kafka \
+    && cargo build --release --locked \
+    # See NOTE below.
+    && cp -r target/release/deps target/release/deps-slim \
+    && cd target/release/deps-slim \
+    && ls -1 . | grep -v j4rs | xargs -l rm
+
+# NOTE:
+#   The j4rs runtime needs some of the files in deps but not all.
+#   The needed files have dyanmically generated names which we cannot easily
+#   predict for a directed COPY command in upper layers.
+#   Create a copy of the deps directory that only includes the needed files
+#   so that we can COPY that over to upper layers and reduce image size.
 
 
 #######################################
@@ -36,9 +45,9 @@ RUN chmod +x /tini
 ENTRYPOINT ["/tini", "--"]
 
 # Copy binaries from builder to smaller image.
+COPY --from=builder /code/kafka/target/release/deps-slim /opt/replicante/bin/deps
+COPY --from=builder /code/kafka/target/release/jassets /opt/replicante/bin/jassets
 COPY --from=builder /code/kafka/target/release/replicante-agent-kafka /opt/replicante/bin/replicante-agent-kafka
-COPY --from=builder /code/kafka/target/release/deps /opt/replicante/bin/deps
-COPY --from=builder /code/kafka/target/release/jassets/j4rs-0.1.5-jar-with-dependencies.jar /opt/replicante/bin/jassets/j4rs-0.1.5-jar-with-dependencies.jar
 
 # Set up runtime environment as needed.
 #  Add libjvm for the kafka agent.
