@@ -13,7 +13,13 @@ sidebar_label: Kafka
 | 0.1.0+        | 1.0+          |
 
 
-## Installation from code
+## Install
+
+### From pre-built binaries
+See the [installation section](intro-install.md#from-pre-built-binaries) for this install method.
+
+
+### From code
 The Kafka agent uses an embedded JVM instance to access remote JMX data.
 This means compiling the Kafka agent has extra requirements as compared to other agents.
 
@@ -56,6 +62,11 @@ FLAGS:
 OPTIONS:
     -c, --config <FILE>    Specifies the configuration file to use [default: agent-kafka.yaml]
 ```
+
+
+### With Docker
+See the [installation section](intro-install.md#from-docker) for this install method.
+
 
 ## Configuration
 ```yaml

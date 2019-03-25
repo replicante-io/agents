@@ -10,6 +10,45 @@ This is currently the only officially supported method.
 
 ## 1. Install
 
+### From pre-built binaries
+Pre-built binaries are helpful for users to get up and running quickly.
+Unfortunately they require a good deal of effort from the community to be available for all
+popular distributions that people my want to use.
+The Replicante Community cannot afford to provide pre-built binaries for all popular
+Linux distributions at this stage but we do want to provide something to make things
+easier on people.
+
+Pre-built binaries are available but they may not work for your system, in which case
+we suggest you use an alternative install method.
+
+```bash
+# Grab the binaries for the version of your choice from GitHub:
+VERSION=vX.Y.Z
+wget https://github.com/replicante-io/agents/releases/download/$VERSION/checksum.txt
+wget https://github.com/replicante-io/agents/releases/download/$VERSION/replicante-agent-kafka.tar.gz-linux-64bits
+wget https://github.com/replicante-io/agents/releases/download/$VERSION/replicante-agent-mongodb-linux-64bits
+wget https://github.com/replicante-io/agents/releases/download/$VERSION/replicante-agent-zookeeper-linux-64bits
+
+# Verify the integrity of the binaries:
+sha256sum --check checksum.txt
+
+# Unpack the kafka agent:
+mkdir -p kafka
+pushd kafka
+tar --extract --file ../replicante-agent-kafka.tar.gz-linux-64bits
+popd
+
+# Verify the binaries work:
+mv replicante-agent-mongodb-linux-64bits replicante-agent-mongodb
+mv replicante-agent-zookeeper-linux-64bits replicante-agent-zookeeper
+chmod +x replicante-agent-mongodb replicante-agent-zookeeper
+./replicante-agent-mongodb --version
+./replicante-agent-zookeeper --version
+# NOTE: the kafka agent needs access to JVM libraries.
+kafka/replicante-agent-kafka --version
+```
+
+
 ### From code
 The following instructions where executed on a clean Fedora 28 install
 but should work for any Linux system:
