@@ -27,5 +27,6 @@ otherwise internal, crates need to be publised as well:
 
 - [ ] replicante_agent_models
 - [ ] replicante_logging
+- [ ] replicante_util_failure
 - [ ] replicante_util_iron
 - [ ] replicante_util_tracing

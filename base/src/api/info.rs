@@ -138,7 +138,7 @@ mod tests {
             if let Some(result) = result.err() {
                 let body = response::extract_body_to_bytes(result.response);
                 let body = String::from_utf8(body).unwrap();
-                assert_eq!(body, r#"{"cause":null,"error":"Testing failure","layers":1,"trace":null}"#);
+                assert_eq!(body, r#"{"error":"Testing failure","layers":["Testing failure"],"trace":null}"#);
             }
         }
 
@@ -192,7 +192,7 @@ mod tests {
             if let Some(result) = result.err() {
                 let body = response::extract_body_to_bytes(result.response);
                 let body = String::from_utf8(body).unwrap();
-                assert_eq!(body, r#"{"cause":null,"error":"Testing failure","layers":1,"trace":null}"#);
+                assert_eq!(body, r#"{"error":"Testing failure","layers":["Testing failure"],"trace":null}"#);
             }
         }
 

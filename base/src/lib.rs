@@ -29,6 +29,7 @@ extern crate serde_yaml;
 
 extern crate replicante_agent_models;
 extern crate replicante_logging;
+extern crate replicante_util_failure;
 extern crate replicante_util_iron;
 extern crate replicante_util_tracing;
 

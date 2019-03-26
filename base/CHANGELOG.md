@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [Unreleased]
 ### Changed
 - **BREAKING**: Replace `error-chain` with `failure`.
+- Standardise API error response.
 
 ## [0.2.0] - 2019-02-20
 ### Added
