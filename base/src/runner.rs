@@ -15,6 +15,7 @@ use prometheus::process_collector::ProcessCollector;
 #[cfg(debug_assertions)]
 use slog::Discard;
 use slog::Logger;
+use slog_scope::GlobalLoggerGuard;
 
 use replicante_util_iron::MetricsHandler;
 use replicante_util_iron::MetricsMiddleware;
@@ -75,9 +76,12 @@ impl AgentContext {
     }
 
     /// Configure and instantiate the logger.
-    pub fn logger(config: &AgentConfig) -> Logger {
+    pub fn logger(config: &AgentConfig) -> (Logger, GlobalLoggerGuard) {
         let logger_opts = ::replicante_logging::Opts::new(env!("GIT_BUILD_HASH").into());
-        ::replicante_logging::configure(config.logging.clone(), &logger_opts)
+        let logger = ::replicante_logging::configure(config.logging.clone(), &logger_opts);
+        let scope_guard = slog_scope::set_global_logger(logger.clone());
+        slog_stdlog::init().expect("Failed to initialise log -> slog integration");
+        (logger, scope_guard)
     }
 
     #[cfg(debug_assertions)]

@@ -41,6 +41,16 @@ impl Config {
         let conf = serde_yaml::from_reader(reader).with_context(|_| ErrorKind::ConfigLoad)?;
         Ok(conf)
     }
+
+    /// Apply transformations to the configuration to derive some parameters.
+    ///
+    /// Transvormation:
+    ///
+    ///   * Apply verbose debug level logic.
+    pub fn transform(mut self) -> Self {
+        self.agent = self.agent.transform();
+        self
+    }
 }
 
 impl Config {

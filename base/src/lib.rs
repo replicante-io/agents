@@ -35,6 +35,8 @@ extern crate replicante_util_tracing;
 
 #[macro_use]
 extern crate slog;
+extern crate slog_scope;
+extern crate slog_stdlog;
 
 
 mod api;

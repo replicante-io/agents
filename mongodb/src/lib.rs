@@ -88,10 +88,11 @@ pub fn run() -> Result<()> {
     } else {
         Config::from_file(config_location)?
     };
+    let config = config.transform();
 
     // Configure the logger (from the agent context).
     let agent_config = config.agent.clone();
-    let logger = AgentContext::logger(&agent_config);
+    let (logger, _scope_guard) = AgentContext::logger(&agent_config);
 
     // Setup and run the tracer.
     let (tracer, mut extra) = tracer(config.agent.tracing.clone(), logger.clone())

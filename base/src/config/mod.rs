@@ -1,4 +1,5 @@
 use replicante_logging::Config as LoggingConfig;
+use replicante_logging::LoggingLevel;
 use replicante_util_tracing::Config as TracerConfig;
 
 
@@ -36,6 +37,21 @@ impl Default for Agent {
             logging: LoggingConfig::default(),
             tracing: TracerConfig::default(),
         }
+    }
+}
+
+impl Agent {
+    /// Apply transformations to the configuration to derive some parameters.
+    ///
+    /// Transvormation:
+    ///
+    ///   * Apply verbose debug level logic.
+    pub fn transform(mut self) -> Self {
+        if self.logging.level == LoggingLevel::Debug && !self.logging.verbose {
+            self.logging.level = LoggingLevel::Info;
+            self.logging.modules.entry("replicante".into()).or_insert(LoggingLevel::Debug);
+        }
+        self
     }
 }
 
