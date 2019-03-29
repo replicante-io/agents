@@ -2,21 +2,28 @@ Releasing agents
 ================
 Agents release steps:
 
-- [ ] Ensure dependences are up to date
+- [ ] Ensure dependences are up to date:
   - [ ] For the main workspace
   - [ ] For the Kafka workspace
 - [ ] Ensure tests and CI checks pass
+- [ ] Release `common` crates:
+  - [ ] Bump version numbers as needed
+  - [ ] Commit changes if needed
+  - [ ] Release in reverse order below
+  - [ ] Update subrepo and versions in agents
 - [ ] Bump the version number of all crates that need it
-- [ ] Update changelogs with version and date
+- [ ] Update cargo lock file
+- [ ] Update changelog with version and date
 - [ ] Version documents
-- [ ] Ensure docker image builds correctly
+- [ ] Ensure docker image builds correctly:
   - [ ] For the main workspace
   - [ ] For the Kafka workspace
 - [ ] Git commit and tag release
-- [ ] Build and push docker images
+- [ ] Build and push docker images:
   - [ ] For the main workspace
   - [ ] For the Kafka workspace
 - [ ] Publish base cargo crate
+- [ ] Release pre-built binaries
 - [ ] Release documentation
 
 
@@ -27,6 +34,6 @@ otherwise internal, crates need to be publised as well:
 
 - [ ] replicante_agent_models
 - [ ] replicante_logging
-- [ ] replicante_util_failure
 - [ ] replicante_util_iron
+- [ ] replicante_util_failure
 - [ ] replicante_util_tracing

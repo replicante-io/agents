@@ -1,7 +1,8 @@
 ---
-id: intro-install
+id: version-0.3.0-intro-install
 title: Installation
 sidebar_label: Installation
+original_id: intro-install
 ---
 
 Official agents can be installed from code as described below.
