@@ -83,11 +83,6 @@ dependencies = [
 
 [[package]]
 name = "bitflags"
-version = "0.9.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-
-[[package]]
-name = "bitflags"
 version = "1.0.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
@@ -530,7 +525,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 [[package]]
 name = "kafka"
 version = "0.7.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
+source = "git+https://github.com/l4l/kafka-rust?branch=update/openssl#ceb365d9b7740037368fd00126527bd7e338af5f"
 dependencies = [
  "byteorder 0.5.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "crc 1.8.1 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -538,7 +533,7 @@ dependencies = [
  "flate2 0.2.20 (registry+https://github.com/rust-lang/crates.io-index)",
  "fnv 1.0.6 (registry+https://github.com/rust-lang/crates.io-index)",
  "log 0.3.9 (registry+https://github.com/rust-lang/crates.io-index)",
- "openssl 0.9.24 (registry+https://github.com/rust-lang/crates.io-index)",
+ "openssl 0.10.20 (registry+https://github.com/rust-lang/crates.io-index)",
  "ref_slice 1.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "snap 0.2.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "twox-hash 1.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -764,10 +759,11 @@ dependencies = [
 
 [[package]]
 name = "openssl"
-version = "0.9.24"
+version = "0.10.20"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
- "bitflags 0.9.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "bitflags 1.0.4 (registry+https://github.com/rust-lang/crates.io-index)",
+ "cfg-if 0.1.7 (registry+https://github.com/rust-lang/crates.io-index)",
  "foreign-types 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "lazy_static 1.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "libc 0.2.51 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -808,7 +804,7 @@ dependencies = [
  "byteorder 1.3.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "crossbeam-channel 0.1.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "data-encoding 2.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "kafka 0.7.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "kafka 0.7.0 (git+https://github.com/l4l/kafka-rust?branch=update/openssl)",
  "opentracingrust 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "ordered-float 0.5.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "rand 0.4.6 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -1834,7 +1830,6 @@ dependencies = [
 "checksum backtrace-sys 0.1.28 (registry+https://github.com/rust-lang/crates.io-index)" = "797c830ac25ccc92a7f8a7b9862bde440715531514594a6154e3d4a54dd769b6"
 "checksum base64 0.10.1 (registry+https://github.com/rust-lang/crates.io-index)" = "0b25d992356d2eb0ed82172f5248873db5560c4721f564b13cb5193bda5e668e"
 "checksum base64 0.9.3 (registry+https://github.com/rust-lang/crates.io-index)" = "489d6c0ed21b11d038c31b6ceccca973e65d73ba3bd8ecb9a2babf5546164643"
-"checksum bitflags 0.9.1 (registry+https://github.com/rust-lang/crates.io-index)" = "4efd02e230a02e18f92fc2735f44597385ed02ad8f831e7c1c1156ee5e1ab3a5"
 "checksum bitflags 1.0.4 (registry+https://github.com/rust-lang/crates.io-index)" = "228047a76f468627ca71776ecdebd732a3423081fcf5125585bcd7c49886ce12"
 "checksum block-buffer 0.3.3 (registry+https://github.com/rust-lang/crates.io-index)" = "a076c298b9ecdb530ed9d967e74a6027d6a7478924520acddcddc24c1c8ab3ab"
 "checksum bson 0.13.0 (registry+https://github.com/rust-lang/crates.io-index)" = "8984b7b33b1f8ac97468df3cefa76c7035abb0786473aa2a437dea0c72855702"
@@ -1887,7 +1882,7 @@ dependencies = [
 "checksum iron-json-response 0.6.0 (registry+https://github.com/rust-lang/crates.io-index)" = "7a55102e5eb90fdb87aad4d876b2eb80692542056cae72ecbfb235a6a81e0a73"
 "checksum iron-test 0.6.0 (registry+https://github.com/rust-lang/crates.io-index)" = "b1944bcf30f8b3f51ebf01e715517dd9755e9480934778d6de70179a41d283c1"
 "checksum itoa 0.4.3 (registry+https://github.com/rust-lang/crates.io-index)" = "1306f3464951f30e30d12373d31c79fbd52d236e5e896fd92f96ec7babbbe60b"
-"checksum kafka 0.7.0 (registry+https://github.com/rust-lang/crates.io-index)" = "a1747ff9b7aef4b3ad13d78b75b7a754dbc561125face70ede7055396828c025"
+"checksum kafka 0.7.0 (git+https://github.com/l4l/kafka-rust?branch=update/openssl)" = "<none>"
 "checksum language-tags 0.2.2 (registry+https://github.com/rust-lang/crates.io-index)" = "a91d884b6667cd606bb5a69aa0c99ba811a115fc68915e7056ec08a46e93199a"
 "checksum lazy_static 1.3.0 (registry+https://github.com/rust-lang/crates.io-index)" = "bc5729f27f159ddd61f4df6228e827e86643d4d3e7c32183cb30a1c08f604a14"
 "checksum libc 0.2.51 (registry+https://github.com/rust-lang/crates.io-index)" = "bedcc7a809076656486ffe045abeeac163da1b558e963a31e29fbfbeba916917"
@@ -1915,7 +1910,7 @@ dependencies = [
 "checksum num-traits 0.1.43 (registry+https://github.com/rust-lang/crates.io-index)" = "92e5113e9fd4cc14ded8e499429f396a20f98c772a47cc8622a736e1ec843c31"
 "checksum num-traits 0.2.6 (registry+https://github.com/rust-lang/crates.io-index)" = "0b3a5d7cc97d6d30d8b9bc8fa19bf45349ffe46241e8816f50f62f6d6aaabee1"
 "checksum num_cpus 1.10.0 (registry+https://github.com/rust-lang/crates.io-index)" = "1a23f0ed30a54abaa0c7e83b1d2d87ada7c3c23078d1d87815af3e3b6385fbba"
-"checksum openssl 0.9.24 (registry+https://github.com/rust-lang/crates.io-index)" = "a3605c298474a3aa69de92d21139fb5e2a81688d308262359d85cdd0d12a7985"
+"checksum openssl 0.10.20 (registry+https://github.com/rust-lang/crates.io-index)" = "5a0d6b781aac4ac1bd6cafe2a2f0ad8c16ae8e1dd5184822a16c50139f8838d9"
 "checksum openssl-probe 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)" = "77af24da69f9d9341038eba93a073b1fdaaa1b788221b00a69bce9e762cb32de"
 "checksum openssl-sys 0.9.43 (registry+https://github.com/rust-lang/crates.io-index)" = "33c86834957dd5b915623e94f2f4ab2c70dd8f6b70679824155d5ae21dbd495d"
 "checksum opentracingrust 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)" = "9aa3db3150b653a819b0c801cfcf56b79aeb7896b2aa324f996d5865c4fe07b8"
