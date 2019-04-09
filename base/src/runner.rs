@@ -4,10 +4,7 @@ use std::sync::Arc;
 #[cfg(debug_assertions)]
 use std::time::Duration;
 
-use iron::Chain;
 use iron::Iron;
-use router::Router;
-
 use opentracingrust::Tracer;
 use prometheus::Registry;
 use prometheus::process_collector::ProcessCollector;
@@ -17,16 +14,12 @@ use slog::Discard;
 use slog::Logger;
 use slog_scope::GlobalLoggerGuard;
 
-use replicante_util_iron::MetricsHandler;
-use replicante_util_iron::MetricsMiddleware;
-use replicante_util_iron::RequestLogger;
-
 #[cfg(debug_assertions)]
 use replicante_util_tracing::TracerExtra;
 
-use super::Agent;
-use super::api;
 use super::config::Agent as AgentConfig;
+use super::api;
+use super::Agent;
 
 
 /// Agent services injection.
@@ -122,10 +115,10 @@ impl AgentRunner {
     /// Register all static metrics provided by the base agent.
     pub fn register_metrics(logger: &Logger, registry: &Registry) {
         let process = ProcessCollector::for_self();
-        if let Err(err) = registry.register(Box::new(process)) {
-            let error = format!("{:?}", err);
-            debug!(logger, "Failed to register process metrics"; "error" => error);
+        if let Err(error) = registry.register(Box::new(process)) {
+            debug!(logger, "Failed to register process metrics"; "error" => ?error);
         }
+        api::register_metrics(logger, registry);
     }
 
     /// Starts the Agent process and waits for it to terminate.
@@ -134,43 +127,10 @@ impl AgentRunner {
     ///
     /// This method panics if:
     ///
-    ///   * It fails to configure or register the metrics.
     ///   * It fails to bind to the configured port.
     pub fn run(&self) {
-        // Create and configure API handlers.
-        let mut router = Router::new();
-        let agent_info = api::AgentInfo::make(Arc::clone(&self.agent), self.context.clone());
-        let datastore_info = api::DatastoreInfo::make(
-            Arc::clone(&self.agent), self.context.clone()
-        );
-        let metrics = MetricsHandler::new(self.context.metrics.clone());
-        let shards = api::Shards::make(Arc::clone(&self.agent), self.context.clone());
-
-        router.get("/", api::index, "index");
-        router.get("/api/v1/info/agent", agent_info, "agent_info");
-        router.get("/api/v1/info/datastore", datastore_info, "datastore_info");
-        router.get("/api/v1/metrics", metrics, "metrics");
-        router.get("/api/v1/shards", shards, "shards");
-
-        // Setup metrics collection.
-        let registry = &self.context.metrics;
-        let (duration, errors, requests) = MetricsMiddleware::metrics("replicante_agent");
-        registry.register(Box::new(duration.clone()))
-            .expect("Unable to register duration histogram");
-        registry.register(Box::new(errors.clone())).expect("Unable to register errors counter");
-        registry.register(Box::new(requests.clone()))
-            .expect("Unable to register requests counter");
-        let metrics = MetricsMiddleware::new(
-            duration, errors, requests, self.context.logger.clone()
-        );
-
-        // Wrap the router with middleweres.
-        let mut handler = Chain::new(router);
-        handler.link_after(RequestLogger::new(self.context.logger.clone()));
-        handler.link(metrics.into_middleware());
-
-        // Start the agent server.
         let bind = &self.context.config.api.bind;
+        let handler = api::mount(Arc::clone(&self.agent), self.context.clone());
         info!(self.context.logger, "Agent API ready"; "bind" => bind);
         Iron::new(handler)
             .http(bind)

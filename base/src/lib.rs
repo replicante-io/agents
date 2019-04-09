@@ -8,6 +8,7 @@
 #![doc(html_root_url = "https://docs.rs/replicante_agent/0.3.0")]
 extern crate failure;
 extern crate failure_derive;
+extern crate humthreads;
 extern crate iron;
 extern crate iron_json_response;
 extern crate router;

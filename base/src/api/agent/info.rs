@@ -3,17 +3,14 @@ use std::sync::Arc;
 use iron::prelude::*;
 use iron::Handler;
 use iron::status;
-
 use iron_json_response::JsonResponse;
-use iron_json_response::JsonResponseMiddleware;
-
 use opentracingrust::Log;
 
-use super::super::Agent;
-use super::super::AgentContext;
-use super::super::error::fail_span;
-use super::super::error::otr_to_iron;
-use super::super::util::tracing::HeadersCarrier;
+use super::super::super::error::fail_span;
+use super::super::super::error::otr_to_iron;
+use super::super::super::util::tracing::HeadersCarrier;
+use super::super::super::Agent;
+use super::super::super::AgentContext;
 
 
 /// Handler implementing the /api/v1/info/agent endpoint.
@@ -23,11 +20,8 @@ pub struct AgentInfo {
 }
 
 impl AgentInfo {
-    pub fn make(agent: Arc<Agent>, context: AgentContext) -> Chain {
-        let handler = AgentInfo { agent, context };
-        let mut chain = Chain::new(handler);
-        chain.link_after(JsonResponseMiddleware::new());
-        chain
+    pub fn make(agent: Arc<Agent>, context: AgentContext) -> AgentInfo {
+        AgentInfo { agent, context }
     }
 }
 
@@ -45,8 +39,7 @@ impl Handler for AgentInfo {
         match HeadersCarrier::inject(span.context(), &mut response.headers, tracer) {
             Ok(_) => (),
             Err(error) => {
-                let error = format!("{:?}", error);
-                error!(self.context.logger, "Failed to inject span"; "error" => error);
+                error!(self.context.logger, "Failed to inject span"; "error" => ?error);
             }
         };
         response.set_mut(JsonResponse::json(info)).set_mut(status::Ok);
@@ -62,11 +55,8 @@ pub struct DatastoreInfo {
 }
 
 impl DatastoreInfo {
-    pub fn make(agent: Arc<Agent>, context: AgentContext) -> Chain {
-        let handler = DatastoreInfo { agent, context };
-        let mut chain = Chain::new(handler);
-        chain.link_after(JsonResponseMiddleware::new());
-        chain
+    pub fn make(agent: Arc<Agent>, context: AgentContext) -> DatastoreInfo {
+        DatastoreInfo { agent, context }
     }
 }
 
@@ -100,15 +90,17 @@ mod tests {
     mod agent {
         use std::sync::Arc;
 
+        use iron::Chain;
         use iron::IronError;
         use iron::Headers;
+        use iron_json_response::JsonResponseMiddleware;
         use iron_test::request;
         use iron_test::response;
 
-        use super::super::super::super::Agent;
-        use super::super::super::super::AgentContext;
-        use super::super::super::super::testing::MockAgent;
-        use super::super::AgentInfo;
+        use super::super::super::super::super::Agent;
+        use super::super::super::super::super::AgentContext;
+        use super::super::super::super::super::testing::MockAgent;
+        use super::super::super::AgentInfo;
 
 
         fn get<A>(agent: A) -> Result<String, IronError> 
@@ -116,6 +108,11 @@ mod tests {
         {
             let (context, extra) = AgentContext::mock();
             let handler = AgentInfo::make(Arc::new(agent), context);
+            let handler = {
+                let mut chain = Chain::new(handler);
+                chain.link_after(JsonResponseMiddleware::new());
+                chain
+            };
             let response = request::get(
                 "http://localhost:3000/api/v1/info/agent",
                 Headers::new(), &handler
@@ -154,15 +151,17 @@ mod tests {
     mod datastore {
         use std::sync::Arc;
 
+        use iron::Chain;
         use iron::IronError;
         use iron::Headers;
+        use iron_json_response::JsonResponseMiddleware;
         use iron_test::request;
         use iron_test::response;
 
-        use super::super::super::super::Agent;
-        use super::super::super::super::AgentContext;
-        use super::super::super::super::testing::MockAgent;
-        use super::super::DatastoreInfo;
+        use super::super::super::super::super::Agent;
+        use super::super::super::super::super::AgentContext;
+        use super::super::super::super::super::testing::MockAgent;
+        use super::super::super::DatastoreInfo;
 
 
         fn get<A>(agent: A) -> Result<String, IronError> 
@@ -170,6 +169,11 @@ mod tests {
         {
             let (context, extra) = AgentContext::mock();
             let handler = DatastoreInfo::make(Arc::new(agent), context);
+            let handler = {
+                let mut chain = Chain::new(handler);
+                chain.link_after(JsonResponseMiddleware::new());
+                chain
+            };
             let response = request::get(
                 "http://localhost:3000/api/v1/info/datastore",
                 Headers::new(), &handler

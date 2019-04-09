@@ -5,15 +5,14 @@ use iron::Handler;
 use iron::status;
 
 use iron_json_response::JsonResponse;
-use iron_json_response::JsonResponseMiddleware;
 
 use opentracingrust::Log;
 
-use super::super::Agent;
-use super::super::AgentContext;
-use super::super::error::fail_span;
-use super::super::error::otr_to_iron;
-use super::super::util::tracing::HeadersCarrier;
+use super::super::super::error::fail_span;
+use super::super::super::error::otr_to_iron;
+use super::super::super::util::tracing::HeadersCarrier;
+use super::super::super::Agent;
+use super::super::super::AgentContext;
 
 
 /// Handler implementing the /api/v1/status endpoint.
@@ -23,11 +22,8 @@ pub struct Shards {
 }
 
 impl Shards {
-    pub fn make(agent: Arc<Agent>, context: AgentContext) -> Chain {
-        let handler = Shards { agent, context };
-        let mut chain = Chain::new(handler);
-        chain.link_after(JsonResponseMiddleware::new());
-        chain
+    pub fn make(agent: Arc<Agent>, context: AgentContext) -> Shards {
+        Shards { agent, context }
     }
 }
 
@@ -59,8 +55,10 @@ impl Handler for Shards {
 mod tests {
     use std::sync::Arc;
 
+    use iron::Chain;
     use iron::Headers;
     use iron::IronError;
+    use iron_json_response::JsonResponseMiddleware;
     use iron_test::request;
     use iron_test::response;
 
@@ -69,16 +67,21 @@ mod tests {
     use replicante_agent_models::Shards as ShardsModel;
     use replicante_agent_models::ShardRole;
 
-    use super::super::super::Agent;
-    use super::super::super::AgentContext;
-    use super::super::super::testing::MockAgent;
-    use super::Shards;
+    use super::super::super::super::Agent;
+    use super::super::super::super::AgentContext;
+    use super::super::super::super::testing::MockAgent;
+    use super::super::Shards;
 
     fn request_get<A>(agent: A) -> Result<String, IronError> 
         where A: Agent + 'static
     {
         let (context, extra) = AgentContext::mock();
         let handler = Shards::make(Arc::new(agent), context);
+        let handler = {
+            let mut chain = Chain::new(handler);
+            chain.link_after(JsonResponseMiddleware::new());
+            chain
+        };
         let response = request::get(
             "http://localhost:3000/api/v1/status",
             Headers::new(), &handler

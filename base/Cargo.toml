@@ -24,6 +24,7 @@ maintenance = { status = "actively-developed" }
 [dependencies]
 failure = "^0.1.5"
 failure_derive = "^0.1.5"
+humthreads = "^0.1.0"
 iron = "^0.6.0"
 iron-json-response = "^0.6.0"
 lazy_static = "^1.0.1"

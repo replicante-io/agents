@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::sync::RwLock;
 
 
@@ -13,12 +14,17 @@ pub struct APIConfig {
     /// Local addess to bind the API server to.
     #[serde(default = "APIConfig::default_bind")]
     pub bind: String,
+
+    /// Enable/disable entire API trees.
+    #[serde(default)]
+    pub trees: APITrees,
 }
 
 impl Default for APIConfig {
     fn default() -> Self {
         APIConfig {
             bind: Self::default_bind(),
+            trees: APITrees::default(),
         }
     }
 }
@@ -46,5 +52,41 @@ impl APIConfig {
             panic!("Cannot override the default api.bind option more than once");
         }
         *default = Some(bind);
+    }
+}
+
+/// Enable/disable entire API trees.
+#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
+pub struct APITrees {
+    /// Enable/disable the introspection APIs.
+    #[serde(default = "APITrees::default_true")]
+    pub introspect: bool,
+
+    /// Enable/disable the unstable API.
+    #[serde(default = "APITrees::default_true")]
+    pub unstable: bool,
+}
+
+impl Default for APITrees {
+    fn default() -> APITrees {
+        APITrees {
+            introspect: true,
+            unstable: true,
+        }
+    }
+}
+
+impl APITrees {
+    fn default_true() -> bool {
+        true
+    }
+}
+
+impl From<APITrees> for HashMap<&'static str, bool> {
+    fn from(trees: APITrees) -> HashMap<&'static str, bool> {
+        let mut flags = HashMap::new();
+        flags.insert("introspect", trees.introspect);
+        flags.insert("unstable", trees.unstable);
+        flags
     }
 }
