@@ -25,8 +25,8 @@ pub fn mount(agent: Arc<Agent>, context: AgentContext) -> Chain {
     let mut router = Router::new(context.config.api.trees.clone().into());
 
     // Create the index root for each API root.
-    let roots = vec![APIRoot::UnstableAPI];
-    for root in roots.into_iter() {
+    let roots = [APIRoot::UnstableAPI];
+    for root in roots.iter() {
         let mut root = router.for_root(root);
         root.get("/", index::index, "index");
     }

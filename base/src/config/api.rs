@@ -82,9 +82,12 @@ impl APITrees {
     }
 }
 
+// We can's fulfill the wish of the implicit-hasher clippy because
+// we do not use the genieric hasher parameter in any LOCAL type.
+#[allow(clippy::implicit_hasher)]
 impl From<APITrees> for HashMap<&'static str, bool> {
     fn from(trees: APITrees) -> HashMap<&'static str, bool> {
-        let mut flags = HashMap::new();
+        let mut flags = HashMap::default();
         flags.insert("introspect", trees.introspect);
         flags.insert("unstable", trees.unstable);
         flags

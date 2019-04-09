@@ -18,7 +18,7 @@ pub fn mount(agent: Arc<Agent>, context: AgentContext, router: &mut Router) {
     let agent_info = AgentInfo::make(Arc::clone(&agent), context.clone());
     let datastore_info = DatastoreInfo::make(Arc::clone(&agent), context.clone());
     let shards = Shards::make(agent, context);
-    let mut root = router.for_root(APIRoot::UnstableAPI);
+    let mut root = router.for_root(&APIRoot::UnstableAPI);
     root.get("/info/agent", agent_info, "/info/agent");
     root.get("/info/datastore", datastore_info, "/info/datastore");
     root.get("/shards", shards, "/shards");
