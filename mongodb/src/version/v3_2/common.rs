@@ -2,14 +2,14 @@ use bson;
 use bson::Bson;
 use failure::ResultExt;
 
+use mongodb::db::ThreadedDatabase;
 use mongodb::Client;
 use mongodb::CommandType;
 use mongodb::ThreadedClient;
-use mongodb::db::ThreadedDatabase;
 
+use opentracingrust::utils::FailSpan;
 use opentracingrust::Log;
 use opentracingrust::Span;
-use opentracingrust::utils::FailSpan;
 
 use replicante_agent::AgentContext;
 use replicante_agent::Result;
@@ -17,15 +17,14 @@ use replicante_agent::Result;
 use replicante_agent_models::AgentInfo;
 use replicante_agent_models::CommitOffset;
 use replicante_agent_models::Shard;
-use replicante_agent_models::Shards;
 use replicante_agent_models::ShardRole;
+use replicante_agent_models::Shards;
 use replicante_util_failure::failure_info;
 
 use super::super::super::error::ErrorKind;
 use super::super::super::metrics::MONGODB_OPS_COUNT;
 use super::super::super::metrics::MONGODB_OPS_DURATION;
 use super::super::super::metrics::MONGODB_OP_ERRORS_COUNT;
-
 use super::super::common::AGENT_VERSION;
 
 use super::BuildInfo;
@@ -39,10 +38,7 @@ pub struct CommonLogic {
 
 impl CommonLogic {
     pub fn new(client: Client, context: AgentContext) -> CommonLogic {
-        CommonLogic { 
-            client,
-            context,
-        }
+        CommonLogic { client, context }
     }
 
     /// Returns agent information.
@@ -57,15 +53,21 @@ impl CommonLogic {
         span.child_of(parent.context().clone());
         span.log(Log::new().log("span.kind", "client-send"));
         MONGODB_OPS_COUNT.with_label_values(&["buildInfo"]).inc();
-        let timer = MONGODB_OPS_DURATION.with_label_values(&["buildInfo"]).start_timer();
-        let info = self.client.db("test").command(
-            doc! {"buildInfo" => 1},
-            CommandType::BuildInfo,
-            None
-        ).fail_span(&mut span).map_err(|error| {
-            MONGODB_OP_ERRORS_COUNT.with_label_values(&["buildInfo"]).inc();
-            error
-        }).with_context(|_| ErrorKind::StoreOpFailed("buildInfo"))?;
+        let timer = MONGODB_OPS_DURATION
+            .with_label_values(&["buildInfo"])
+            .start_timer();
+        let info = self
+            .client
+            .db("test")
+            .command(doc! {"buildInfo" => 1}, CommandType::BuildInfo, None)
+            .fail_span(&mut span)
+            .map_err(|error| {
+                MONGODB_OP_ERRORS_COUNT
+                    .with_label_values(&["buildInfo"])
+                    .inc();
+                error
+            })
+            .with_context(|_| ErrorKind::StoreOpFailed("buildInfo"))?;
         timer.observe_duration();
         span.log(Log::new().log("span.kind", "client-receive"));
         let info = bson::from_bson(Bson::Document(info))
@@ -78,16 +80,24 @@ impl CommonLogic {
         let mut span = self.context.tracer.span("replSetGetStatus").auto_finish();
         span.child_of(parent.context().clone());
         span.log(Log::new().log("span.kind", "client-send"));
-        MONGODB_OPS_COUNT.with_label_values(&["replSetGetStatus"]).inc();
-        let timer = MONGODB_OPS_DURATION.with_label_values(&["replSetGetStatus"]).start_timer();
-        let status = self.client.db("admin").command(
-            doc! {"replSetGetStatus" => 1},
-            CommandType::IsMaster,
-            None
-        ).fail_span(&mut span).map_err(|error| {
-            MONGODB_OP_ERRORS_COUNT.with_label_values(&["replSetGetStatus"]).inc();
-            error
-        }).with_context(|_| ErrorKind::StoreOpFailed("replSetGetStatus"))?;
+        MONGODB_OPS_COUNT
+            .with_label_values(&["replSetGetStatus"])
+            .inc();
+        let timer = MONGODB_OPS_DURATION
+            .with_label_values(&["replSetGetStatus"])
+            .start_timer();
+        let status = self
+            .client
+            .db("admin")
+            .command(doc! {"replSetGetStatus" => 1}, CommandType::IsMaster, None)
+            .fail_span(&mut span)
+            .map_err(|error| {
+                MONGODB_OP_ERRORS_COUNT
+                    .with_label_values(&["replSetGetStatus"])
+                    .inc();
+                error
+            })
+            .with_context(|_| ErrorKind::StoreOpFailed("replSetGetStatus"))?;
         timer.observe_duration();
         span.log(Log::new().log("span.kind", "client-receive"));
         let status = bson::from_bson(Bson::Document(status))
@@ -109,10 +119,15 @@ impl CommonLogic {
                     span.tag("lag.error", format!("Failed lag computation: {:?}", error));
                     None
                 }
-            }
+            },
         };
         let name = status.set;
-        let shards = vec![Shard::new(name, role, Some(CommitOffset::seconds(last_op)), lag)];
+        let shards = vec![Shard::new(
+            name,
+            role,
+            Some(CommitOffset::seconds(last_op)),
+            lag,
+        )];
         Ok(Shards::new(shards))
     }
 }

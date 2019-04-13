@@ -1,8 +1,8 @@
 use mongodb::Client;
 use opentracingrust::Span;
 
-use replicante_agent::AgentContext;
 use replicante_agent::Agent;
+use replicante_agent::AgentContext;
 use replicante_agent::Result;
 
 use replicante_agent_models::AgentInfo;
@@ -11,7 +11,6 @@ use replicante_agent_models::Shards;
 
 use super::super::Sharding;
 use super::common::CommonLogic;
-
 
 /// MongoDB 3.2+ sharded agent.
 pub struct Sharded {
@@ -44,11 +43,23 @@ impl Agent for Sharded {
         let cluster = self.cluster_name.clone();
         if self.is_mongos {
             let node_name = self.mongos_node_name.as_ref().unwrap().clone();
-            Ok(DatastoreInfo::new(cluster, "MongoDB", node_name, info.version, None))
+            Ok(DatastoreInfo::new(
+                cluster,
+                "MongoDB",
+                node_name,
+                info.version,
+                None,
+            ))
         } else {
             let status = self.common.repl_set_get_status(span)?;
             let node_name = status.node_name()?;
-            Ok(DatastoreInfo::new(cluster, "MongoDB", node_name, info.version, None))
+            Ok(DatastoreInfo::new(
+                cluster,
+                "MongoDB",
+                node_name,
+                info.version,
+                None,
+            ))
         }
     }
 

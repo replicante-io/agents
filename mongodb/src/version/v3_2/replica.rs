@@ -11,7 +11,6 @@ use replicante_agent_models::Shards;
 
 use super::common::CommonLogic;
 
-
 /// MongoDB 3.2+ replica set agent.
 pub struct ReplicaSet {
     common: CommonLogic,
@@ -34,7 +33,13 @@ impl Agent for ReplicaSet {
         let status = self.common.repl_set_get_status(span)?;
         let node_name = status.node_name()?;
         let cluster = status.set;
-        Ok(DatastoreInfo::new(cluster, "MongoDB", node_name, info.version, None))
+        Ok(DatastoreInfo::new(
+            cluster,
+            "MongoDB",
+            node_name,
+            info.version,
+            None,
+        ))
     }
 
     fn shards(&self, span: &mut Span) -> Result<Shards> {

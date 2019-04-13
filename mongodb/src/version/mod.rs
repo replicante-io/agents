@@ -1,12 +1,12 @@
 use std::sync::Arc;
 
 use failure::ResultExt;
-use mongodb::Client;
-use mongodb::ClientOptions;
-use mongodb::ThreadedClient;
 use mongodb::db::ThreadedDatabase;
 use mongodb::topology::TopologyDescription;
 use mongodb::topology::TopologyType;
+use mongodb::Client;
+use mongodb::ClientOptions;
+use mongodb::ThreadedClient;
 
 use semver::Version;
 
@@ -22,20 +22,16 @@ use replicante_util_failure::failure_info;
 use super::config::Config;
 use super::config::Sharding;
 use super::error::ErrorKind;
-
 use super::metrics::MONGODB_OPS_COUNT;
 use super::metrics::MONGODB_OPS_DURATION;
 use super::metrics::MONGODB_OP_ERRORS_COUNT;
-
 
 mod common;
 mod v3_0;
 mod v3_2;
 
-
 const MONGODB_MODE_RS: &str = "replica-set";
 const MONGODB_MODE_SHARDED: &str = "sharded-cluster";
-
 
 /// An `AgentFactory` that returns a MongoDB 3.2+ Replica Set compatible agent.
 pub struct MongoDBFactory {
@@ -79,7 +75,9 @@ impl MongoDBFactory {
     fn default_agent(&self) -> (Arc<Agent>, &'static str, &'static str) {
         if self.sharded_mode {
             let agent = v3_2::Sharded::new(
-                self.sharding.as_ref().unwrap().clone(), self.client.clone(), self.context.clone()
+                self.sharding.as_ref().unwrap().clone(),
+                self.client.clone(),
+                self.context.clone(),
             );
             let agent = Arc::new(agent);
             (agent, "3.2.0", MONGODB_MODE_SHARDED)
@@ -93,11 +91,20 @@ impl MongoDBFactory {
     /// Fetch the currently running version of MongoDB.
     fn mongo_version(&self) -> Result<Version> {
         MONGODB_OPS_COUNT.with_label_values(&["version"]).inc();
-        let timer = MONGODB_OPS_DURATION.with_label_values(&["version"]).start_timer();
-        let version = self.client.db("test").version().map_err(|error| {
-            MONGODB_OP_ERRORS_COUNT.with_label_values(&["version"]).inc();
-            error
-        }).with_context(|_| ErrorKind::StoreOpFailed("version"))?;
+        let timer = MONGODB_OPS_DURATION
+            .with_label_values(&["version"])
+            .start_timer();
+        let version = self
+            .client
+            .db("test")
+            .version()
+            .map_err(|error| {
+                MONGODB_OP_ERRORS_COUNT
+                    .with_label_values(&["version"])
+                    .inc();
+                error
+            })
+            .with_context(|_| ErrorKind::StoreOpFailed("version"))?;
         timer.observe_duration();
         Ok(version)
     }
@@ -111,34 +118,35 @@ impl MongoDBFactory {
                 let (agent, agent_version, mode) = self.default_agent();
                 warn!(
                     self.context.logger, "Could not detect MongoDB version, using default agent";
-                    "agent_version" => agent_version, "mode" => mode, failure_info(&error)
+                    "agent_version" => agent_version, "mode" => mode, failure_info(&error),
                 );
                 ActiveAgent::new(agent, "unknown")
-            },
+            }
             Ok(version) => {
                 let (agent, mode) = if self.sharded_mode {
                     (self.make_sharded(&version), MONGODB_MODE_SHARDED)
                 } else {
                     (self.make_rs(&version), MONGODB_MODE_RS)
                 };
-                agent.map(|(agent, agent_version)| {
-                    info!(
-                        self.context.logger, "Instantiated MongoDB agent";
-                        "agent_version" => agent_version, "mongo_version" => %version,
-                        "mode" => mode
-                    );
-                    ActiveAgent::new(agent, version.to_string())
-
-                // Failed to find a compatible version.
-                }).unwrap_or_else(|| {
-                    let (agent, agent_version, mode) = self.default_agent();
-                    warn!(
-                        self.context.logger, "Unsupported MongoDB version, using default agent";
-                        "agent_version" => agent_version, "mongo_version" => %version,
-                        "mode" => mode
-                    );
-                    ActiveAgent::new(agent, "unknown")
-                })
+                agent
+                    .map(|(agent, agent_version)| {
+                        info!(
+                            self.context.logger, "Instantiated MongoDB agent";
+                            "agent_version" => agent_version, "mongo_version" => %version,
+                            "mode" => mode
+                        );
+                        ActiveAgent::new(agent, version.to_string())
+                    })
+                    // Failed to find a compatible version.
+                    .unwrap_or_else(|| {
+                        let (agent, agent_version, mode) = self.default_agent();
+                        warn!(
+                            self.context.logger, "Unsupported MongoDB version, using default agent";
+                            "agent_version" => agent_version, "mongo_version" => %version,
+                            "mode" => mode
+                        );
+                        ActiveAgent::new(agent, "unknown")
+                    })
             }
         }
     }
@@ -160,7 +168,9 @@ impl MongoDBFactory {
     fn make_sharded(&self, version: &Version) -> Option<(Arc<Agent>, &'static str)> {
         if v3_2::SHARDED_RANGE.matches(version) {
             let agent = v3_2::Sharded::new(
-                self.sharding.as_ref().unwrap().clone(), self.client.clone(), self.context.clone()
+                self.sharding.as_ref().unwrap().clone(),
+                self.client.clone(),
+                self.context.clone(),
             );
             Some((Arc::new(agent), "3.2.0"))
         } else {
@@ -186,7 +196,6 @@ impl AgentFactory for MongoDBFactory {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use semver::Version;
@@ -198,7 +207,6 @@ mod tests {
     use super::Config;
     use super::ErrorKind;
     use super::MongoDBFactory;
-
 
     #[test]
     fn make_from_error() {

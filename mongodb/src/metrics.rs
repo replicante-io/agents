@@ -6,7 +6,6 @@ use prometheus::Registry;
 
 use slog::Logger;
 
-
 lazy_static! {
     /// Counter for MongoDB operation errors.
     pub static ref MONGODB_OP_ERRORS_COUNT: CounterVec = CounterVec::new(
@@ -32,21 +31,17 @@ lazy_static! {
     ).expect("Failed to create MONGODB_OPS_DURATION histogram");
 }
 
-
 /// Attemps to register metrics with the Repositoy.
 ///
 /// Metrics that fail to register are logged and ignored.
 pub fn register_metrics(logger: &Logger, registry: &Registry) {
-    if let Err(err) = registry.register(Box::new(MONGODB_OPS_COUNT.clone())) {
-        let error = format!("{:?}", err);
-        debug!(logger, "Failed to register MONGODB_OPS_COUNT"; "error" => error);
+    if let Err(error) = registry.register(Box::new(MONGODB_OPS_COUNT.clone())) {
+        debug!(logger, "Failed to register MONGODB_OPS_COUNT"; "error" => ?error);
     }
-    if let Err(err) = registry.register(Box::new(MONGODB_OP_ERRORS_COUNT.clone())) {
-        let error = format!("{:?}", err);
-        debug!(logger, "Failed to register MONGODB_OP_ERRORS_COUNT"; "error" => error);
+    if let Err(error) = registry.register(Box::new(MONGODB_OP_ERRORS_COUNT.clone())) {
+        debug!(logger, "Failed to register MONGODB_OP_ERRORS_COUNT"; "error" => ?error);
     }
-    if let Err(err) = registry.register(Box::new(MONGODB_OPS_DURATION.clone())) {
-        let error = format!("{:?}", err);
-        debug!(logger, "Failed to register MONGODB_OPS_DURATION"; "error" => error);
+    if let Err(error) = registry.register(Box::new(MONGODB_OPS_DURATION.clone())) {
+        debug!(logger, "Failed to register MONGODB_OPS_DURATION"; "error" => ?error);
     }
 }

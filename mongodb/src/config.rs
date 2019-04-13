@@ -5,15 +5,14 @@ use std::path::Path;
 use failure::ResultExt;
 use serde_yaml;
 
-use replicante_agent::Result;
-use replicante_agent::config::Agent;
 use replicante_agent::config::APIConfig;
+use replicante_agent::config::Agent;
+use replicante_agent::Result;
 
 use super::error::ErrorKind;
 
-
 /// MongoDB Agent configuration
-#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
+#[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
 pub struct Config {
     /// Common agent options.
     #[serde(default)]
@@ -69,7 +68,6 @@ impl Config {
     }
 }
 
-
 /// MongoDB related options.
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
 pub struct MongoDB {
@@ -98,12 +96,15 @@ impl Default for MongoDB {
 
 impl MongoDB {
     /// Default value for `uri` used by serde.
-    fn default_uri() -> String { String::from("mongodb://localhost:27017") }
+    fn default_uri() -> String {
+        String::from("mongodb://localhost:27017")
+    }
 
     /// Default value for `timeout` used by serde.
-    fn default_timeout() -> i64 { 1000 }
+    fn default_timeout() -> i64 {
+        1000
+    }
 }
-
 
 /// Configure the agent to operate in sharded cluster mode.
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
@@ -125,13 +126,15 @@ pub struct Sharding {
 
 impl Sharding {
     /// Default value for `enable` used by serde.
-    fn default_enable() -> bool { true }
+    fn default_enable() -> bool {
+        true
+    }
 }
-
 
 #[cfg(test)]
 mod tests {
     use std::io::Cursor;
+
     use super::Config;
 
     #[test]

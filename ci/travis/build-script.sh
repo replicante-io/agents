@@ -9,6 +9,7 @@ cargo fmt --verbose -- --check || true
 
 # Avoid regressings on fixed crates.
 cargo fmt -preplicante_agent -- --check
+cargo fmt -preplicante_agent_mongodb -- --check
 
 # Kafka is special ...
 cd kafka/

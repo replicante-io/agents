@@ -74,7 +74,9 @@ pub struct ReplSetStatusMember {
 }
 
 impl ReplSetStatusMember {
-    fn default_self() -> bool { false }
+    fn default_self() -> bool {
+        false
+    }
 }
 
 #[cfg(test)]
@@ -92,7 +94,6 @@ mod tests {
             let ts = 1514677701_u32.to_le();
             Bson::TimeStamp((ts as i64) << 32)
         };
-
         static ref MONGO_TIMESTAMP_TWO: Bson = {
             let ts = 1514677698_u32.to_le();
             Bson::TimeStamp((ts as i64) << 32)
@@ -142,9 +143,9 @@ mod tests {
         let rs: ReplSetStatus = bson::from_bson(rs).unwrap();
         match rs.last_op() {
             Err(error) => match error.kind() {
-                &ErrorKind::InvalidStoreState(ref msg) => assert_eq!(
-                    "self not in members list", msg.to_string()
-                ),
+                &ErrorKind::InvalidStoreState(ref msg) => {
+                    assert_eq!("self not in members list", msg.to_string());
+                }
                 _ => panic!("Unexpected error {:?}", error),
             },
             Ok(result) => panic!("Unexpected success {:?}", result),
@@ -174,9 +175,9 @@ mod tests {
         let rs: ReplSetStatus = bson::from_bson(rs).unwrap();
         match rs.node_name() {
             Err(error) => match error.kind() {
-                &ErrorKind::InvalidStoreState(ref msg) => assert_eq!(
-                    "self not in members list", msg.to_string()
-                ),
+                &ErrorKind::InvalidStoreState(ref msg) => {
+                    assert_eq!("self not in members list", msg.to_string());
+                }
                 _ => panic!("Unexpected error {:?}", error),
             },
             Ok(result) => panic!("Unexpected success {:?}", result),
@@ -206,9 +207,9 @@ mod tests {
         let rs: ReplSetStatus = bson::from_bson(rs).unwrap();
         match rs.primary_optime() {
             Err(error) => match error.kind() {
-                &ErrorKind::InvalidStoreState(ref msg) => assert_eq!(
-                    "primary node not in members list", msg.to_string()
-                ),
+                &ErrorKind::InvalidStoreState(ref msg) => {
+                    assert_eq!("primary node not in members list", msg.to_string());
+                }
                 _ => panic!("Unexpected error {:?}", error),
             },
             Ok(result) => panic!("Unexpected success {:?}", result),
@@ -237,9 +238,9 @@ mod tests {
         let rs: ReplSetStatus = bson::from_bson(rs).unwrap();
         match rs.role() {
             Err(error) => match error.kind() {
-                &ErrorKind::InvalidStoreState(ref msg) => assert_eq!(
-                    "unsupported node state 22", msg.to_string()
-                ),
+                &ErrorKind::InvalidStoreState(ref msg) => {
+                    assert_eq!("unsupported node state 22", msg.to_string());
+                }
                 _ => panic!("Unexpected error {:?}", error),
             },
             Ok(result) => panic!("Unexpected success {:?}", result),

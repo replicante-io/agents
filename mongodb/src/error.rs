@@ -3,7 +3,6 @@ use std::fmt;
 use replicante_agent::Error;
 use replicante_agent::ErrorKind as BaseKind;
 
-
 /// MongoDB specifc error kinds.
 #[derive(Debug)]
 pub enum ErrorKind {
@@ -53,13 +52,16 @@ impl From<ErrorKind> for BaseKind {
             ErrorKind::Connection(system, address) => BaseKind::Connection(system, address),
             ErrorKind::Initialisation(message) => BaseKind::Initialisation(message),
             ErrorKind::Io(path) => BaseKind::Io(path),
-            ErrorKind::MembersNoPrimary =>
-                BaseKind::InvalidStoreState("primary node not in members list".into()),
-            ErrorKind::MembersNoSelf =>
-                BaseKind::InvalidStoreState("self not in members list".into()),
+            ErrorKind::MembersNoPrimary => {
+                BaseKind::InvalidStoreState("primary node not in members list".into())
+            }
+            ErrorKind::MembersNoSelf => {
+                BaseKind::InvalidStoreState("self not in members list".into())
+            }
             ErrorKind::StoreOpFailed(op) => BaseKind::StoreOpFailed(op),
-            ErrorKind::UnsupportedSateId(state) =>
-                BaseKind::InvalidStoreState(format!("unsupported node state {}", state)),
+            ErrorKind::UnsupportedSateId(state) => {
+                BaseKind::InvalidStoreState(format!("unsupported node state {}", state))
+            }
         }
     }
 }
