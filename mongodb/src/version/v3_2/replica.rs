@@ -34,7 +34,8 @@ impl Agent for ReplicaSet {
         let status = self.common.repl_set_get_status(span)?;
         let node_name = status.node_name()?;
         let cluster = status.set;
-        Ok(DatastoreInfo::new(cluster, "MongoDB", node_name, info.version))
+        // TODO: Friendly cluster name.
+        Ok(DatastoreInfo::new(cluster, "MongoDB", node_name, info.version, None))
     }
 
     fn shards(&self, span: &mut Span) -> Result<Shards> {

@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Changed
 - **BREAKING**: Rename incorrectly named v1 API as unstable.
+- **BREAKING**: Rename model fields to match spec.
 
 ## [0.3.0] - 2019-03-29
 ### Changed

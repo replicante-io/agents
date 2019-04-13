@@ -39,7 +39,6 @@ extern crate slog;
 extern crate slog_scope;
 extern crate slog_stdlog;
 
-
 mod api;
 mod error;
 mod runner;

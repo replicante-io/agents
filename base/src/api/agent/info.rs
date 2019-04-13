@@ -204,7 +204,10 @@ mod tests {
         fn returns_version() {
             let agent = MockAgent::new();
             let result = get(agent).unwrap();
-            let expected = r#"{"cluster":"cluster","kind":"DB","name":"mock","version":"1.2.3"}"#;
+            let expected = concat!(
+                r#"{"cluster_display_name":null,"cluster_id":"cluster","#,
+                r#""kind":"DB","node_id":"mock","version":"1.2.3"}"#
+            );
             assert_eq!(result, expected);
         }
     }

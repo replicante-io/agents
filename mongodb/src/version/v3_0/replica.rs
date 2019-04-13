@@ -33,7 +33,6 @@ use super::super::common::AGENT_VERSION;
 use super::BuildInfo;
 use super::ReplSetStatus;
 
-
 /// MongoDB 3.0 replica set agent.
 pub struct ReplicaSet {
     client: Client,
@@ -106,7 +105,8 @@ impl Agent for ReplicaSet {
         let status = self.repl_set_get_status(span)?;
         let node_name = status.node_name()?;
         let cluster = status.set;
-        Ok(DatastoreInfo::new(cluster, "MongoDB", node_name, info.version))
+        // TODO: Friendly cluster name.
+        Ok(DatastoreInfo::new(cluster, "MongoDB", node_name, info.version, None))
     }
 
     fn shards(&self, span: &mut Span) -> Result<Shards> {

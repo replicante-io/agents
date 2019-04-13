@@ -27,13 +27,11 @@ use super::metrics::OPS_DURATION;
 use super::zk4lw::Conf;
 use super::zk4lw::Srvr;
 
-
 lazy_static! {
     pub static ref AGENT_VERSION: AgentVersion = AgentVersion::new(
         env!("GIT_BUILD_HASH"), env!("CARGO_PKG_VERSION"), env!("GIT_BUILD_TAINT")
     );
 }
-
 
 /// Converts a Zookeeper version into a Semver compatible string.
 ///
@@ -48,7 +46,6 @@ fn to_semver(version: &str) -> Result<String> {
         _ => Err(ErrorKind::VersionParse.into())
     }
 }
-
 
 /// Zookeeper 3.3+ agent.
 pub struct ZookeeperAgent {
@@ -114,7 +111,8 @@ impl Agent for ZookeeperAgent {
     fn datastore_info(&self, span: &mut Span) -> Result<DatastoreInfo> {
         let name = self.conf(span)?.zk_server_id;
         let version = to_semver(&self.srvr(span)?.zk_version)?;
-        let info = DatastoreInfo::new(self.cluster_name.clone(), "Zookeeper", name, version);
+        // TODO: Friendly cluster name.
+        let info = DatastoreInfo::new(self.cluster_name.clone(), "Zookeeper", name, version, None);
         Ok(info)
     }
 
@@ -132,7 +130,6 @@ impl Agent for ZookeeperAgent {
         Ok(shards)
     }
 }
-
 
 #[cfg(test)]
 mod tests {

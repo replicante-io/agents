@@ -130,7 +130,8 @@ impl Agent for KafkaAgent {
         let cluster = self.zoo.cluster_id(span)?;
         let name = self.jmx.broker_name(span)?;
         let version = self.jmx.broker_version(span)?;
-        Ok(DatastoreInfo::new(cluster, "Kafka", name, version))
+        // TODO: Friendly cluster name.
+        Ok(DatastoreInfo::new(cluster, "Kafka", name, version, None))
     }
 
     fn shards(&self, span: &mut Span) -> Result<Shards> {
