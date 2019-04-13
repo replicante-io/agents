@@ -11,9 +11,9 @@ extern crate failure_derive;
 extern crate humthreads;
 extern crate iron;
 extern crate iron_json_response;
-extern crate router;
 #[cfg(test)]
 extern crate iron_test;
+extern crate router;
 
 #[macro_use]
 extern crate lazy_static;
@@ -51,10 +51,10 @@ pub mod util;
 #[cfg(debug_assertions)]
 pub mod testing;
 
+pub use self::error::fail_span;
 pub use self::error::Error;
 pub use self::error::ErrorKind;
 pub use self::error::Result;
-pub use self::error::fail_span;
 
 pub use self::runner::AgentContext;
 pub use self::runner::AgentRunner;

@@ -1,23 +1,22 @@
 use std::fmt;
 
+use failure::err_msg;
 use failure::Backtrace;
 use failure::Context;
 use failure::Fail;
-use failure::err_msg;
 
+use iron::status;
 use iron::IronError;
 use iron::Response;
 use iron::Set;
-use iron::status;
 use iron_json_response::JsonResponse;
 
 use opentracingrust::Error as OTError;
-use opentracingrust::Span;
 use opentracingrust::Log;
+use opentracingrust::Span;
 
 use replicante_util_failure::SerializableFail;
 use replicante_util_iron::into_ironerror;
-
 
 /// Error information returned by functions in case of errors.
 #[derive(Debug)]
@@ -55,14 +54,14 @@ impl From<ErrorKind> for Error {
 // can be converted into base agent error kinds and wrapped in an error.
 // See the MongoDB agent code for an example of this.
 impl<E> From<Context<E>> for Error
-    where E: Into<ErrorKind> + fmt::Display + Sync + Send
+where
+    E: Into<ErrorKind> + fmt::Display + Sync + Send,
 {
     fn from(context: Context<E>) -> Error {
         let context = context.map(|e| e.into());
         Error(context)
     }
 }
-
 
 /// Exhaustive list of possible errors emitted by this crate.
 #[derive(Debug, Fail)]
@@ -89,17 +88,18 @@ pub enum ErrorKind {
     #[fail(display = "I/O error on file {}", _0)]
     Io(String),
 
-    #[fail(display = "could not decode {} response from store for '{}' operation", _0, _1)]
+    #[fail(
+        display = "could not decode {} response from store for '{}' operation",
+        _0, _1
+    )]
     ResponseDecode(&'static str, &'static str),
 
     #[fail(display = "datastore operation '{}' failed", _0)]
     StoreOpFailed(&'static str),
 }
 
-
 /// Short form alias for functions returning `Error`s.
 pub type Result<T> = ::std::result::Result<T, Error>;
-
 
 // **********************
 // * Compatibility Code *
@@ -111,16 +111,15 @@ impl From<Error> for IronError {
     }
 }
 
-
 // OpenTracing compatibility code.
 /// Re-implement `FailSpan` for `Fail` errors :-(
 pub fn fail_span<E: Fail>(error: E, span: &mut Span) -> E {
     span.tag("error", true);
     span.log(
         Log::new()
-        .log("event", "error")
-        .log("message", error.to_string())
-        .log("error.object", format!("{:?}", error))
+            .log("event", "error")
+            .log("message", error.to_string())
+            .log("error.object", format!("{:?}", error)),
     );
     error
 }
@@ -135,7 +134,9 @@ pub fn otr_to_iron(error: OTError) -> IronError {
         trace: None,
     };
     let mut response = Response::new();
-    response.set_mut(JsonResponse::json(wrapper)).set_mut(status::BadRequest);
+    response
+        .set_mut(JsonResponse::json(wrapper))
+        .set_mut(status::BadRequest);
     // OTError should really have implemented `Error` :-(
     let error = err_msg(error).compat();
     IronError {
@@ -144,17 +145,16 @@ pub fn otr_to_iron(error: OTError) -> IronError {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
-    use failure::Fail;
     use failure::err_msg;
+    use failure::Fail;
 
-    use iron::IronResult;
-    use iron::Headers;
-    use iron::Response;
-    use iron::Request;
     use iron::headers::ContentType;
+    use iron::Headers;
+    use iron::IronResult;
+    use iron::Request;
+    use iron::Response;
 
     use iron_test::request;
     use iron_test::response;
@@ -175,14 +175,15 @@ mod tests {
         let response = request::get("http://host:16016/", Headers::new(), &failing);
         let response = match response {
             Err(error) => error.response,
-            Ok(_) => panic!("Request should fail")
+            Ok(_) => panic!("Request should fail"),
         };
-
         let content_type = response.headers.get::<ContentType>().unwrap().clone();
         assert_eq!(content_type, ContentType::json());
-
         let result_body = response::extract_body_to_bytes(response);
         let result_body = String::from_utf8(result_body).unwrap();
-        assert_eq!(result_body, r#"{"error":"failures","layers":["failures","chained","test"],"trace":null}"#);
+        assert_eq!(
+            result_body,
+            r#"{"error":"failures","layers":["failures","chained","test"],"trace":null}"#
+        );
     }
 }

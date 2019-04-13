@@ -12,7 +12,6 @@ use opentracingrust::Span;
 use opentracingrust::SpanContext;
 use opentracingrust::Tracer;
 
-
 /// Implement the MapCarrier trait for Iron's Headers.
 ///
 /// # Examples
@@ -59,8 +58,9 @@ impl<'a> HeadersCarrier<'a> {
     /// Again ... sorry.
     fn prepare_iter(&mut self) {
         let items: HashMap<String, String> = {
-            self.headers.iter()
-                .map(|header|(String::from(header.name()), header.value_string()))
+            self.headers
+                .iter()
+                .map(|header| (String::from(header.name()), header.value_string()))
                 .collect()
         };
         self.iter_stage = items;
@@ -72,7 +72,7 @@ impl<'a> HeadersCarrier<'a> {
     pub fn new(headers: &'a mut Headers) -> HeadersCarrier<'a> {
         let mut carrier = HeadersCarrier {
             iter_stage: HashMap::new(),
-            headers
+            headers,
         };
         carrier.prepare_iter();
         carrier
@@ -124,7 +124,7 @@ impl<'a> MapCarrier for HeadersCarrier<'a> {
     fn get(&self, key: &str) -> Option<String> {
         match self.headers.get_raw(key) {
             Some(value) => Some(String::from_utf8(value[0].clone()).unwrap()),
-            None => None
+            None => None,
         }
     }
 
@@ -135,21 +135,24 @@ impl<'a> MapCarrier for HeadersCarrier<'a> {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use iron::Response;
 
-    use opentracingrust::MapCarrier;
     use opentracingrust::tracers::NoopTracer;
+    use opentracingrust::MapCarrier;
 
     use super::HeadersCarrier;
 
     #[test]
     fn get_header() {
         let mut response = Response::new();
-        response.headers.set_raw("X-Test-1", vec![String::from("Test 1").into_bytes()]);
-        response.headers.set_raw("X-Test-2", vec![String::from("Test 2").into_bytes()]);
+        response
+            .headers
+            .set_raw("X-Test-1", vec![String::from("Test 1").into_bytes()]);
+        response
+            .headers
+            .set_raw("X-Test-2", vec![String::from("Test 2").into_bytes()]);
         let carrier = HeadersCarrier::new(&mut response.headers);
         let boxed: Box<MapCarrier> = Box::new(carrier);
         assert_eq!("Test 1", boxed.get("X-Test-1").unwrap());
@@ -160,8 +163,12 @@ mod tests {
     #[test]
     fn iter_headers() {
         let mut response = Response::new();
-        response.headers.set_raw("X-Test-1", vec![String::from("Test 1").into_bytes()]);
-        response.headers.set_raw("X-Test-2", vec![String::from("Test 2").into_bytes()]);
+        response
+            .headers
+            .set_raw("X-Test-1", vec![String::from("Test 1").into_bytes()]);
+        response
+            .headers
+            .set_raw("X-Test-2", vec![String::from("Test 2").into_bytes()]);
         let carrier = HeadersCarrier::new(&mut response.headers);
         let boxed: Box<MapCarrier> = Box::new(carrier);
         let items: Vec<(&String, &String)> = boxed.items();

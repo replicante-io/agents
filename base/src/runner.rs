@@ -6,8 +6,8 @@ use std::time::Duration;
 
 use iron::Iron;
 use opentracingrust::Tracer;
-use prometheus::Registry;
 use prometheus::process_collector::ProcessCollector;
+use prometheus::Registry;
 
 #[cfg(debug_assertions)]
 use slog::Discard;
@@ -17,10 +17,9 @@ use slog_scope::GlobalLoggerGuard;
 #[cfg(debug_assertions)]
 use replicante_util_tracing::TracerExtra;
 
-use super::config::Agent as AgentConfig;
 use super::api;
+use super::config::Agent as AgentConfig;
 use super::Agent;
-
 
 /// Agent services injection.
 ///
@@ -51,7 +50,8 @@ pub struct AgentContext {
 impl fmt::Debug for AgentContext {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(
-            f, "AgentContext{{config:{:?},logger:{:?},metrics:Registry,tracer:Tracer}}",
+            f,
+            "AgentContext{{config:{:?},logger:{:?},metrics:Registry,tracer:Tracer}}",
             self.config, self.logger,
         )
     }
@@ -82,8 +82,10 @@ impl AgentContext {
         let config = AgentConfig::default();
         let logger = Logger::root(Discard, o!());
         let (tracer, mut extra) = ::replicante_util_tracing::tracer(
-            ::replicante_util_tracing::Config::Noop, logger.clone()
-        ).unwrap();
+            ::replicante_util_tracing::Config::Noop,
+            logger.clone(),
+        )
+        .unwrap();
         let context = AgentContext::new(config, logger, tracer);
         if let TracerExtra::ReporterThread(ref mut reporter) = extra {
             reporter.stop_delay(Duration::from_millis(2));
@@ -91,7 +93,6 @@ impl AgentContext {
         (context, extra)
     }
 }
-
 
 /// Common implementation for Agents.
 ///
@@ -104,7 +105,8 @@ pub struct AgentRunner {
 
 impl AgentRunner {
     pub fn new<A>(agent: A, context: AgentContext) -> AgentRunner
-        where A: 'static + Agent
+    where
+        A: 'static + Agent,
     {
         AgentRunner {
             agent: Arc::new(agent),

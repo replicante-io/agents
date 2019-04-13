@@ -1,14 +1,13 @@
 use opentracingrust::Span;
 
-use super::Agent;
-use super::ErrorKind;
-use super::Result;
-
 use replicante_agent_models::AgentInfo;
 use replicante_agent_models::AgentVersion;
 use replicante_agent_models::DatastoreInfo;
 use replicante_agent_models::Shards;
 
+use super::Agent;
+use super::ErrorKind;
+use super::Result;
 
 /// An implementation of Agent to be used for tests.
 pub struct MockAgent {
@@ -33,15 +32,21 @@ impl MockAgent {
 
 impl Agent for MockAgent {
     fn agent_info(&self, _: &mut Span) -> Result<AgentInfo> {
-        self.agent_info.clone().map_err(|error| ErrorKind::FreeForm(error).into())
+        self.agent_info
+            .clone()
+            .map_err(|error| ErrorKind::FreeForm(error).into())
     }
 
     fn datastore_info(&self, _: &mut Span) -> Result<DatastoreInfo> {
-        self.datastore_info.clone().map_err(|error| ErrorKind::FreeForm(error).into())
+        self.datastore_info
+            .clone()
+            .map_err(|error| ErrorKind::FreeForm(error).into())
     }
 
-    fn shards(&self, _:&mut Span) -> Result<Shards> {
-        self.shards.clone().map_err(|error| ErrorKind::FreeForm(error).into())
+    fn shards(&self, _: &mut Span) -> Result<Shards> {
+        self.shards
+            .clone()
+            .map_err(|error| ErrorKind::FreeForm(error).into())
     }
 }
 

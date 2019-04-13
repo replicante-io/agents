@@ -1,8 +1,8 @@
 use std::sync::Arc;
 
 use iron::prelude::*;
-use iron::Handler;
 use iron::status;
+use iron::Handler;
 use iron_json_response::JsonResponse;
 use opentracingrust::Log;
 
@@ -11,7 +11,6 @@ use super::super::super::error::otr_to_iron;
 use super::super::super::util::tracing::HeadersCarrier;
 use super::super::super::Agent;
 use super::super::super::AgentContext;
-
 
 /// Handler implementing the /api/v1/info/agent endpoint.
 pub struct AgentInfo {
@@ -29,10 +28,14 @@ impl Handler for AgentInfo {
     fn handle(&self, request: &mut Request) -> IronResult<Response> {
         let tracer = &self.context.tracer;
         let mut span = HeadersCarrier::child_of("agent-info", &mut request.headers, tracer)
-            .map_err(otr_to_iron)?.auto_finish();
+            .map_err(otr_to_iron)?
+            .auto_finish();
 
         span.log(Log::new().log("span.kind", "server-receive"));
-        let info = self.agent.agent_info(&mut span).map_err(|error| fail_span(error, &mut span))?;
+        let info = self
+            .agent
+            .agent_info(&mut span)
+            .map_err(|error| fail_span(error, &mut span))?;
         span.log(Log::new().log("span.kind", "server-send"));
 
         let mut response = Response::new();
@@ -42,11 +45,12 @@ impl Handler for AgentInfo {
                 error!(self.context.logger, "Failed to inject span"; "error" => ?error);
             }
         };
-        response.set_mut(JsonResponse::json(info)).set_mut(status::Ok);
+        response
+            .set_mut(JsonResponse::json(info))
+            .set_mut(status::Ok);
         Ok(response)
     }
 }
-
 
 /// Handler implementing the /api/v1/info/datastore endpoint.
 pub struct DatastoreInfo {
@@ -64,10 +68,13 @@ impl Handler for DatastoreInfo {
     fn handle(&self, request: &mut Request) -> IronResult<Response> {
         let tracer = &self.context.tracer;
         let mut span = HeadersCarrier::child_of("datastore-info", &mut request.headers, tracer)
-            .map_err(otr_to_iron)?.auto_finish();
+            .map_err(otr_to_iron)?
+            .auto_finish();
 
         span.log(Log::new().log("span.kind", "server-receive"));
-        let info = self.agent.datastore_info(&mut span)
+        let info = self
+            .agent
+            .datastore_info(&mut span)
             .map_err(|error| fail_span(error, &mut span))?;
         span.log(Log::new().log("span.kind", "server-send"));
 
@@ -75,15 +82,15 @@ impl Handler for DatastoreInfo {
         match HeadersCarrier::inject(span.context(), &mut response.headers, tracer) {
             Ok(_) => (),
             Err(error) => {
-                let error = format!("{:?}", error);
-                error!(self.context.logger, "Failed to inject span"; "error" => error);
+                error!(self.context.logger, "Failed to inject span"; "error" => ?error);
             }
         };
-        response.set_mut(JsonResponse::json(info)).set_mut(status::Ok);
+        response
+            .set_mut(JsonResponse::json(info))
+            .set_mut(status::Ok);
         Ok(response)
     }
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -91,20 +98,20 @@ mod tests {
         use std::sync::Arc;
 
         use iron::Chain;
-        use iron::IronError;
         use iron::Headers;
+        use iron::IronError;
         use iron_json_response::JsonResponseMiddleware;
         use iron_test::request;
         use iron_test::response;
 
+        use super::super::super::super::super::testing::MockAgent;
         use super::super::super::super::super::Agent;
         use super::super::super::super::super::AgentContext;
-        use super::super::super::super::super::testing::MockAgent;
         use super::super::super::AgentInfo;
 
-
-        fn get<A>(agent: A) -> Result<String, IronError> 
-            where A: Agent + 'static
+        fn get<A>(agent: A) -> Result<String, IronError>
+        where
+            A: Agent + 'static,
         {
             let (context, extra) = AgentContext::mock();
             let handler = AgentInfo::make(Arc::new(agent), context);
@@ -115,7 +122,8 @@ mod tests {
             };
             let response = request::get(
                 "http://localhost:3000/api/v1/info/agent",
-                Headers::new(), &handler
+                Headers::new(),
+                &handler,
             )
             .map(|response| {
                 let body = response::extract_body_to_bytes(response);
@@ -135,7 +143,10 @@ mod tests {
             if let Some(result) = result.err() {
                 let body = response::extract_body_to_bytes(result.response);
                 let body = String::from_utf8(body).unwrap();
-                assert_eq!(body, r#"{"error":"Testing failure","layers":["Testing failure"],"trace":null}"#);
+                assert_eq!(
+                    body,
+                    r#"{"error":"Testing failure","layers":["Testing failure"],"trace":null}"#
+                );
             }
         }
 
@@ -152,20 +163,20 @@ mod tests {
         use std::sync::Arc;
 
         use iron::Chain;
-        use iron::IronError;
         use iron::Headers;
+        use iron::IronError;
         use iron_json_response::JsonResponseMiddleware;
         use iron_test::request;
         use iron_test::response;
 
+        use super::super::super::super::super::testing::MockAgent;
         use super::super::super::super::super::Agent;
         use super::super::super::super::super::AgentContext;
-        use super::super::super::super::super::testing::MockAgent;
         use super::super::super::DatastoreInfo;
 
-
-        fn get<A>(agent: A) -> Result<String, IronError> 
-            where A: Agent + 'static
+        fn get<A>(agent: A) -> Result<String, IronError>
+        where
+            A: Agent + 'static,
         {
             let (context, extra) = AgentContext::mock();
             let handler = DatastoreInfo::make(Arc::new(agent), context);
@@ -176,7 +187,8 @@ mod tests {
             };
             let response = request::get(
                 "http://localhost:3000/api/v1/info/datastore",
-                Headers::new(), &handler
+                Headers::new(),
+                &handler,
             )
             .map(|response| {
                 let body = response::extract_body_to_bytes(response);
@@ -196,7 +208,10 @@ mod tests {
             if let Some(result) = result.err() {
                 let body = response::extract_body_to_bytes(result.response);
                 let body = String::from_utf8(body).unwrap();
-                assert_eq!(body, r#"{"error":"Testing failure","layers":["Testing failure"],"trace":null}"#);
+                assert_eq!(
+                    body,
+                    r#"{"error":"Testing failure","layers":["Testing failure"],"trace":null}"#
+                );
             }
         }
 

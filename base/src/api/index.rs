@@ -1,11 +1,12 @@
 use iron::prelude::*;
 use iron::status;
 
-
 pub fn index(_: &mut Request) -> IronResult<Response> {
-    Ok(Response::with((status::Ok, "Replicante Agent API endpoints")))
+    Ok(Response::with((
+        status::Ok,
+        "Replicante Agent API endpoints",
+    )))
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -15,10 +16,8 @@ mod tests {
 
     #[test]
     fn index_points_to_api() {
-        let response = request::get(
-            "http://localhost:3000/",
-            Headers::new(), &super::index
-        ).unwrap();
+        let response =
+            request::get("http://localhost:3000/", Headers::new(), &super::index).unwrap();
         let result_body = response::extract_body_to_bytes(response);
         let result_body = String::from_utf8(result_body).unwrap();
         assert_eq!(result_body, "Replicante Agent API endpoints");

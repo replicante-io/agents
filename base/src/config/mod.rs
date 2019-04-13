@@ -2,10 +2,8 @@ use replicante_logging::Config as LoggingConfig;
 use replicante_logging::LoggingLevel;
 use replicante_util_tracing::Config as TracerConfig;
 
-
 mod api;
 pub use self::api::APIConfig;
-
 
 /// Stores the base agent configuration options.
 ///
@@ -49,17 +47,19 @@ impl Agent {
     pub fn transform(mut self) -> Self {
         if self.logging.level == LoggingLevel::Debug && !self.logging.verbose {
             self.logging.level = LoggingLevel::Info;
-            self.logging.modules.entry("replicante".into()).or_insert(LoggingLevel::Debug);
+            self.logging
+                .modules
+                .entry("replicante".into())
+                .or_insert(LoggingLevel::Debug);
         }
         self
     }
 }
 
-
 #[cfg(test)]
 mod tests {
-    use super::Agent;
     use super::APIConfig;
+    use super::Agent;
 
     #[test]
     fn override_defauts() {

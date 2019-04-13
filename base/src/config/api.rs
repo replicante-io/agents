@@ -1,12 +1,10 @@
 use std::collections::HashMap;
 use std::sync::RwLock;
 
-
 // Define some globals to hold the default overrides.
 lazy_static! {
     static ref DEFAULT_BIND: RwLock<Option<String>> = RwLock::new(None);
 }
-
 
 /// Web server configuration options.
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
@@ -32,8 +30,11 @@ impl Default for APIConfig {
 impl APIConfig {
     /// Default value for `bind` used by serde.
     fn default_bind() -> String {
-        DEFAULT_BIND.read().unwrap()
-            .as_ref().map(Clone::clone)
+        DEFAULT_BIND
+            .read()
+            .unwrap()
+            .as_ref()
+            .map(Clone::clone)
             .unwrap_or_else(|| String::from("127.0.0.1:8000"))
     }
 }

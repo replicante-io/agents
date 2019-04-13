@@ -13,7 +13,6 @@ use super::AgentContext;
 use super::Error;
 use super::Result;
 
-
 /// Information about an Agent that is active.
 #[derive(Clone)]
 pub struct ActiveAgent {
@@ -41,9 +40,8 @@ impl ActiveAgent {
     }
 }
 
-
 /// Abstract logic to instantiate an Agent.
-pub trait AgentFactory : Send + Sync {
+pub trait AgentFactory: Send + Sync {
     /// Instantiate a new Agent best interacting with the current version.
     ///
     /// This method should detect the best fit communicating with the datastore itself.
@@ -55,7 +53,6 @@ pub trait AgentFactory : Send + Sync {
     /// Checks if the currently active agent should be replaced with a new one in case of error.
     fn should_remake_on_error(&self, active: &ActiveAgent, error: &Error) -> bool;
 }
-
 
 /// Replicante agent decorator to support runtime-selected agent versions.
 ///
@@ -98,7 +95,8 @@ pub trait AgentFactory : Send + Sync {
 /// Agents applications can implement additional strategies by calling
 /// `VersionedAgent::validate_version`.
 pub struct VersionedAgent<Factory>
-    where Factory: AgentFactory + 'static
+where
+    Factory: AgentFactory + 'static,
 {
     active: RwLock<ActiveAgent>,
     context: AgentContext,
@@ -106,7 +104,8 @@ pub struct VersionedAgent<Factory>
 }
 
 impl<Factory> VersionedAgent<Factory>
-    where Factory: AgentFactory + 'static
+where
+    Factory: AgentFactory + 'static,
 {
     /// Replace the active agent with a newly made one.
     fn remake_agent(&self, span: &mut Span) {
@@ -119,7 +118,8 @@ impl<Factory> VersionedAgent<Factory>
 }
 
 impl<Factory> VersionedAgent<Factory>
-    where Factory: AgentFactory + 'static
+where
+    Factory: AgentFactory + 'static,
 {
     pub fn new(context: AgentContext, factory: Factory) -> VersionedAgent<Factory> {
         let active = RwLock::new(factory.make());
@@ -142,15 +142,19 @@ impl<Factory> VersionedAgent<Factory>
     pub fn validate_version(&self, span: &mut Span) -> Option<DatastoreInfo> {
         // Scope version check because it requires a read lock.
         let (should_remake, info) = {
-            let active = self.active.read().expect("ActiveAgent lock was poisoned").clone();
+            let active = self
+                .active
+                .read()
+                .expect("ActiveAgent lock was poisoned")
+                .clone();
             let info = active.agent.datastore_info(span);
             match info {
                 Err(err) => {
                     let error = format!("{:?}", err);
                     warn!(self.context.logger, "Failed to detect version"; "error" => error);
                     (self.factory.should_remake_on_error(&active, &err), None)
-                },
-                Ok(info) => (self.factory.should_remake(&active, &info), Some(info))
+                }
+                Ok(info) => (self.factory.should_remake(&active, &info), Some(info)),
             }
         };
         // Remake the agent if needed.
@@ -165,7 +169,8 @@ impl<Factory> VersionedAgent<Factory>
 }
 
 impl<Factory> Agent for VersionedAgent<Factory>
-    where Factory: AgentFactory + 'static
+where
+    Factory: AgentFactory + 'static,
 {
     fn agent_info(&self, span: &mut Span) -> Result<AgentInfo> {
         let active = self.active.read().expect("ActiveAgent lock was poisoned");
@@ -178,7 +183,11 @@ impl<Factory> Agent for VersionedAgent<Factory>
             return Ok(info);
         }
         // Otherwise we attempt to get it directly.
-        let active = self.active.read().expect("ActiveAgent lock was poisoned").clone();
+        let active = self
+            .active
+            .read()
+            .expect("ActiveAgent lock was poisoned")
+            .clone();
         active.agent.datastore_info(span)
     }
 
@@ -187,7 +196,6 @@ impl<Factory> Agent for VersionedAgent<Factory>
         active.agent.shards(span)
     }
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -200,16 +208,15 @@ mod tests {
     use replicante_agent_models::DatastoreInfo;
     use replicante_agent_models::Shards;
 
+    use super::super::testing::MockAgent;
     use super::super::AgentContext;
     use super::super::Error;
     use super::super::Result;
-    use super::super::testing::MockAgent;
 
     use super::ActiveAgent;
     use super::Agent;
     use super::AgentFactory;
     use super::VersionedAgent;
-
 
     struct MockFactory {
         pub agent: Arc<Agent>,
@@ -244,14 +251,17 @@ mod tests {
             self.0.datastore_info(span)
         }
 
-        fn shards(&self, span:&mut Span) -> Result<Shards> {
+        fn shards(&self, span: &mut Span) -> Result<Shards> {
             self.0.shards(span)
         }
     }
 
     struct WrappedMockFactory(Arc<MockFactory>);
     impl AgentFactory for WrappedMockFactory {
-        fn make(&self) -> ActiveAgent { self.0.make() }
+        fn make(&self) -> ActiveAgent {
+            self.0.make()
+        }
+
         fn should_remake(&self, active: &ActiveAgent, info: &DatastoreInfo) -> bool {
             self.0.should_remake(active, info)
         }
@@ -259,7 +269,6 @@ mod tests {
             self.0.should_remake_on_error(active, error)
         }
     }
-
 
     #[test]
     fn does_not_remake() {
@@ -270,11 +279,11 @@ mod tests {
             remake_on_error: false,
         });
         let (context, extra) = AgentContext::mock();
-        let agent = VersionedAgent::new(
-            context.clone(), WrappedMockFactory(Arc::clone(&factory))
-        );
+        let agent = VersionedAgent::new(context.clone(), WrappedMockFactory(Arc::clone(&factory)));
         assert_eq!(1, *factory.made.lock().unwrap());
-        agent.datastore_info(&mut context.tracer.span("TEST")).unwrap();
+        agent
+            .datastore_info(&mut context.tracer.span("TEST"))
+            .unwrap();
         assert_eq!(1, *factory.made.lock().unwrap());
         drop(extra);
     }
@@ -291,9 +300,7 @@ mod tests {
             remake_on_error: true,
         });
         let (context, extra) = AgentContext::mock();
-        let agent = VersionedAgent::new(
-            context.clone(), WrappedMockFactory(Arc::clone(&factory))
-        );
+        let agent = VersionedAgent::new(context.clone(), WrappedMockFactory(Arc::clone(&factory)));
         agent.validate_version(&mut context.tracer.span("TEST"));
         assert_eq!(2, *factory.made.lock().unwrap());
         drop(extra);
@@ -311,9 +318,7 @@ mod tests {
             remake_on_error: false,
         });
         let (context, extra) = AgentContext::mock();
-        let agent = VersionedAgent::new(
-            context.clone(), WrappedMockFactory(Arc::clone(&factory))
-        );
+        let agent = VersionedAgent::new(context.clone(), WrappedMockFactory(Arc::clone(&factory)));
         agent.validate_version(&mut context.tracer.span("TEST"));
         assert_eq!(1, *factory.made.lock().unwrap());
         drop(extra);
@@ -330,9 +335,7 @@ mod tests {
             remake_on_error: false,
         });
         let (context, extra) = AgentContext::mock();
-        let agent = VersionedAgent::new(
-            context.clone(), WrappedMockFactory(Arc::clone(&factory))
-        );
+        let agent = VersionedAgent::new(context.clone(), WrappedMockFactory(Arc::clone(&factory)));
         agent.validate_version(&mut context.tracer.span("TEST"));
         assert_eq!(1, *factory.made.lock().unwrap());
         drop(extra);
@@ -349,9 +352,7 @@ mod tests {
             remake_on_error: false,
         });
         let (context, extra) = AgentContext::mock();
-        let agent = VersionedAgent::new(
-            context.clone(), WrappedMockFactory(Arc::clone(&factory))
-        );
+        let agent = VersionedAgent::new(context.clone(), WrappedMockFactory(Arc::clone(&factory)));
         agent.validate_version(&mut context.tracer.span("TEST"));
         assert_eq!(2, *factory.made.lock().unwrap());
         drop(extra);
