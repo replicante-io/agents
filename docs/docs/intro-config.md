@@ -46,6 +46,20 @@ agent:
       # where the attributes and parameters can change a lot and often.
       unstable: true
 
+  # Override the cluster display name, or set it if none was detected.
+  #
+  # The cluster ID is used to uniquely identify the cluster across the system
+  # but some datastores report random, machine generated, strings as IDs.
+  # To make clusters more identifiable to Replicante users a display name is
+  # used in messages/views when provided, using the cluster ID as a fallback.
+  #
+  # When a datastore does not auto-detect a display name or you wish to change the
+  # auto-detected display name, use this field to set whatever you want.
+  #
+  # NOTE: just like the cluster ID, the display name must be unique across all
+  # clusters in a single Replicante Core instance.
+  cluster_display_name_override: ~
+
   # The section below is for logging configuration.
   logging:
     # Flush logs asynchronously.

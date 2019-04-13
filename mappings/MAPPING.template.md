@@ -1,8 +1,9 @@
 ## ???
 * Administration:
-  * A cluster name shared by all nodes: ???
-  * A cluster-unique name for the node: ???
+  * A cluster ID shared by all nodes: ???
+  * A cluster-unique ID for the node: ???
   * Version information: ???
+  * [Optional] An operation friendly cluster display name: ???
 
 * Clustering: ???
 

@@ -1,8 +1,9 @@
 ## Etcd
 * Administration:
-  * A cluster name shared by all nodes: user defined in agent configuration.
-  * A cluster-unique name for the node: node name (extract node ID from `MemberListResponse.ResponseHeader.member_id` and map to a `MemberListResponse.Member`).
+  * A cluster ID shared by all nodes: user defined in agent configuration.
+  * A cluster-unique ID for the node: node name (extract node ID from `MemberListResponse.ResponseHeader.member_id` and map to a `MemberListResponse.Member`).
   * Version information: `StatusResponse.version`.
+  * [Optional] An operation friendly cluster display name: unavailable.
 
 * Clustering: etcd processes.
 

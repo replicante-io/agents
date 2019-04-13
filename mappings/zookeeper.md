@@ -1,8 +1,9 @@
 ## Zookeeper
 * Administration:
-  * A cluster name shared by all nodes: user defined in agent configuration.
-  * A cluster-unique name for the node: `serverId` value of the [`conf`](https://zookeeper.apache.org/doc/current/zookeeperAdmin.html#sc_zkCommands) command output.
+  * A cluster ID shared by all nodes: user defined in agent configuration.
+  * A cluster-unique ID for the node: `serverId` value of the [`conf`](https://zookeeper.apache.org/doc/current/zookeeperAdmin.html#sc_zkCommands) command output.
   * Version information: from the output of either [`envi`](https://zookeeper.apache.org/doc/current/zookeeperAdmin.html#sc_zkCommands) or [`srvr`](https://zookeeper.apache.org/doc/current/zookeeperAdmin.html#sc_zkCommands) command.
+  * [Optional] An operation friendly cluster display name: unavailable.
 
 * Clustering: zookeeper processes forming an ensable.
 

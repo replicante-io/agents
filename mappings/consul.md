@@ -1,8 +1,9 @@
 ## Consul
 * Administration:
-  * A cluster name shared by all nodes: user defined in agent configuration.
-  * A cluster-unique name for the node: `.Member.Name` from [`/v1/agent/self`](https://www.consul.io/api/agent.html#read-configuration).
+  * A cluster ID shared by all nodes: user defined in agent configuration.
+  * A cluster-unique ID for the node: `.Member.Name` from [`/v1/agent/self`](https://www.consul.io/api/agent.html#read-configuration).
   * Version information: `.Config.Version` from [`/v1/agent/self`](https://www.consul.io/api/agent.html#read-configuration).
+  * [Optional] An operation friendly cluster display name: unavailable.
 
 * Clustering: consul server agent.
 

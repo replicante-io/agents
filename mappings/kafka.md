@@ -1,8 +1,9 @@
 ## Kafka
 * Administration:
-  * A cluster name shared by all nodes: user defined in agent configuration.
-  * A cluster-unique name for the node: extracted from the name of the [`kafka.server:type=app-info,id=ID`](https://kafka.apache.org/documentation/#monitoring) JMX MBean.
+  * A cluster ID shared by all nodes: user defined in agent configuration.
+  * A cluster-unique ID for the node: extracted from the name of the [`kafka.server:type=app-info,id=ID`](https://kafka.apache.org/documentation/#monitoring) JMX MBean.
   * Version information: extracted from the `version` attribute of the [`kafka.server:type=app-info`](https://kafka.apache.org/documentation/#monitoring) JMX MBean.
+  * [Optional] An operation friendly cluster display name: unavailable.
 
 * Clustering:
   * Kafka processes forming a set of brokers.

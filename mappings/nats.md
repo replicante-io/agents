@@ -4,9 +4,10 @@ NATS itself seems to be a network abstraction and not a datastore
 
 
 * Administration:
-  * A cluster name shared by all nodes: user defined in agent configuration (only available in the API when node is `FT_ACTIVE`).
-  * A cluster-unique name for the node: `server_id` from `/streaming/serverz`.
+  * A cluster ID shared by all nodes: user defined in agent configuration (only available in the API when node is `FT_ACTIVE`).
+  * A cluster-unique ID for the node: `server_id` from `/streaming/serverz`.
   * Version information: `version` from `/streaming/serverz`.
+  * [Optional] An operation friendly cluster display name: unavailable.
 
 * Clustering: the NATS straming process, MUST BE in fault tolerant mode.
 

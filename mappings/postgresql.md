@@ -11,9 +11,10 @@ to manage a replicated PostgreSQL cluster.
 
 
 * Administration:
-  * A cluster name shared by all nodes: user defined in agent configuration.
-  * A cluster-unique name for the node: user defined in agent configuration.
+  * A cluster ID shared by all nodes: user defined in agent configuration.
+  * A cluster-unique ID for the node: user defined in agent configuration.
   * Version information: output of `SELECT version();`
+  * [Optional] An operation friendly cluster display name: unavailable.
 
 * Clustering:
   * PostgreSQL server processes.

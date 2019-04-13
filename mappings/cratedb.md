@@ -1,8 +1,9 @@
 ## CrateDB
 * Administration:
-  * A cluster name shared by all nodes: [`SELECT name FROM sys.cluster;`](https://crate.io/docs/crate/reference/en/latest/admin/system-information.html#cluster).
-  * A cluster-unique name for the node: user defined in agent configuration (MUST match local node name).
+  * A cluster ID shared by all nodes: [`SELECT name FROM sys.cluster;`](https://crate.io/docs/crate/reference/en/latest/admin/system-information.html#cluster).
+  * A cluster-unique ID for the node: user defined in agent configuration (MUST match local node name).
   * Version information: [`SELECT name, version['number'] as version FROM sys.nodes WHERE name = '<NODE>';`](https://crate.io/docs/crate/reference/en/latest/admin/system-information.html#version).
+  * [Optional] An operation friendly cluster display name: unavailable.
 
 * Clustering: CrateDB processes.
 

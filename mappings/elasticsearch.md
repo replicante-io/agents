@@ -1,8 +1,9 @@
 ## ElasticSearch
 * Administration:
-  * A cluster name shared by all nodes: `cluster_name` as reported by [`_cluster/health?local=true`](https://www.elastic.co/guide/en/elasticsearch/reference/6.3/cluster-health.html).
-  * A cluster-unique name for the node: node's `name` as reported by [`_nodes/_local`](https://www.elastic.co/guide/en/elasticsearch/reference/6.3/cluster-nodes-info.html).
+  * A cluster ID shared by all nodes: `cluster_name` as reported by [`_cluster/health?local=true`](https://www.elastic.co/guide/en/elasticsearch/reference/6.3/cluster-health.html).
+  * A cluster-unique ID for the node: node's `name` as reported by [`_nodes/_local`](https://www.elastic.co/guide/en/elasticsearch/reference/6.3/cluster-nodes-info.html).
   * Version information: node's `version` as reported by [`_nodes/_local`](https://www.elastic.co/guide/en/elasticsearch/reference/6.3/cluster-nodes-info.html).
+  * [Optional] An operation friendly cluster display name: unavailable.
 
 * Clustering: elasticsearch instances forming the cluster.
 

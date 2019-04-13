@@ -1,8 +1,9 @@
 ## Redis (cluster)
 * Administration:
-  * A cluster name shared by all nodes: user defined in agent configuration.
-  * A cluster-unique name for the node: Node ID from the [`CLUSTER NODES`](https://redis.io/commands/cluster-nodes) output.
+  * A cluster ID shared by all nodes: user defined in agent configuration.
+  * A cluster-unique ID for the node: Node ID from the [`CLUSTER NODES`](https://redis.io/commands/cluster-nodes) output.
   * Version information: `redis_version` field of the `server` section from the [`INFO`](https://redis.io/commands/info) output.
+  * [Optional] An operation friendly cluster display name: unavailable.
 
 * Clustering: redis processes forming the cluster.
 
@@ -35,9 +36,10 @@ from the redis sentinel documentation.
 
 
 * Administration:
-  * A cluster name shared by all nodes: user defined in agent configuration.
-  * A cluster-unique name for the node: user defined in agent configuration.
+  * A cluster ID shared by all nodes: user defined in agent configuration.
+  * A cluster-unique ID for the node: user defined in agent configuration.
   * Version information: `redis_version` field of the `server` section from the [`INFO`](https://redis.io/commands/info) output.
+  * [Optional] An operation friendly cluster display name: unavailable.
 
 * Clustering:
   * Redis processes holding the data.

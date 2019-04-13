@@ -1,8 +1,9 @@
 ## MongoDB Replica Set
 * Administration:
-  * A cluster name shared by all nodes: name field from [`replSetGetStatus`](https://docs.mongodb.com/manual/reference/command/replSetGetStatus/).
-  * A cluster-unique name for the node: name field from [`replSetGetStatus`](https://docs.mongodb.com/manual/reference/command/replSetGetStatus/).
+  * A cluster ID shared by all nodes: RS name field from [`replSetGetStatus`](https://docs.mongodb.com/manual/reference/command/replSetGetStatus/).
+  * A cluster-unique ID for the node: name field from [`replSetGetStatus`](https://docs.mongodb.com/manual/reference/command/replSetGetStatus/).
   * Version information: [`buildInfo`](https://docs.mongodb.com/manual/reference/command/buildInfo/).
+  * [Optional] An operation friendly cluster display name: unavailable.
 
 * Clustering: `mongod` instances talking to each other.
 
@@ -22,11 +23,12 @@
 
 ## MongoDB Sharded
 * Administration:
-  * A cluster name shared by all nodes: user defined in agent configuration.
-  * A cluster-unique name for the node:
+  * A cluster ID shared by all nodes: user defined in agent configuration.
+  * A cluster-unique ID for the node:
     * `mongod`: name field from [`replSetGetStatus`](https://docs.mongodb.com/manual/reference/command/replSetGetStatus/).
     * `mongos`: user defined in agent configuration.
   * Version information: [`buildInfo`](https://docs.mongodb.com/manual/reference/command/buildInfo/).
+  * [Optional] An operation friendly cluster display name: unavailable.
 
 * Clustering:
   * `mongod` instances forming the configuration Replica Set.
