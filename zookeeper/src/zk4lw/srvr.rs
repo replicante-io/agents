@@ -20,7 +20,7 @@ impl FourLetterWord for Srvr {
         let lines = response.lines();
         for line in lines {
             let mut iter = line.splitn(2, ':');
-            match (iter.next().map(|s| s.trim()), iter.next().map(|s| s.trim())) {
+            match (iter.next().map(str::trim), iter.next().map(str::trim)) {
                 (Some(key), Some(value)) => {
                     match key {
                         "Mode" => zk_mode = Some(value.into()),

@@ -18,7 +18,7 @@ impl FourLetterWord for Conf {
         let lines = response.lines();
         for line in lines {
             let mut iter = line.split('=');
-            match (iter.next().map(|s| s.trim()), iter.next().map(|s| s.trim())) {
+            match (iter.next().map(str::trim), iter.next().map(str::trim)) {
                 (Some(key), Some(value)) => {
                     match key {
                         "serverId" => zk_server_id = Some(value.into()),

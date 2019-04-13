@@ -58,7 +58,7 @@ where
     E: Into<ErrorKind> + fmt::Display + Sync + Send,
 {
     fn from(context: Context<E>) -> Error {
-        let context = context.map(|e| e.into());
+        let context = context.map(Into::into);
         Error(context)
     }
 }

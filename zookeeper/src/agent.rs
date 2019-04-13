@@ -40,7 +40,7 @@ fn to_semver(version: &str) -> Result<String> {
     let ver = version.split(',').next()
         .expect("splitting version string returned no elements");
     let mut iter = ver.split('-');
-    match (iter.next().map(|s| s.trim()), iter.next().map(|s| s.trim())) {
+    match (iter.next().map(str::trim), iter.next().map(str::trim)) {
         (Some(version), Some(hash)) => Ok(format!("{}+{}", version, hash)),
         (Some(version), None) => Ok(version.into()),
         _ => Err(ErrorKind::VersionParse.into())
