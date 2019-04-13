@@ -251,7 +251,6 @@ mod tests {
     fn should_always_remake_unknown_version() {
         let (context, extra) = AgentContext::mock();
         let config = Config::default();
-        // TODO: Friendly cluster name.
         let info = DatastoreInfo::new("test", "MongoDB", "name", "unknown", None);
         let factory = MongoDBFactory::with_config(config, context).unwrap();
         let active = factory.make_agent(Err(ErrorKind::MembersNoPrimary.into()));
@@ -266,7 +265,6 @@ mod tests {
     fn should_remake_changed_version() {
         let (context, extra) = AgentContext::mock();
         let config = Config::default();
-        // TODO: Friendly cluster name.
         let info = DatastoreInfo::new("test", "MongoDB", "name", "3.6.0", None);
         let version = Version::parse("3.3.0").unwrap();
         let factory = MongoDBFactory::with_config(config, context).unwrap();
@@ -282,7 +280,6 @@ mod tests {
     fn should_remake_same_version() {
         let (context, extra) = AgentContext::mock();
         let config = Config::default();
-        // TODO: Friendly cluster name.
         let info = DatastoreInfo::new("test", "MongoDB", "name", "3.3.0", None);
         let version = Version::parse("3.3.0").unwrap();
         let factory = MongoDBFactory::with_config(config, context).unwrap();

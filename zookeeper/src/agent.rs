@@ -111,7 +111,6 @@ impl Agent for ZookeeperAgent {
     fn datastore_info(&self, span: &mut Span) -> Result<DatastoreInfo> {
         let name = self.conf(span)?.zk_server_id;
         let version = to_semver(&self.srvr(span)?.zk_version)?;
-        // TODO: Friendly cluster name.
         let info = DatastoreInfo::new(self.cluster_name.clone(), "Zookeeper", name, version, None);
         Ok(info)
     }

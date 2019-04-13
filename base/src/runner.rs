@@ -79,7 +79,11 @@ impl AgentContext {
 
     #[cfg(debug_assertions)]
     pub fn mock() -> (AgentContext, TracerExtra) {
-        let config = AgentConfig::default();
+        AgentContext::mock_with_config(AgentConfig::default())
+    }
+
+    #[cfg(debug_assertions)]
+    pub fn mock_with_config(config: AgentConfig) -> (AgentContext, TracerExtra) {
         let logger = Logger::root(Discard, o!());
         let (tracer, mut extra) = ::replicante_util_tracing::tracer(
             ::replicante_util_tracing::Config::Noop,

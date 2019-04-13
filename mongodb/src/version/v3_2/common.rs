@@ -31,7 +31,6 @@ use super::super::common::AGENT_VERSION;
 use super::BuildInfo;
 use super::ReplSetStatus;
 
-
 /// MongoDB 3.2+ logic common to both RS and Shareded modes.
 pub struct CommonLogic {
     client: Client,

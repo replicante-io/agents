@@ -44,12 +44,10 @@ impl Agent for Sharded {
         let cluster = self.cluster_name.clone();
         if self.is_mongos {
             let node_name = self.mongos_node_name.as_ref().unwrap().clone();
-            // TODO: Friendly cluster name.
             Ok(DatastoreInfo::new(cluster, "MongoDB", node_name, info.version, None))
         } else {
             let status = self.common.repl_set_get_status(span)?;
             let node_name = status.node_name()?;
-            // TODO: Friendly cluster name.
             Ok(DatastoreInfo::new(cluster, "MongoDB", node_name, info.version, None))
         }
     }

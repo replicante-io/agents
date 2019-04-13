@@ -11,7 +11,6 @@ pub struct BuildInfo {
     pub version: String,
 }
 
-
 /// Section of the replSetGetStatus command that we care about.
 #[derive(Debug, Deserialize)]
 pub struct ReplSetStatus {
@@ -65,11 +64,10 @@ impl ReplSetStatus {
             8 => Ok(ShardRole::Unknown(String::from("DOWN"))),
             9 => Ok(ShardRole::Unknown(String::from("ROLLBACK"))),
             10 => Ok(ShardRole::Unknown(String::from("REMOVED"))),
-            state => Err(ErrorKind::UnsupportedSateId(state).into())
+            state => Err(ErrorKind::UnsupportedSateId(state).into()),
         }
     }
 }
-
 
 /// Section of the replSetGetStatus member that we care about.
 #[derive(Debug, Deserialize)]
@@ -85,13 +83,11 @@ impl ReplSetStatusMember {
     fn default_self() -> bool { false }
 }
 
-
 /// Section of replSetGetStatus optime information that we care about.
 #[derive(Debug, Deserialize)]
 pub struct RepliSetOptime {
     pub ts: TimeStamp,
 }
-
 
 #[cfg(test)]
 mod tests {

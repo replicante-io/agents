@@ -19,6 +19,10 @@ pub struct Agent {
     #[serde(default)]
     pub api: APIConfig,
 
+    /// Override the cluster display name, or set it if none was detected.
+    #[serde(default)]
+    pub cluster_display_name_override: Option<String>,
+
     /// Logging configuration
     #[serde(default)]
     pub logging: LoggingConfig,
@@ -32,6 +36,7 @@ impl Default for Agent {
     fn default() -> Self {
         Agent {
             api: APIConfig::default(),
+            cluster_display_name_override: None,
             logging: LoggingConfig::default(),
             tracing: TracerConfig::default(),
         }
@@ -41,7 +46,7 @@ impl Default for Agent {
 impl Agent {
     /// Apply transformations to the configuration to derive some parameters.
     ///
-    /// Transvormation:
+    /// Transformations:
     ///
     ///   * Apply verbose debug level logic.
     pub fn transform(mut self) -> Self {

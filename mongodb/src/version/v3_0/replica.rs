@@ -79,11 +79,14 @@ impl ReplicaSet {
         let status = self.client.db("admin").command(
             doc! {"replSetGetStatus" => 1},
             CommandType::IsMaster,
-            None
-        ).fail_span(&mut span).map_err(|error| {
+            None,
+        )
+        .fail_span(&mut span)
+        .map_err(|error| {
             MONGODB_OP_ERRORS_COUNT.with_label_values(&["replSetGetStatus"]).inc();
             error
-        }).with_context(|_| ErrorKind::StoreOpFailed("replSetGetStatus"))?;
+        })
+        .with_context(|_| ErrorKind::StoreOpFailed("replSetGetStatus"))?;
         timer.observe_duration();
         span.log(Log::new().log("span.kind", "client-receive"));
         let status = bson::from_bson(Bson::Document(status))
@@ -105,7 +108,6 @@ impl Agent for ReplicaSet {
         let status = self.repl_set_get_status(span)?;
         let node_name = status.node_name()?;
         let cluster = status.set;
-        // TODO: Friendly cluster name.
         Ok(DatastoreInfo::new(cluster, "MongoDB", node_name, info.version, None))
     }
 

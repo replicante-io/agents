@@ -5,7 +5,6 @@ use replicante_agent_models::ShardRole;
 
 use super::super::super::error::ErrorKind;
 
-
 /// Section of the replSetGetStatus command that we care about.
 #[derive(Debug, Deserialize)]
 pub struct ReplSetStatus {
@@ -59,11 +58,10 @@ impl ReplSetStatus {
             8 => Ok(ShardRole::Unknown(String::from("DOWN"))),
             9 => Ok(ShardRole::Unknown(String::from("ROLLBACK"))),
             10 => Ok(ShardRole::Unknown(String::from("REMOVED"))),
-            state => Err(ErrorKind::UnsupportedSateId(state).into())
+            state => Err(ErrorKind::UnsupportedSateId(state).into()),
         }
     }
 }
-
 
 /// Section of the replSetGetStatus member that we care about.
 #[derive(Debug, Deserialize)]
@@ -78,7 +76,6 @@ pub struct ReplSetStatusMember {
 impl ReplSetStatusMember {
     fn default_self() -> bool { false }
 }
-
 
 #[cfg(test)]
 mod tests {

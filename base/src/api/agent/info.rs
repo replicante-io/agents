@@ -72,11 +72,19 @@ impl Handler for DatastoreInfo {
             .auto_finish();
 
         span.log(Log::new().log("span.kind", "server-receive"));
-        let info = self
+        let mut info = self
             .agent
             .datastore_info(&mut span)
             .map_err(|error| fail_span(error, &mut span))?;
         span.log(Log::new().log("span.kind", "server-send"));
+
+        // Inject the cluster_display_name override if configured.
+        info.cluster_display_name = self
+            .context
+            .config
+            .cluster_display_name_override
+            .clone()
+            .or(info.cluster_display_name);
 
         let mut response = Response::new();
         match HeadersCarrier::inject(span.context(), &mut response.headers, tracer) {
@@ -169,6 +177,7 @@ mod tests {
         use iron_test::request;
         use iron_test::response;
 
+        use super::super::super::super::super::config::Agent as AgentConfig;
         use super::super::super::super::super::testing::MockAgent;
         use super::super::super::super::super::Agent;
         use super::super::super::super::super::AgentContext;
@@ -178,7 +187,14 @@ mod tests {
         where
             A: Agent + 'static,
         {
-            let (context, extra) = AgentContext::mock();
+            get_with_config(agent, AgentConfig::default())
+        }
+
+        fn get_with_config<A>(agent: A, config: AgentConfig) -> Result<String, IronError>
+        where
+            A: Agent + 'static,
+        {
+            let (context, extra) = AgentContext::mock_with_config(config);
             let handler = DatastoreInfo::make(Arc::new(agent), context);
             let handler = {
                 let mut chain = Chain::new(handler);
@@ -200,7 +216,19 @@ mod tests {
         }
 
         #[test]
-        fn returns_error() {
+        fn override_display_name() {
+            let agent = MockAgent::new();
+            let config = AgentConfig::default();
+            let result = get_with_config(agent, config).unwrap();
+            let expected = concat!(
+                r#"{"cluster_display_name":"display","cluster_id":"id","#,
+                r#""kind":"DB","node_id":"mock","version":"1.2.3"}"#
+            );
+            assert_eq!(result, expected);
+        }
+
+        #[test]
+        fn return_error() {
             let mut agent = MockAgent::new();
             agent.datastore_info = Err("Testing failure".into());
             let result = get(agent);
@@ -216,11 +244,11 @@ mod tests {
         }
 
         #[test]
-        fn returns_version() {
+        fn return_version() {
             let agent = MockAgent::new();
             let result = get(agent).unwrap();
             let expected = concat!(
-                r#"{"cluster_display_name":null,"cluster_id":"cluster","#,
+                r#"{"cluster_display_name":"display","cluster_id":"id","#,
                 r#""kind":"DB","node_id":"mock","version":"1.2.3"}"#
             );
             assert_eq!(result, expected);

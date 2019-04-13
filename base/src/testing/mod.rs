@@ -19,8 +19,13 @@ pub struct MockAgent {
 impl MockAgent {
     pub fn new() -> MockAgent {
         let agent_info = Ok(AgentInfo::new(AgentVersion::new("dcd", "1.2.3", "tainted")));
-        // TODO: Friendly cluster name.
-        let datastore_info = Ok(DatastoreInfo::new("cluster", "DB", "mock", "1.2.3", None));
+        let datastore_info = Ok(DatastoreInfo::new(
+            "id",
+            "DB",
+            "mock",
+            "1.2.3",
+            Some("display".into()),
+        ));
         let shards = Ok(Shards::new(vec![]));
         MockAgent {
             agent_info,
