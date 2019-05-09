@@ -10,17 +10,16 @@ use jmx::MBeanThreadedClientOptions;
 use opentracingrust::Log;
 use opentracingrust::Span;
 
+use replicante_agent::fail_span;
 use replicante_agent::AgentContext;
 use replicante_agent::Error;
 use replicante_agent::Result;
-use replicante_agent::fail_span;
 
 use super::super::error::ErrorKind;
 use super::super::metrics::OPS_COUNT;
 use super::super::metrics::OPS_DURATION;
 use super::super::metrics::OP_ERRORS_COUNT;
 use super::super::metrics::RECONNECT_COUNT;
-
 
 const KAFKA_BROKER_ID_MBEAN_QUERY: &str = "kafka.server:type=app-info,id=*";
 const KAFKA_BROKER_VERSION: &str = "kafka.server:type=app-info";
@@ -29,7 +28,6 @@ const KAFKA_LAG_PREFIX: &str =
 
 // Limit the number of pending JMX requests to avoid memory exhaustion.
 const JMX_REQUESTS_QUEUE: usize = 1024;
-
 
 /// Kafka specifics that rely on JMX.
 pub struct KafkaJmx {
@@ -47,10 +45,12 @@ impl KafkaJmx {
             // Skip connecting the first time around.
             .skip_connect(true);
         let jmx = MBeanThreadedClient::connect_with_options(address.clone(), options)
-            .with_context(|_| ErrorKind::JmxConnection(match address.clone() {
-                MBeanAddress::Address(address) => address,
-                MBeanAddress::ServiceUrl(address) => address,
-            }))?;
+            .with_context(|_| {
+                ErrorKind::JmxConnection(match address.clone() {
+                    MBeanAddress::Address(address) => address,
+                    MBeanAddress::ServiceUrl(address) => address,
+                })
+            })?;
         Ok(KafkaJmx {
             context,
             jmx,
@@ -65,13 +65,20 @@ impl KafkaJmx {
             let mut span = self.context.tracer.span("brokerName").auto_finish();
             span.child_of(parent.context().clone());
             span.tag("service", "jmx");
-            self.reconnect_if_needed(&mut span).map_err(|error| fail_span(error, &mut span))?;
+            self.reconnect_if_needed(&mut span)
+                .map_err(|error| fail_span(error, &mut span))?;
             span.log(Log::new().log("span.kind", "client-send"));
             OPS_COUNT.with_label_values(&["jmx", "queryNames"]).inc();
-            let timer = OPS_DURATION.with_label_values(&["jmx", "queryNames"]).start_timer();
-            let names = self.jmx.query_names(KAFKA_BROKER_ID_MBEAN_QUERY, "")
+            let timer = OPS_DURATION
+                .with_label_values(&["jmx", "queryNames"])
+                .start_timer();
+            let names = self
+                .jmx
+                .query_names(KAFKA_BROKER_ID_MBEAN_QUERY, "")
                 .map_err(|error| {
-                    OP_ERRORS_COUNT.with_label_values(&["jmx", "queryNames"]).inc();
+                    OP_ERRORS_COUNT
+                        .with_label_values(&["jmx", "queryNames"])
+                        .inc();
                     fail_span(error, &mut span)
                 })
                 .with_context(|_| ErrorKind::StoreOpFailed("<jmx>.broker_name"))
@@ -110,13 +117,20 @@ impl KafkaJmx {
         let mut span = self.context.tracer.span("brokerVersion").auto_finish();
         span.child_of(parent.context().clone());
         span.tag("service", "jmx");
-        self.reconnect_if_needed(&mut span).map_err(|error| fail_span(error, &mut span))?;
+        self.reconnect_if_needed(&mut span)
+            .map_err(|error| fail_span(error, &mut span))?;
         span.log(Log::new().log("span.kind", "client-send"));
         OPS_COUNT.with_label_values(&["jmx", "getAttribute"]).inc();
-        let timer = OPS_DURATION.with_label_values(&["jmx", "getAttribute"]).start_timer();
-        let version = self.jmx.get_attribute(KAFKA_BROKER_VERSION, "version")
+        let timer = OPS_DURATION
+            .with_label_values(&["jmx", "getAttribute"])
+            .start_timer();
+        let version = self
+            .jmx
+            .get_attribute(KAFKA_BROKER_VERSION, "version")
             .map_err(|error| {
-                OP_ERRORS_COUNT.with_label_values(&["jmx", "getAttribute"]).inc();
+                OP_ERRORS_COUNT
+                    .with_label_values(&["jmx", "getAttribute"])
+                    .inc();
                 fail_span(error, &mut span)
             })
             .with_context(|_| ErrorKind::StoreOpFailed("<jmx>.broker_version"))
@@ -129,21 +143,33 @@ impl KafkaJmx {
 
     /// Fetch replica lag information.
     pub fn replica_lag(
-        &self, topic: &str, partition: i32, leader: i32, parent: &mut Span
+        &self,
+        topic: &str,
+        partition: i32,
+        leader: i32,
+        parent: &mut Span,
     ) -> Result<i64> {
         let mut span = self.context.tracer.span("replicaLag").auto_finish();
         span.child_of(parent.context().clone());
         span.tag("service", "jmx");
         let key = format!(
-            "{}{},topic={},partition={}", KAFKA_LAG_PREFIX, leader, topic, partition
+            "{}{},topic={},partition={}",
+            KAFKA_LAG_PREFIX, leader, topic, partition
         );
-        self.reconnect_if_needed(&mut span).map_err(|error| fail_span(error, &mut span))?;
+        self.reconnect_if_needed(&mut span)
+            .map_err(|error| fail_span(error, &mut span))?;
         span.log(Log::new().log("span.kind", "client-send"));
         OPS_COUNT.with_label_values(&["jmx", "getAttribute"]).inc();
-        let timer = OPS_DURATION.with_label_values(&["jmx", "getAttribute"]).start_timer();
-        let lag = self.jmx.get_attribute(key, "Value")
+        let timer = OPS_DURATION
+            .with_label_values(&["jmx", "getAttribute"])
+            .start_timer();
+        let lag = self
+            .jmx
+            .get_attribute(key, "Value")
             .map_err(|error| {
-                OP_ERRORS_COUNT.with_label_values(&["jmx", "getAttribute"]).inc();
+                OP_ERRORS_COUNT
+                    .with_label_values(&["jmx", "getAttribute"])
+                    .inc();
                 fail_span(error, &mut span)
             })
             .with_context(|_| ErrorKind::StoreOpFailed("<jmx>.partitionLag"))
@@ -173,11 +199,14 @@ impl KafkaJmx {
             span.log(Log::new().log("action", "jmx.connect"));
             RECONNECT_COUNT.with_label_values(&["jmx"]).inc();
             let options = self.reconnect_options();
-            self.jmx.reconnect_with_options(self.reconnect_address.clone(), options)
-                .with_context(|_| ErrorKind::JmxConnection(match self.reconnect_address.clone() {
-                    MBeanAddress::Address(address) => address,
-                    MBeanAddress::ServiceUrl(address) => address,
-                }))?;
+            self.jmx
+                .reconnect_with_options(self.reconnect_address.clone(), options)
+                .with_context(|_| {
+                    ErrorKind::JmxConnection(match self.reconnect_address.clone() {
+                        MBeanAddress::Address(address) => address,
+                        MBeanAddress::ServiceUrl(address) => address,
+                    })
+                })?;
             self.reconnect.store(false, Ordering::Relaxed);
             info!(self.context.logger, "Reconnected to JMX server");
         }
@@ -186,7 +215,6 @@ impl KafkaJmx {
 
     /// Generate connection options for reconnecting to the JMX server.
     fn reconnect_options(&self) -> MBeanThreadedClientOptions {
-        MBeanThreadedClientOptions::default()
-            .requests_buffer_size(JMX_REQUESTS_QUEUE)
+        MBeanThreadedClientOptions::default().requests_buffer_size(JMX_REQUESTS_QUEUE)
     }
 }

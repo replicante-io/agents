@@ -5,12 +5,11 @@ use std::path::Path;
 use failure::ResultExt;
 use serde_yaml;
 
-use replicante_agent::Result;
-use replicante_agent::config::Agent;
 use replicante_agent::config::APIConfig;
+use replicante_agent::config::Agent;
+use replicante_agent::Result;
 
 use super::error::ErrorKind;
-
 
 /// Kafka Agent configuration
 #[derive(Clone, Default, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
@@ -60,7 +59,6 @@ impl Config {
     }
 }
 
-
 /// Kafka related options.
 #[derive(Clone, Default, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
 pub struct Kafka {
@@ -68,7 +66,6 @@ pub struct Kafka {
     #[serde(default)]
     pub target: KafkaTarget,
 }
-
 
 /// Kafka server listening locations.
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
@@ -87,7 +84,9 @@ pub struct KafkaTarget {
 }
 
 impl KafkaTarget {
-    fn default_jmx() -> String { "localhost:9999".into() }
+    fn default_jmx() -> String {
+        "localhost:9999".into()
+    }
 }
 
 impl Default for KafkaTarget {
@@ -99,7 +98,6 @@ impl Default for KafkaTarget {
         }
     }
 }
-
 
 /// Kafka server location.
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
@@ -114,8 +112,12 @@ pub struct BrokerTarget {
 }
 
 impl BrokerTarget {
-    fn default_uri() -> String { "localhost:9092".into() }
-    fn default_timeout() -> u64 { 10 }
+    fn default_uri() -> String {
+        "localhost:9092".into()
+    }
+    fn default_timeout() -> u64 {
+        10
+    }
 }
 
 impl Default for BrokerTarget {
@@ -126,7 +128,6 @@ impl Default for BrokerTarget {
         }
     }
 }
-
 
 /// Kafka's cluster Zookeeper server location.
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
@@ -141,8 +142,12 @@ pub struct ZookeeperTarget {
 }
 
 impl ZookeeperTarget {
-    fn default_uri() -> String { "localhost:2818".into() }
-    fn default_timeout() -> u64 { 10 }
+    fn default_uri() -> String {
+        "localhost:2818".into()
+    }
+    fn default_timeout() -> u64 {
+        10
+    }
 }
 
 impl Default for ZookeeperTarget {
@@ -154,10 +159,10 @@ impl Default for ZookeeperTarget {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use std::io::Cursor;
+
     use super::Config;
 
     #[test]

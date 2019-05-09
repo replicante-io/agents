@@ -31,8 +31,8 @@ use replicante_agent::AgentContext;
 use replicante_agent::AgentRunner;
 use replicante_agent::Result;
 
-use replicante_util_tracing::TracerExtra;
 use replicante_util_tracing::tracer;
+use replicante_util_tracing::TracerExtra;
 
 mod agent;
 mod config;
@@ -43,18 +43,17 @@ use agent::KafkaAgent;
 use config::Config;
 use error::ErrorKind;
 
-
 lazy_static! {
     /// Version string.
     pub static ref VERSION: String = format!(
         "{} [{}; {}]",
-        env!("CARGO_PKG_VERSION"), env!("GIT_BUILD_HASH"), env!("GIT_BUILD_TAINT")
+        env!("CARGO_PKG_VERSION"),
+        env!("GIT_BUILD_HASH"),
+        env!("GIT_BUILD_TAINT")
     );
 }
 
-
 const DEFAULT_CONFIG_FILE: &str = "agent-kafka.yaml";
-
 
 /// Configure and start the agent.
 pub fn run() -> Result<()> {
@@ -62,13 +61,14 @@ pub fn run() -> Result<()> {
     let cli_args = App::new("Kafka Replicante Agent")
         .version(VERSION.as_ref())
         .about(env!("CARGO_PKG_DESCRIPTION"))
-        .arg(Arg::with_name("config")
-             .short("c")
-             .long("config")
-             .value_name("FILE")
-             .default_value(DEFAULT_CONFIG_FILE)
-             .help("Specifies the configuration file to use")
-             .takes_value(true)
+        .arg(
+            Arg::with_name("config")
+                .short("c")
+                .long("config")
+                .value_name("FILE")
+                .default_value(DEFAULT_CONFIG_FILE)
+                .help("Specifies the configuration file to use")
+                .takes_value(true),
         )
         .get_matches();
 
@@ -76,8 +76,7 @@ pub fn run() -> Result<()> {
     Config::override_defaults();
     let config_location = cli_args.value_of("config").unwrap();
     let default_and_missing =
-        config_location == DEFAULT_CONFIG_FILE &&
-        !Path::new(DEFAULT_CONFIG_FILE).exists();
+        config_location == DEFAULT_CONFIG_FILE && !Path::new(DEFAULT_CONFIG_FILE).exists();
     let config = if default_and_missing {
         Config::default()
     } else {

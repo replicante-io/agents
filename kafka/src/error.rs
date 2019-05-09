@@ -3,7 +3,6 @@ use std::fmt;
 use replicante_agent::Error;
 use replicante_agent::ErrorKind as BaseKind;
 
-
 /// Zookeeper specifc error kinds.
 #[derive(Debug)]
 pub enum ErrorKind {
@@ -56,26 +55,29 @@ impl fmt::Display for ErrorKind {
 impl From<ErrorKind> for BaseKind {
     fn from(error: ErrorKind) -> BaseKind {
         match error {
-            ErrorKind::BrokerIdFormat(name) => BaseKind::FreeForm(
-                format!("unable to extract broker id from JMX metric '{}'", name)
-            ),
-            ErrorKind::BrokerNoId => 
-                BaseKind::FreeForm("no broker id reported in through JMX".into()),
-            ErrorKind::BrokerTooManyIds => 
-                BaseKind::FreeForm("too many broker ids reported through JMX metric".into()),
+            ErrorKind::BrokerIdFormat(name) => BaseKind::FreeForm(format!(
+                "unable to extract broker id from JMX metric '{}'",
+                name
+            )),
+            ErrorKind::BrokerNoId => {
+                BaseKind::FreeForm("no broker id reported in through JMX".into())
+            }
+            ErrorKind::BrokerTooManyIds => {
+                BaseKind::FreeForm("too many broker ids reported through JMX metric".into())
+            }
             ErrorKind::ConfigLoad => BaseKind::ConfigLoad,
             ErrorKind::ConfigOption(option) => BaseKind::ConfigOption(option),
             ErrorKind::Initialisation(message) => BaseKind::Initialisation(message),
             ErrorKind::Io(path) => BaseKind::Io(path),
             ErrorKind::JmxConnection(address) => BaseKind::Connection("jmx server", address),
             ErrorKind::JsonDecode(op) => BaseKind::ResponseDecode("json", op),
-            ErrorKind::PartitionNoBrokers(partition) => BaseKind::InvalidStoreState(
-                format!("partition {} has no brokers", partition)
-            ),
+            ErrorKind::PartitionNoBrokers(partition) => {
+                BaseKind::InvalidStoreState(format!("partition {} has no brokers", partition))
+            }
             ErrorKind::StoreOpFailed(op) => BaseKind::StoreOpFailed(op),
-            ErrorKind::TopicNoOffsets(topic) => BaseKind::FreeForm(
-                format!("unable to find offsets for topic {}", topic)
-            ),
+            ErrorKind::TopicNoOffsets(topic) => {
+                BaseKind::FreeForm(format!("unable to find offsets for topic {}", topic))
+            }
             ErrorKind::ZookeeperConnection(address) => BaseKind::Connection("zookeeper", address),
         }
     }
