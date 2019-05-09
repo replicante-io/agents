@@ -9,7 +9,9 @@ pub struct Srvr;
 
 impl FourLetterWord for Srvr {
     type Response = Response;
-    fn command() -> &'static str { "srvr" }
+    fn command() -> &'static str {
+        "srvr"
+    }
 
     fn parse_response(response: &str) -> Result<Self::Response> {
         let mut zk_mode: Option<String> = None;
@@ -21,15 +23,15 @@ impl FourLetterWord for Srvr {
         for line in lines {
             let mut iter = line.splitn(2, ':');
             match (iter.next().map(str::trim), iter.next().map(str::trim)) {
-                (Some(key), Some(value)) => {
-                    match key {
-                        "Mode" => zk_mode = Some(value.into()),
-                        "Zxid" => zk_zxid = Some(i64::from_str_radix(&value[2..], 16)?),
-                        "Zookeeper version" => zk_version = Some(value.into()),
-                        _ => { zk_extras.insert(key.into(), value.into()); },
+                (Some(key), Some(value)) => match key {
+                    "Mode" => zk_mode = Some(value.into()),
+                    "Zxid" => zk_zxid = Some(i64::from_str_radix(&value[2..], 16)?),
+                    "Zookeeper version" => zk_version = Some(value.into()),
+                    _ => {
+                        zk_extras.insert(key.into(), value.into());
                     }
                 },
-                _ => break
+                _ => break,
             };
         }
 
@@ -52,7 +54,6 @@ impl FourLetterWord for Srvr {
     }
 }
 
-
 /// Sub-set of the "srvr" response the agent needs.
 pub struct Response {
     pub zk_mode: String,
@@ -61,10 +62,10 @@ pub struct Response {
     pub zk_extras: HashMap<String, String>,
 }
 
-
 #[cfg(test)]
 mod tests {
     use zk_4lw::FourLetterWord;
+
     use super::Srvr;
 
     #[test]
@@ -85,7 +86,16 @@ Proposal sizes last/min/max: 32/32/36"#).unwrap();
             "3.4.13-2d71af4dbe22557fda74f9a9b4309b15a7487f03, built on 06/29/2018 04:05 GMT"
         );
         assert_eq!(response.zk_zxid, 25769803780);
-        assert_eq!(response.zk_extras.get("Latency min/avg/max").unwrap(), "0/0/0");
-        assert_eq!(response.zk_extras.get("Proposal sizes last/min/max").unwrap(), "32/32/36");
+        assert_eq!(
+            response.zk_extras.get("Latency min/avg/max").unwrap(),
+            "0/0/0"
+        );
+        assert_eq!(
+            response
+                .zk_extras
+                .get("Proposal sizes last/min/max")
+                .unwrap(),
+            "32/32/36"
+        );
     }
 }

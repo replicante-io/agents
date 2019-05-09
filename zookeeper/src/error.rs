@@ -3,7 +3,6 @@ use std::fmt;
 use replicante_agent::Error;
 use replicante_agent::ErrorKind as BaseKind;
 
-
 /// Zookeeper specifc error kinds.
 #[derive(Debug)]
 pub enum ErrorKind {

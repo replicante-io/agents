@@ -5,12 +5,11 @@ use std::path::Path;
 use failure::ResultExt;
 use serde_yaml;
 
-use replicante_agent::Result;
-use replicante_agent::config::Agent;
 use replicante_agent::config::APIConfig;
+use replicante_agent::config::Agent;
+use replicante_agent::Result;
 
 use super::error::ErrorKind;
-
 
 /// Zookeeper Agent configuration
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
@@ -59,7 +58,6 @@ impl Config {
     }
 }
 
-
 /// Zookeeper related options.
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
 pub struct Zookeeper {
@@ -72,13 +70,15 @@ pub struct Zookeeper {
 }
 
 impl Zookeeper {
-    pub fn default_target() -> String { "localhost:2181".into() }
+    pub fn default_target() -> String {
+        "localhost:2181".into()
+    }
 }
-
 
 #[cfg(test)]
 mod tests {
     use std::io::Cursor;
+
     use super::Config;
 
     #[test]

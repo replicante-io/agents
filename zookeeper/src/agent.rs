@@ -6,10 +6,10 @@ use failure::ResultExt;
 use zk_4lw::Client;
 use zk_4lw::FourLetterWord;
 
+use replicante_agent::fail_span;
 use replicante_agent::Agent;
 use replicante_agent::AgentContext;
 use replicante_agent::Result;
-use replicante_agent::fail_span;
 
 use replicante_agent_models::AgentInfo;
 use replicante_agent_models::AgentVersion;
@@ -19,17 +19,19 @@ use replicante_agent_models::Shard;
 use replicante_agent_models::ShardRole;
 use replicante_agent_models::Shards;
 
-use super::Config;
 use super::error::ErrorKind;
-use super::metrics::OP_ERRORS_COUNT;
 use super::metrics::OPS_COUNT;
 use super::metrics::OPS_DURATION;
+use super::metrics::OP_ERRORS_COUNT;
 use super::zk4lw::Conf;
 use super::zk4lw::Srvr;
+use super::Config;
 
 lazy_static! {
     pub static ref AGENT_VERSION: AgentVersion = AgentVersion::new(
-        env!("GIT_BUILD_HASH"), env!("CARGO_PKG_VERSION"), env!("GIT_BUILD_TAINT")
+        env!("GIT_BUILD_HASH"),
+        env!("CARGO_PKG_VERSION"),
+        env!("GIT_BUILD_TAINT")
     );
 }
 
@@ -37,13 +39,15 @@ lazy_static! {
 ///
 /// In particular it reformats the commit hash as metadata.
 fn to_semver(version: &str) -> Result<String> {
-    let ver = version.split(',').next()
+    let ver = version
+        .split(',')
+        .next()
         .expect("splitting version string returned no elements");
     let mut iter = ver.split('-');
     match (iter.next().map(str::trim), iter.next().map(str::trim)) {
         (Some(version), Some(hash)) => Ok(format!("{}+{}", version, hash)),
         (Some(version), None) => Ok(version.into()),
-        _ => Err(ErrorKind::VersionParse.into())
+        _ => Err(ErrorKind::VersionParse.into()),
     }
 }
 
@@ -65,13 +69,20 @@ impl ZookeeperAgent {
 
     /// Executes the "conf" 4lw against the zookeeper server.
     fn conf(&self, root: &Span) -> Result<<Conf as FourLetterWord>::Response> {
-        let mut span = self.agent_context.tracer.span_with_options(
-            "conf", StartOptions::default().child_of(root.context().clone())
-        ).auto_finish();
+        let mut span = self
+            .agent_context
+            .tracer
+            .span_with_options(
+                "conf",
+                StartOptions::default().child_of(root.context().clone()),
+            )
+            .auto_finish();
         span.log(Log::new().log("span.kind", "client-send"));
         OPS_COUNT.with_label_values(&["conf"]).inc();
         let timer = OPS_DURATION.with_label_values(&["conf"]).start_timer();
-        let conf = self.zk_client.exec::<Conf>()
+        let conf = self
+            .zk_client
+            .exec::<Conf>()
             .map_err(|error| {
                 OP_ERRORS_COUNT.with_label_values(&["conf"]).inc();
                 fail_span(error, &mut span)
@@ -84,13 +95,20 @@ impl ZookeeperAgent {
 
     /// Executes the "conf" 4lw against the zookeeper server.
     fn srvr(&self, root: &Span) -> Result<<Srvr as FourLetterWord>::Response> {
-        let mut span = self.agent_context.tracer.span_with_options(
-            "srvr", StartOptions::default().child_of(root.context().clone())
-        ).auto_finish();
+        let mut span = self
+            .agent_context
+            .tracer
+            .span_with_options(
+                "srvr",
+                StartOptions::default().child_of(root.context().clone()),
+            )
+            .auto_finish();
         span.log(Log::new().log("span.kind", "client-send"));
         OPS_COUNT.with_label_values(&["srvr"]).inc();
         let timer = OPS_DURATION.with_label_values(&["srvr"]).start_timer();
-        let srvr = self.zk_client.exec::<Srvr>()
+        let srvr = self
+            .zk_client
+            .exec::<Srvr>()
             .map_err(|error| {
                 OP_ERRORS_COUNT.with_label_values(&["srvr"]).inc();
                 fail_span(error, &mut span)
@@ -120,7 +138,7 @@ impl Agent for ZookeeperAgent {
         let role = match srvr.zk_mode.as_ref() {
             "leader" => ShardRole::Primary,
             "follower" => ShardRole::Secondary,
-            unkown => ShardRole::Unknown(unkown.into())
+            unkown => ShardRole::Unknown(unkown.into()),
         };
         let commit_offset = CommitOffset::unit(srvr.zk_zxid, "zxid");
         let commit_offset = Some(commit_offset);
@@ -137,8 +155,9 @@ mod tests {
     #[test]
     fn conver_to_semver() {
         let version = to_semver(
-            "3.4.13-2d71af4dbe22557fda74f9a9b4309b15a7487f03, built on 06/29/2018 04:05 GMT".into()
-        ).unwrap();
+            "3.4.13-2d71af4dbe22557fda74f9a9b4309b15a7487f03, built on 06/29/2018 04:05 GMT".into(),
+        )
+        .unwrap();
         assert_eq!(version, "3.4.13+2d71af4dbe22557fda74f9a9b4309b15a7487f03");
     }
 
