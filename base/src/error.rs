@@ -96,6 +96,9 @@ pub enum ErrorKind {
 
     #[fail(display = "datastore operation '{}' failed", _0)]
     StoreOpFailed(&'static str),
+
+    #[fail(display = "unable to spawn '{}' thread", _0)]
+    ThreadSpawn(&'static str),
 }
 
 /// Short form alias for functions returning `Error`s.

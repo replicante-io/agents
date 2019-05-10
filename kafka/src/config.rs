@@ -12,7 +12,7 @@ use replicante_agent::Result;
 use super::error::ErrorKind;
 
 /// Kafka Agent configuration
-#[derive(Clone, Default, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
+#[derive(Clone, Default, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
 pub struct Config {
     /// Common agent options.
     #[serde(default)]

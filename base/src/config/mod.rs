@@ -13,7 +13,7 @@ pub use self::api::APIConfig;
 ///
 /// New configuration values are created with `AgentConfig::default` and
 /// changing the attributes as desired.
-#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
+#[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
 pub struct Agent {
     /// API server configuration
     #[serde(default)]

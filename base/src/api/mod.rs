@@ -1,13 +1,18 @@
 use std::collections::HashMap;
 use std::sync::Arc;
+use std::time::Duration;
 
+use failure::ResultExt;
+use humthreads::Builder;
 use iron::Chain;
+use iron::Iron;
 use iron_json_response::JsonResponseMiddleware;
 
 use replicante_util_iron::MetricsMiddleware;
 use replicante_util_iron::RequestLogger;
 use replicante_util_iron::RootDescriptor;
 use replicante_util_iron::Router;
+use replicante_util_upkeep::Upkeep;
 
 mod agent;
 mod index;
@@ -18,6 +23,8 @@ pub use self::metrics::register_metrics;
 
 use super::Agent;
 use super::AgentContext;
+use super::ErrorKind;
+use super::Result;
 
 /// Mount all API endpoints into an Iron Chain.
 pub fn mount(agent: Arc<Agent>, context: AgentContext) -> Chain {
@@ -47,6 +54,53 @@ pub fn mount(agent: Arc<Agent>, context: AgentContext) -> Chain {
     chain.link_after(RequestLogger::new(logger));
     chain.link(metrics_middlewere.into_middleware());
     chain
+}
+
+/// Start an Iron HTTP server.
+///
+/// # Panics
+///
+/// This method panics if:
+///
+///   * It fails to bind to the configured port.
+pub fn spawn_server<A>(agent: A, context: AgentContext, upkeep: &mut Upkeep) -> Result<()>
+where
+    A: Agent + 'static,
+{
+    let agent: Arc<dyn Agent> = Arc::new(agent);
+    let thread = Builder::new("r:b:api")
+        .full_name("replicante:base:api")
+        .spawn(move |scope| {
+            let chain = mount(Arc::clone(&agent), context.clone());
+            let config = &context.config.api;
+            let mut server = Iron::new(chain);
+            server.timeouts.keep_alive = config.timeouts.keep_alive.map(Duration::from_secs);
+            server.timeouts.read = config.timeouts.read.map(Duration::from_secs);
+            server.timeouts.write = config.timeouts.write.map(Duration::from_secs);
+            if let Some(threads_count) = config.threads_count {
+                server.threads = threads_count;
+            }
+
+            info!(context.logger, "Starting API server"; "bind" => &config.bind);
+            scope.activity("running https://github.com/iron/iron HTTP server");
+            let mut bind = server
+                .http(&config.bind)
+                .expect("Unable to start API server");
+            // Once started, the server will run in the background.
+            // When the guard returned by Iron::http is dropped it tries to join the server.
+            // To support shutting down wait for the signal here, then close the server.
+            // NOTE: closing the server does not really work, just prevent the need to join :-(
+            //   See https://github.com/hyperium/hyper/issues/338
+            while !scope.should_shutdown() {
+                ::std::thread::sleep(Duration::from_secs(1));
+            }
+            if let Err(error) = bind.close() {
+                error!(context.logger, "Failed to shutdown API server"; "error" => ?error);
+            }
+        })
+        .with_context(|_| ErrorKind::ThreadSpawn("api server"))?;
+    upkeep.register_thread(thread);
+    Ok(())
 }
 
 /// Enumerates all possible API roots.

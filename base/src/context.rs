@@ -4,22 +4,17 @@ use std::sync::Arc;
 #[cfg(debug_assertions)]
 use std::time::Duration;
 
-use iron::Iron;
 use opentracingrust::Tracer;
-use prometheus::process_collector::ProcessCollector;
 use prometheus::Registry;
 
 #[cfg(debug_assertions)]
 use slog::Discard;
 use slog::Logger;
-use slog_scope::GlobalLoggerGuard;
 
 #[cfg(debug_assertions)]
 use replicante_util_tracing::TracerExtra;
 
-use super::api;
 use super::config::Agent as AgentConfig;
-use super::Agent;
 
 /// Agent services injection.
 ///
@@ -68,15 +63,6 @@ impl AgentContext {
         }
     }
 
-    /// Configure and instantiate the logger.
-    pub fn logger(config: &AgentConfig) -> (Logger, GlobalLoggerGuard) {
-        let logger_opts = ::replicante_logging::Opts::new(env!("GIT_BUILD_HASH").into());
-        let logger = ::replicante_logging::configure(config.logging.clone(), &logger_opts);
-        let scope_guard = slog_scope::set_global_logger(logger.clone());
-        slog_stdlog::init().expect("Failed to initialise log -> slog integration");
-        (logger, scope_guard)
-    }
-
     #[cfg(debug_assertions)]
     pub fn mock() -> (AgentContext, TracerExtra) {
         AgentContext::mock_with_config(AgentConfig::default())
@@ -95,51 +81,5 @@ impl AgentContext {
             reporter.stop_delay(Duration::from_millis(2));
         };
         (context, extra)
-    }
-}
-
-/// Common implementation for Agents.
-///
-/// This runner implements common logic that every
-/// agent will need on top of the `Agent` trait.
-pub struct AgentRunner {
-    agent: Arc<Agent>,
-    context: AgentContext,
-}
-
-impl AgentRunner {
-    pub fn new<A>(agent: A, context: AgentContext) -> AgentRunner
-    where
-        A: 'static + Agent,
-    {
-        AgentRunner {
-            agent: Arc::new(agent),
-            context,
-        }
-    }
-
-    /// Register all static metrics provided by the base agent.
-    pub fn register_metrics(logger: &Logger, registry: &Registry) {
-        let process = ProcessCollector::for_self();
-        if let Err(error) = registry.register(Box::new(process)) {
-            debug!(logger, "Failed to register process metrics"; "error" => ?error);
-        }
-        api::register_metrics(logger, registry);
-    }
-
-    /// Starts the Agent process and waits for it to terminate.
-    ///
-    /// # Panics
-    ///
-    /// This method panics if:
-    ///
-    ///   * It fails to bind to the configured port.
-    pub fn run(&self) {
-        let bind = &self.context.config.api.bind;
-        let handler = api::mount(Arc::clone(&self.agent), self.context.clone());
-        info!(self.context.logger, "Agent API ready"; "bind" => bind);
-        Iron::new(handler)
-            .http(bind)
-            .expect("Unable to start server");
     }
 }

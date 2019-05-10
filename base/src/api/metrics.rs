@@ -1,9 +1,9 @@
 use prometheus::CounterVec;
 use prometheus::HistogramVec;
-use prometheus::Registry;
-use slog::Logger;
 
 use replicante_util_iron::MetricsMiddleware;
+
+use super::super::AgentContext;
 
 lazy_static! {
     pub static ref MIDDLEWARE: (HistogramVec, CounterVec, CounterVec) =
@@ -13,8 +13,9 @@ lazy_static! {
 /// Attemps to register metrics with the Registry.
 ///
 /// Metrics that fail to register are logged and ignored.
-pub fn register_metrics(logger: &Logger, registry: &Registry) {
-    // Register the three middleware metrics.
+pub fn register_metrics(context: &AgentContext) {
+    let logger = &context.logger;
+    let registry = &context.metrics;
     if let Err(error) = registry.register(Box::new(MIDDLEWARE.0.clone())) {
         debug!(logger, "Failed to register MIDDLEWARE.0"; "error" => ?error);
     }

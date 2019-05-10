@@ -12,7 +12,7 @@ use replicante_agent::Result;
 use super::error::ErrorKind;
 
 /// Zookeeper Agent configuration
-#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
+#[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
 pub struct Config {
     /// Common agent options.
     #[serde(default)]

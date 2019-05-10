@@ -2,8 +2,8 @@ use prometheus::CounterVec;
 use prometheus::HistogramOpts;
 use prometheus::HistogramVec;
 use prometheus::Opts;
-use prometheus::Registry;
-use slog::Logger;
+
+use replicante_agent::AgentContext;
 
 lazy_static! {
     pub static ref OP_ERRORS_COUNT: CounterVec = CounterVec::new(
@@ -43,7 +43,9 @@ lazy_static! {
 /// Attemps to register metrics with the Repositoy.
 ///
 /// Metrics that fail to register are logged and ignored.
-pub fn register_metrics(logger: &Logger, registry: &Registry) {
+pub fn register_metrics(context: &AgentContext) {
+    let logger = &context.logger;
+    let registry = &context.metrics;
     if let Err(error) = registry.register(Box::new(OPS_COUNT.clone())) {
         debug!(logger, "Failed to register OPS_COUNT"; "error" => ?error);
     }
