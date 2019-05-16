@@ -60,7 +60,7 @@ impl Config {
 }
 
 /// Kafka related options.
-#[derive(Clone, Default, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
+#[derive(Clone, Default, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
 pub struct Kafka {
     /// Addresses used to locate the kafka services.
     #[serde(default)]
@@ -68,7 +68,7 @@ pub struct Kafka {
 }
 
 /// Kafka server listening locations.
-#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
+#[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
 pub struct KafkaTarget {
     /// Kafka broker configuration.
     #[serde(default)]
@@ -100,7 +100,7 @@ impl Default for KafkaTarget {
 }
 
 /// Kafka server location.
-#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
+#[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
 pub struct BrokerTarget {
     /// Addresses "host:port" of the zookeeper ensamble.
     #[serde(default = "BrokerTarget::default_uri")]
@@ -130,7 +130,7 @@ impl Default for BrokerTarget {
 }
 
 /// Kafka's cluster Zookeeper server location.
-#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
+#[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
 pub struct ZookeeperTarget {
     /// Addresses "host:port" of the zookeeper ensamble.
     #[serde(default = "ZookeeperTarget::default_uri")]

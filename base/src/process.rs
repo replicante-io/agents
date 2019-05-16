@@ -1,3 +1,4 @@
+use std::borrow::Cow;
 use std::env;
 use std::process::exit;
 use std::time::Duration;
@@ -6,6 +7,9 @@ use clap::App;
 use clap::Arg;
 use failure::ResultExt;
 use prometheus::process_collector::ProcessCollector;
+use sentry::integrations::failure::capture_fail;
+use sentry::internals::ClientInitGuard;
+use sentry::internals::IntoDsn;
 use slog::Logger;
 use slog_scope::GlobalLoggerGuard;
 
@@ -16,6 +20,7 @@ use replicante_util_upkeep::Upkeep;
 
 use super::api;
 use super::config::Agent as Config;
+use super::config::SentryConfig;
 use super::Agent;
 use super::AgentContext;
 use super::ErrorKind;
@@ -45,6 +50,43 @@ where
             .help("Specifies the configuration file to use")
             .takes_value(true),
     )
+}
+
+/// Main logic for the `run` function.
+///
+/// This function is implemented separately to allow `run` to apply error handling
+/// once to all possible error return branches.
+fn initialise_and_run<A, F>(config: Config, logger: Logger, initialise: F) -> Result<bool>
+where
+    A: Agent + 'static,
+    F: FnOnce(&AgentContext, &mut Upkeep, &mut TracerExtra) -> Result<A>,
+{
+    let (tracer, mut tracer_extra) = tracer(config.tracing.clone(), logger.clone())
+        .with_context(|_| ErrorKind::Initialisation("tracer configuration failed".into()))?;
+    if let TracerExtra::ReporterThread(ref mut reporter) = tracer_extra {
+        reporter.stop_delay(Duration::from_secs(2));
+    }
+    let mut upkeep = Upkeep::new();
+    upkeep.set_logger(logger.clone());
+    upkeep
+        .register_signal()
+        .with_context(|_| ErrorKind::Initialisation("signal handler registration failed".into()))?;
+
+    let context = AgentContext::new(config, logger.clone(), tracer);
+    register_process_metrics(&context);
+    super::register_metrics(&context);
+    let agent = initialise(&context, &mut upkeep, &mut tracer_extra)?;
+    api::spawn_server(agent, context, &mut upkeep)?;
+    let clean_exit = upkeep.keepalive();
+    if clean_exit {
+        info!(logger, "Agent stopped gracefully");
+    } else {
+        warn!(logger, "Exiting due to error in a worker thread");
+    }
+
+    // Cleanup tracer extras (usually the reporting thread) and exit.
+    drop(tracer_extra);
+    Ok(clean_exit)
 }
 
 /// Configure and instantiate the logger.
@@ -97,36 +139,49 @@ pub fn register_process_metrics(context: &AgentContext) {
 ///
 /// Once done, the process blocks until shutdown is initiated.
 /// See `replicante_util_upkeep::Upkeep` for details on blocking and shutdown.
-pub fn run<A, F>(config: Config, initialise: F) -> Result<bool>
+pub fn run<A, F, R>(config: Config, release: R, initialise: F) -> Result<bool>
 where
     A: Agent + 'static,
     F: FnOnce(&AgentContext, &mut Upkeep, &mut TracerExtra) -> Result<A>,
+    R: Into<Cow<'static, str>>,
 {
     let (logger, _scope_guard) = logger(&config);
-    let (tracer, mut tracer_extra) = tracer(config.tracing.clone(), logger.clone())
-        .with_context(|_| ErrorKind::Initialisation("tracer configuration failed".into()))?;
-    if let TracerExtra::ReporterThread(ref mut reporter) = tracer_extra {
-        reporter.stop_delay(Duration::from_secs(2));
-    }
-    let mut upkeep = Upkeep::new();
-    upkeep.set_logger(logger.clone());
-    upkeep
-        .register_signal()
-        .with_context(|_| ErrorKind::Initialisation("signal handler registration failed".into()))?;
+    let _sentry = sentry(config.sentry.clone(), &logger, release.into())?;
+    initialise_and_run(config, logger, initialise).map_err(|error| {
+        capture_fail(&error);
+        error
+    })
+}
 
-    let context = AgentContext::new(config, logger.clone(), tracer);
-    register_process_metrics(&context);
-    super::register_metrics(&context);
-    let agent = initialise(&context, &mut upkeep, &mut tracer_extra)?;
-    api::spawn_server(agent, context, &mut upkeep)?;
-    let clean_exit = upkeep.keepalive();
-    if clean_exit {
-        info!(logger, "Agent stopped gracefully");
-    } else {
-        warn!(logger, "Exiting due to error in a worker thread");
+/// Initialise sentry integration.
+///
+/// If sentry is configured, the panic handler is also registered.
+pub fn sentry(
+    config: Option<SentryConfig>,
+    logger: &Logger,
+    release: Cow<'static, str>,
+) -> Result<ClientInitGuard> {
+    let config = match config {
+        None => {
+            info!(logger, "Not using sentry: no configuration provided");
+            return Ok(sentry::init(()));
+        }
+        Some(config) => config,
+    };
+    info!(logger, "Configuring sentry integration");
+    let dsn = config
+        .dsn
+        .into_dsn()
+        .with_context(|_| ErrorKind::Initialisation("invalid sentry configuration".into()))?;
+    let client = sentry::init(sentry::ClientOptions {
+        attach_stacktrace: true,
+        dsn,
+        in_app_include: vec!["replicante", "replicante_agent"],
+        release: Some(release),
+        ..Default::default()
+    });
+    if client.is_enabled() {
+        sentry::integrations::panic::register_panic_handler();
     }
-
-    // Cleanup tracer extras (usually the reporting thread) and exit.
-    drop(tracer_extra);
-    Ok(clean_exit)
+    Ok(client)
 }

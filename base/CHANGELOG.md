@@ -6,11 +6,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 ### Added
-- `cluster_display_name` override option.
-- `process` module to reduce agent process duplication.
 - Graceful shutdown.
 - Introduce an `/api/unstable` API "version".
+- Sentry integration.
 - Threads introspection API.
+- `cluster_display_name` override option.
+- `process` module to reduce agent process duplication.
 
 ### Changed
 - **BREAKING**: Rename incorrectly named v1 API as unstable.

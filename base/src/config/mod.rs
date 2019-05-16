@@ -3,7 +3,11 @@ use replicante_logging::LoggingLevel;
 use replicante_util_tracing::Config as TracerConfig;
 
 mod api;
+mod sentry;
+
 pub use self::api::APIConfig;
+pub use self::sentry::SentryCaptureApi;
+pub use self::sentry::SentryConfig;
 
 /// Stores the base agent configuration options.
 ///
@@ -27,6 +31,10 @@ pub struct Agent {
     #[serde(default)]
     pub logging: LoggingConfig,
 
+    /// Sentry integration configuration
+    #[serde(default)]
+    pub sentry: Option<SentryConfig>,
+
     /// OpenTracing configuration
     #[serde(default)]
     pub tracing: TracerConfig,
@@ -38,6 +46,7 @@ impl Default for Agent {
             api: APIConfig::default(),
             cluster_display_name_override: None,
             logging: LoggingConfig::default(),
+            sentry: None,
             tracing: TracerConfig::default(),
         }
     }

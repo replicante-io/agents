@@ -59,7 +59,7 @@ impl Config {
 }
 
 /// Zookeeper related options.
-#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
+#[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
 pub struct Zookeeper {
     /// Name of the zookeeper cluster.
     pub cluster: String,

@@ -1,10 +1,6 @@
 //! This crate provides interfaces and structs to build Replicante agents.
 //!
 //! The crate provides a base `Agent` trait defining a common interface.
-//!
-//! To create an agent implement the `Agent` trait for a struct and pass that
-//! struct to `AgentRunner::new` to create a runner.
-//! The `AgentRunner::run` method will then spin up the API server.
 #![doc(html_root_url = "https://docs.rs/replicante_agent/0.3.0")]
 extern crate clap;
 extern crate failure;
@@ -20,6 +16,7 @@ extern crate lazy_static;
 extern crate opentracingrust;
 extern crate opentracingrust_zipkin;
 extern crate prometheus;
+extern crate sentry;
 extern crate serde;
 #[macro_use]
 extern crate serde_derive;

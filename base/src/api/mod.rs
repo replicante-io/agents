@@ -12,6 +12,7 @@ use replicante_util_iron::MetricsMiddleware;
 use replicante_util_iron::RequestLogger;
 use replicante_util_iron::RootDescriptor;
 use replicante_util_iron::Router;
+use replicante_util_iron::SentryMiddleware;
 use replicante_util_upkeep::Upkeep;
 
 mod agent;
@@ -21,6 +22,7 @@ mod metrics;
 
 pub use self::metrics::register_metrics;
 
+use super::config::SentryCaptureApi;
 use super::Agent;
 use super::AgentContext;
 use super::ErrorKind;
@@ -30,6 +32,12 @@ use super::Result;
 pub fn mount(agent: Arc<Agent>, context: AgentContext) -> Chain {
     let logger = context.logger.clone();
     let mut router = Router::new(context.config.api.trees.clone().into());
+    let sentry_capture_api = context
+        .config
+        .sentry
+        .as_ref()
+        .map(|sentry| sentry.capture_api_errors.clone())
+        .unwrap_or_default();
 
     // Create the index root for each API root.
     let roots = [APIRoot::UnstableAPI];
@@ -52,6 +60,15 @@ pub fn mount(agent: Arc<Agent>, context: AgentContext) -> Chain {
     );
     chain.link_after(JsonResponseMiddleware::new());
     chain.link_after(RequestLogger::new(logger));
+    match sentry_capture_api {
+        SentryCaptureApi::Client => {
+            chain.link_after(SentryMiddleware::new(400));
+        }
+        SentryCaptureApi::No => (),
+        SentryCaptureApi::Server => {
+            chain.link_after(SentryMiddleware::new(500));
+        }
+    };
     chain.link(metrics_middlewere.into_middleware());
     chain
 }

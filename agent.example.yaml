@@ -114,6 +114,54 @@ agent:
     #   * 'debug' (only available in debug builds)
     level: info
 
+    # Advanced level configuration by module prefix.
+    #
+    # The keys in this map are used as prefix matches against log event modules.
+    # If a match is found the mapped level is used for the event.
+    # If no match is found the `level` value is used as the filter.
+    #
+    # Example:
+    #
+    #     modules:
+    #       'hyper::server': debug
+    #       'rdkafka': error
+    #
+    # To find out what modules are available you can set `level` to DEBUG
+    # and enable `verbose` logging to see all logs.
+    # Once you know what logs you are looking for you can undo the changes to `level` and `verbose`
+    # and add the module prefix you need to the `modules` option.
+    modules: {}
+
+    # Enable verbose debug logs.
+    #
+    # When DEBUG level is enabled, things can get loud pretty easily.
+    # To allow DEBUG level to be more useful, only application events are emitted at
+    # DEBUG level while dependency events are emitted at INFO level.
+    #
+    # Verbose mode can be used in cases where DEBUG level should be enabled by default
+    # on all events and not just the application logs.
+    verbose: false
+
+
+  # Optional sentry.io integration configuration (desabled by default).
+  #
+  # Set a DSN parameter to enable centralised error reporting.
+  #sentry:
+  #  # Sentry API response capture filter.
+  #  #
+  #  # When sentry is enabled, API error responses returned to clients can be recorded
+  #  # as sentry events to detect and debug issues.
+  #  #
+  #  # This option sets the severity level of responses that are reported:
+  #  #  * `no`: disable sentry capturing of API error responses.
+  #  #  * `client`: report client side errors and above (status code >= 400).
+  #  #  * `server`: only report server side errors (status code >= 500).
+  #  capture_api_errors: 'server'
+  #
+  #  # (required) The DSN to use to configure sentry.
+  #  dsn: 'https://key@server.domain:port/project'
+  sentry: ~
+
 
   # The section below is for distributed tracing configuration.
   tracing:

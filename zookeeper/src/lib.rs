@@ -1,4 +1,3 @@
-extern crate clap;
 extern crate failure;
 #[macro_use]
 extern crate lazy_static;
@@ -29,7 +28,7 @@ use agent::ZookeeperAgent;
 use config::Config;
 
 lazy_static! {
-    /// Version string.
+    static ref RELEASE: String = format!("repliagent-officials@{}", env!("GIT_BUILD_HASH"));
     pub static ref VERSION: String = format!(
         "{} [{}; {}]",
         env!("CARGO_PKG_VERSION"),
@@ -58,7 +57,9 @@ pub fn run() -> Result<bool> {
     let config = config.transform();
 
     // Run the agent using the provided default helper.
-    ::replicante_agent::process::run(config.agent.clone(), |context, _, _| {
+    let agent_conf = config.agent.clone();
+    let release = RELEASE.as_str();
+    ::replicante_agent::process::run(agent_conf, release, |context, _, _| {
         metrics::register_metrics(context);
         let agent = ZookeeperAgent::new(config, context.clone());
         Ok(agent)

@@ -21,7 +21,6 @@ path = "src/main.rs"
 
 [dependencies]
 bson = "^0.13.0"  # Limited by MongoDB crate.
-clap = "^2.32.0"
 failure = "^0.1.5"
 lazy_static = "^1.0.1"
 mongodb = "^0.3.12"

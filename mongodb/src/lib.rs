@@ -1,6 +1,5 @@
 #[macro_use(bson, doc)]
 extern crate bson;
-extern crate clap;
 extern crate failure;
 #[macro_use]
 extern crate lazy_static;
@@ -32,10 +31,12 @@ use config::Config;
 use version::MongoDBFactory;
 
 lazy_static! {
-    /// Version string.
+    static ref RELEASE: String = format!("repliagent-officials@{}", env!("GIT_BUILD_HASH"));
     pub static ref VERSION: String = format!(
         "{} [{}; {}]",
-        env!("CARGO_PKG_VERSION"), env!("GIT_BUILD_HASH"), env!("GIT_BUILD_TAINT")
+        env!("CARGO_PKG_VERSION"),
+        env!("GIT_BUILD_HASH"),
+        env!("GIT_BUILD_TAINT"),
     );
 }
 
@@ -59,7 +60,9 @@ pub fn run() -> Result<bool> {
     let config = config.transform();
 
     // Run the agent using the provided default helper.
-    ::replicante_agent::process::run(config.agent.clone(), |context, _, _| {
+    let agent_conf = config.agent.clone();
+    let release = RELEASE.as_str();
+    ::replicante_agent::process::run(agent_conf, release, |context, _, _| {
         metrics::register_metrics(context);
         let factory = MongoDBFactory::with_config(config, context.clone())?;
         let agent = VersionedAgent::new(context.clone(), factory);

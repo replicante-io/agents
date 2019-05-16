@@ -69,7 +69,7 @@ impl Config {
 }
 
 /// MongoDB related options.
-#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
+#[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
 pub struct MongoDB {
     /// MongoDB connection URI.
     #[serde(default = "MongoDB::default_uri")]
@@ -107,7 +107,7 @@ impl MongoDB {
 }
 
 /// Configure the agent to operate in sharded cluster mode.
-#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
+#[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
 pub struct Sharding {
     /// The identifier of the MongoDB sharded cluster.
     pub cluster_name: String,
