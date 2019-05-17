@@ -7,6 +7,7 @@ use opentracingrust::Span;
 use replicante_agent_models::AgentInfo;
 use replicante_agent_models::DatastoreInfo;
 use replicante_agent_models::Shards;
+use replicante_util_failure::failure_info;
 
 use super::Agent;
 use super::AgentContext;
@@ -149,10 +150,9 @@ where
                 .clone();
             let info = active.agent.datastore_info(span);
             match info {
-                Err(err) => {
-                    let error = format!("{:?}", err);
-                    warn!(self.context.logger, "Failed to detect version"; "error" => error);
-                    (self.factory.should_remake_on_error(&active, &err), None)
+                Err(error) => {
+                    warn!(self.context.logger, "Failed to detect version"; failure_info(&error));
+                    (self.factory.should_remake_on_error(&active, &error), None)
                 }
                 Ok(info) => (self.factory.should_remake(&active, &info), Some(info)),
             }

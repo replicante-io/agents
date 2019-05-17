@@ -21,6 +21,7 @@ use replicante_agent_models::DatastoreInfo;
 use replicante_agent_models::Shard;
 use replicante_agent_models::ShardRole;
 use replicante_agent_models::Shards;
+use replicante_util_failure::failure_info;
 
 use super::super::super::error::ErrorKind;
 use super::super::super::metrics::MONGODB_OPS_COUNT;
@@ -132,7 +133,7 @@ impl Agent for ReplicaSet {
             _ => match status.primary_optime() {
                 Ok(head) => Some(CommitOffset::seconds(head - last_op)),
                 Err(error) => {
-                    error!(self.context.logger, "Failed to compute lag"; "error" => ?error);
+                    error!(self.context.logger, "Failed to compute lag"; failure_info(&error));
                     span.tag("lag.error", format!("Failed lag computation: {:?}", error));
                     None
                 }

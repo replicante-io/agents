@@ -3,10 +3,11 @@ use std::sync::Arc;
 use iron::prelude::*;
 use iron::status;
 use iron::Handler;
-
 use iron_json_response::JsonResponse;
-
 use opentracingrust::Log;
+
+use replicante_util_failure::capture_fail;
+use replicante_util_failure::failure_info;
 
 use super::super::super::error::fail_span;
 use super::super::super::error::otr_to_iron;
@@ -44,7 +45,13 @@ impl Handler for Shards {
         match HeadersCarrier::inject(span.context(), &mut response.headers, tracer) {
             Ok(_) => (),
             Err(error) => {
-                error!(self.context.logger, "Failed to inject span"; "error" => ?error);
+                let error = failure::format_err!("{:?}", error);
+                capture_fail!(
+                    error.as_fail(),
+                    self.context.logger,
+                    "Failed to inject span";
+                    failure_info(error.as_fail()),
+                );
             }
         };
         response

@@ -55,8 +55,10 @@ impl MongoDBFactory {
         let client = Client::with_config(uri, Some(options), Some(description))
             .with_context(|_| ErrorKind::Connection("mongodb", config.mongo.uri.clone()))?;
         debug!(
-            context.logger, "MongoDB client created";
-            "uri" => &config.mongo.uri, "timeout" => &config.mongo.timeout
+            context.logger,
+            "MongoDB client created";
+            "uri" => &config.mongo.uri,
+            "timeout" => &config.mongo.timeout,
         );
 
         let sharding = config.mongo.sharding;
@@ -117,8 +119,11 @@ impl MongoDBFactory {
             Err(error) => {
                 let (agent, agent_version, mode) = self.default_agent();
                 warn!(
-                    self.context.logger, "Could not detect MongoDB version, using default agent";
-                    "agent_version" => agent_version, "mode" => mode, failure_info(&error),
+                    self.context.logger,
+                    "Could not detect MongoDB version, using default agent";
+                    "agent_version" => agent_version,
+                    "mode" => mode,
+                    failure_info(&error),
                 );
                 ActiveAgent::new(agent, "unknown")
             }
@@ -131,9 +136,11 @@ impl MongoDBFactory {
                 agent
                     .map(|(agent, agent_version)| {
                         info!(
-                            self.context.logger, "Instantiated MongoDB agent";
-                            "agent_version" => agent_version, "mongo_version" => %version,
-                            "mode" => mode
+                            self.context.logger,
+                            "Instantiated MongoDB agent";
+                            "agent_version" => agent_version,
+                            "mongo_version" => %version,
+                            "mode" => mode,
                         );
                         ActiveAgent::new(agent, version.to_string())
                     })
@@ -141,9 +148,11 @@ impl MongoDBFactory {
                     .unwrap_or_else(|| {
                         let (agent, agent_version, mode) = self.default_agent();
                         warn!(
-                            self.context.logger, "Unsupported MongoDB version, using default agent";
-                            "agent_version" => agent_version, "mongo_version" => %version,
-                            "mode" => mode
+                            self.context.logger,
+                            "Unsupported MongoDB version, using default agent";
+                            "agent_version" => agent_version,
+                            "mongo_version" => %version,
+                            "mode" => mode,
                         );
                         ActiveAgent::new(agent, "unknown")
                     })

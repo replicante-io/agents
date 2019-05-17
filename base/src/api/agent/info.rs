@@ -6,6 +6,9 @@ use iron::Handler;
 use iron_json_response::JsonResponse;
 use opentracingrust::Log;
 
+use replicante_util_failure::capture_fail;
+use replicante_util_failure::failure_info;
+
 use super::super::super::error::fail_span;
 use super::super::super::error::otr_to_iron;
 use super::super::super::util::tracing::HeadersCarrier;
@@ -42,7 +45,13 @@ impl Handler for AgentInfo {
         match HeadersCarrier::inject(span.context(), &mut response.headers, tracer) {
             Ok(_) => (),
             Err(error) => {
-                error!(self.context.logger, "Failed to inject span"; "error" => ?error);
+                let error = failure::format_err!("{:?}", error);
+                capture_fail!(
+                    error.as_fail(),
+                    self.context.logger,
+                    "Failed to inject span";
+                    failure_info(error.as_fail()),
+                );
             }
         };
         response
@@ -90,7 +99,13 @@ impl Handler for DatastoreInfo {
         match HeadersCarrier::inject(span.context(), &mut response.headers, tracer) {
             Ok(_) => (),
             Err(error) => {
-                error!(self.context.logger, "Failed to inject span"; "error" => ?error);
+                let error = failure::format_err!("{:?}", error);
+                capture_fail!(
+                    error.as_fail(),
+                    self.context.logger,
+                    "Failed to inject span";
+                    failure_info(error.as_fail()),
+                );
             }
         };
         response

@@ -8,6 +8,8 @@ use iron::Chain;
 use iron::Iron;
 use iron_json_response::JsonResponseMiddleware;
 
+use replicante_util_failure::capture_fail;
+use replicante_util_failure::failure_info;
 use replicante_util_iron::MetricsMiddleware;
 use replicante_util_iron::RequestLogger;
 use replicante_util_iron::RootDescriptor;
@@ -112,7 +114,12 @@ where
                 ::std::thread::sleep(Duration::from_secs(1));
             }
             if let Err(error) = bind.close() {
-                error!(context.logger, "Failed to shutdown API server"; "error" => ?error);
+                capture_fail!(
+                    &error,
+                    context.logger,
+                    "Failed to shutdown API server";
+                    failure_info(&error),
+                );
             }
         })
         .with_context(|_| ErrorKind::ThreadSpawn("api server"))?;
