@@ -86,7 +86,7 @@ mod tests {
     where
         A: Agent + 'static,
     {
-        let (context, extra) = AgentContext::mock();
+        let context = AgentContext::mock();
         let handler = Shards::make(Arc::new(agent), context);
         let handler = {
             let mut chain = Chain::new(handler);
@@ -102,7 +102,6 @@ mod tests {
             let body = response::extract_body_to_bytes(response);
             String::from_utf8(body).unwrap()
         });
-        drop(extra);
         drop(handler);
         response
     }

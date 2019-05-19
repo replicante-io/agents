@@ -136,7 +136,7 @@ mod tests {
         where
             A: Agent + 'static,
         {
-            let (context, extra) = AgentContext::mock();
+            let context = AgentContext::mock();
             let handler = AgentInfo::make(Arc::new(agent), context);
             let handler = {
                 let mut chain = Chain::new(handler);
@@ -152,7 +152,6 @@ mod tests {
                 let body = response::extract_body_to_bytes(response);
                 String::from_utf8(body).unwrap()
             });
-            drop(extra);
             drop(handler);
             response
         }
@@ -209,7 +208,7 @@ mod tests {
         where
             A: Agent + 'static,
         {
-            let (context, extra) = AgentContext::mock_with_config(config);
+            let context = AgentContext::mock_with_config(config);
             let handler = DatastoreInfo::make(Arc::new(agent), context);
             let handler = {
                 let mut chain = Chain::new(handler);
@@ -225,7 +224,6 @@ mod tests {
                 let body = response::extract_body_to_bytes(response);
                 String::from_utf8(body).unwrap()
             });
-            drop(extra);
             drop(handler);
             response
         }

@@ -62,7 +62,7 @@ pub fn run() -> Result<bool> {
     // Run the agent using the provided default helper.
     let agent_conf = config.agent.clone();
     let release = RELEASE.as_str();
-    ::replicante_agent::process::run(agent_conf, release, |context, _, _| {
+    ::replicante_agent::process::run(agent_conf, "repliagent-mongodb", release, |context, _| {
         metrics::register_metrics(context);
         let factory = MongoDBFactory::with_config(config, context.clone())?;
         let agent = VersionedAgent::new(context.clone(), factory);

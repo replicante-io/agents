@@ -14,7 +14,6 @@ extern crate router;
 #[macro_use]
 extern crate lazy_static;
 extern crate opentracingrust;
-extern crate opentracingrust_zipkin;
 extern crate prometheus;
 extern crate sentry;
 extern crate serde;

@@ -38,7 +38,7 @@ serde_yaml = "^0.8.0"
 slog = "^2.2.3"
 zookeeper = "^0.5.4"
 
-opentracingrust = "^0.3.1"
+opentracingrust = "^0.3.3"
 
 replicante_agent = { path = "../base" }
 replicante_agent_models = { path = "../common/agent/models" }

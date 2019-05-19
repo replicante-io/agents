@@ -278,14 +278,13 @@ mod tests {
             remake: false,
             remake_on_error: false,
         });
-        let (context, extra) = AgentContext::mock();
+        let context = AgentContext::mock();
         let agent = VersionedAgent::new(context.clone(), WrappedMockFactory(Arc::clone(&factory)));
         assert_eq!(1, *factory.made.lock().unwrap());
         agent
             .datastore_info(&mut context.tracer.span("TEST"))
             .unwrap();
         assert_eq!(1, *factory.made.lock().unwrap());
-        drop(extra);
     }
 
     #[test]
@@ -299,11 +298,10 @@ mod tests {
             remake: false,
             remake_on_error: true,
         });
-        let (context, extra) = AgentContext::mock();
+        let context = AgentContext::mock();
         let agent = VersionedAgent::new(context.clone(), WrappedMockFactory(Arc::clone(&factory)));
         agent.validate_version(&mut context.tracer.span("TEST"));
         assert_eq!(2, *factory.made.lock().unwrap());
-        drop(extra);
     }
 
     #[test]
@@ -317,11 +315,10 @@ mod tests {
             remake: false,
             remake_on_error: false,
         });
-        let (context, extra) = AgentContext::mock();
+        let context = AgentContext::mock();
         let agent = VersionedAgent::new(context.clone(), WrappedMockFactory(Arc::clone(&factory)));
         agent.validate_version(&mut context.tracer.span("TEST"));
         assert_eq!(1, *factory.made.lock().unwrap());
-        drop(extra);
     }
 
     #[test]
@@ -334,11 +331,10 @@ mod tests {
             remake: false,
             remake_on_error: false,
         });
-        let (context, extra) = AgentContext::mock();
+        let context = AgentContext::mock();
         let agent = VersionedAgent::new(context.clone(), WrappedMockFactory(Arc::clone(&factory)));
         agent.validate_version(&mut context.tracer.span("TEST"));
         assert_eq!(1, *factory.made.lock().unwrap());
-        drop(extra);
     }
 
     #[test]
@@ -351,10 +347,9 @@ mod tests {
             remake: true,
             remake_on_error: false,
         });
-        let (context, extra) = AgentContext::mock();
+        let context = AgentContext::mock();
         let agent = VersionedAgent::new(context.clone(), WrappedMockFactory(Arc::clone(&factory)));
         agent.validate_version(&mut context.tracer.span("TEST"));
         assert_eq!(2, *factory.made.lock().unwrap());
-        drop(extra);
     }
 }

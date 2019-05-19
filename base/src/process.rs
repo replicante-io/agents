@@ -1,7 +1,6 @@
 use std::borrow::Cow;
 use std::env;
 use std::process::exit;
-use std::time::Duration;
 
 use clap::App;
 use clap::Arg;
@@ -15,7 +14,6 @@ use slog_scope::GlobalLoggerGuard;
 
 use replicante_util_failure::format_fail;
 use replicante_util_tracing::tracer;
-use replicante_util_tracing::TracerExtra;
 use replicante_util_upkeep::Upkeep;
 
 use super::api;
@@ -56,26 +54,30 @@ where
 ///
 /// This function is implemented separately to allow `run` to apply error handling
 /// once to all possible error return branches.
-fn initialise_and_run<A, F>(config: Config, logger: Logger, initialise: F) -> Result<bool>
+fn initialise_and_run<A, F>(
+    config: Config,
+    logger: Logger,
+    service: &'static str,
+    initialise: F,
+) -> Result<bool>
 where
     A: Agent + 'static,
-    F: FnOnce(&AgentContext, &mut Upkeep, &mut TracerExtra) -> Result<A>,
+    F: FnOnce(&AgentContext, &mut Upkeep) -> Result<A>,
 {
-    let (tracer, mut tracer_extra) = tracer(config.tracing.clone(), logger.clone())
-        .with_context(|_| ErrorKind::Initialisation("tracer configuration failed".into()))?;
-    if let TracerExtra::ReporterThread(ref mut reporter) = tracer_extra {
-        reporter.stop_delay(Duration::from_secs(2));
-    }
     let mut upkeep = Upkeep::new();
     upkeep.set_logger(logger.clone());
     upkeep
         .register_signal()
         .with_context(|_| ErrorKind::Initialisation("signal handler registration failed".into()))?;
 
+    let tracer_opts = replicante_util_tracing::Opts::new(service, logger.clone(), &mut upkeep);
+    let tracer = tracer(config.tracing.clone(), tracer_opts)
+        .with_context(|_| ErrorKind::Initialisation("tracer configuration failed".into()))?;
+
     let context = AgentContext::new(config, logger.clone(), tracer);
     register_process_metrics(&context);
     super::register_metrics(&context);
-    let agent = initialise(&context, &mut upkeep, &mut tracer_extra)?;
+    let agent = initialise(&context, &mut upkeep)?;
     api::spawn_server(agent, context, &mut upkeep)?;
     let clean_exit = upkeep.keepalive();
     if clean_exit {
@@ -84,8 +86,6 @@ where
         warn!(logger, "Exiting due to error in a worker thread");
     }
 
-    // Cleanup tracer extras (usually the reporting thread) and exit.
-    drop(tracer_extra);
     Ok(clean_exit)
 }
 
@@ -139,15 +139,20 @@ pub fn register_process_metrics(context: &AgentContext) {
 ///
 /// Once done, the process blocks until shutdown is initiated.
 /// See `replicante_util_upkeep::Upkeep` for details on blocking and shutdown.
-pub fn run<A, F, R>(config: Config, release: R, initialise: F) -> Result<bool>
+pub fn run<A, F, R>(
+    config: Config,
+    service: &'static str,
+    release: R,
+    initialise: F,
+) -> Result<bool>
 where
     A: Agent + 'static,
-    F: FnOnce(&AgentContext, &mut Upkeep, &mut TracerExtra) -> Result<A>,
+    F: FnOnce(&AgentContext, &mut Upkeep) -> Result<A>,
     R: Into<Cow<'static, str>>,
 {
     let (logger, _scope_guard) = logger(&config);
     let _sentry = sentry(config.sentry.clone(), &logger, release.into())?;
-    initialise_and_run(config, logger, initialise).map_err(|error| {
+    initialise_and_run(config, logger, service, initialise).map_err(|error| {
         capture_fail(&error);
         error
     })

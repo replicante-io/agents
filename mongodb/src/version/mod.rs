@@ -219,92 +219,80 @@ mod tests {
 
     #[test]
     fn make_from_error() {
-        let (context, extra) = AgentContext::mock();
+        let context = AgentContext::mock();
         let config = Config::default();
         let factory = MongoDBFactory::with_config(config, context).unwrap();
         let active = factory.make_agent(Err(ErrorKind::MembersNoPrimary.into()));
         let error = ErrorKind::MembersNoPrimary.into();
         let remake_on_error = factory.should_remake_on_error(&active, &error);
-        // Drop tracer before assertions to that panics don't lead to thread errors.
         drop(factory);
-        drop(extra);
         assert!(remake_on_error);
         assert_eq!(active.version_id(), "unknown");
     }
 
     #[test]
     fn make_from_version_above_32() {
-        let (context, extra) = AgentContext::mock();
+        let context = AgentContext::mock();
         let config = Config::default();
         let version = Version::parse("3.3.0").unwrap();
         let factory = MongoDBFactory::with_config(config, context).unwrap();
         let active = factory.make_agent(Ok(version));
         let error = ErrorKind::MembersNoPrimary.into();
         let remake_on_error = factory.should_remake_on_error(&active, &error);
-        // Drop tracer before assertions to that panics don't lead to thread errors.
         drop(factory);
-        drop(extra);
         assert!(!remake_on_error);
         assert_eq!(active.version_id(), "3.3.0");
     }
 
     #[test]
     fn make_from_version_exact_32() {
-        let (context, extra) = AgentContext::mock();
+        let context = AgentContext::mock();
         let config = Config::default();
         let version = Version::parse("3.2.0").unwrap();
         let factory = MongoDBFactory::with_config(config, context).unwrap();
         let active = factory.make_agent(Ok(version));
         let error = ErrorKind::MembersNoPrimary.into();
         let remake_on_error = factory.should_remake_on_error(&active, &error);
-        // Drop tracer before assertions to that panics don't lead to thread errors.
         drop(factory);
-        drop(extra);
         assert!(!remake_on_error);
         assert_eq!(active.version_id(), "3.2.0");
     }
 
     #[test]
     fn should_always_remake_unknown_version() {
-        let (context, extra) = AgentContext::mock();
+        let context = AgentContext::mock();
         let config = Config::default();
         let info = DatastoreInfo::new("test", "MongoDB", "name", "unknown", None);
         let factory = MongoDBFactory::with_config(config, context).unwrap();
         let active = factory.make_agent(Err(ErrorKind::MembersNoPrimary.into()));
         let remake = factory.should_remake(&active, &info);
-        // Drop tracer before assertions to that panics don't lead to thread errors.
         drop(factory);
-        drop(extra);
         assert!(remake);
     }
 
     #[test]
     fn should_remake_changed_version() {
-        let (context, extra) = AgentContext::mock();
+        let context = AgentContext::mock();
         let config = Config::default();
         let info = DatastoreInfo::new("test", "MongoDB", "name", "3.6.0", None);
         let version = Version::parse("3.3.0").unwrap();
         let factory = MongoDBFactory::with_config(config, context).unwrap();
         let active = factory.make_agent(Ok(version));
         let remake = factory.should_remake(&active, &info);
-        // Drop tracer before assertions to that panics don't lead to thread errors.
         drop(factory);
-        drop(extra);
         assert!(remake);
     }
 
     #[test]
     fn should_remake_same_version() {
-        let (context, extra) = AgentContext::mock();
+        let context = AgentContext::mock();
         let config = Config::default();
         let info = DatastoreInfo::new("test", "MongoDB", "name", "3.3.0", None);
         let version = Version::parse("3.3.0").unwrap();
         let factory = MongoDBFactory::with_config(config, context).unwrap();
         let active = factory.make_agent(Ok(version));
         let remake = factory.should_remake(&active, &info);
-        // Drop tracer before assertions to that panics don't lead to thread errors.
         drop(factory);
-        drop(extra);
         assert!(!remake);
     }
 }
