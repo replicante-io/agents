@@ -162,7 +162,8 @@ impl Agent for KafkaAgent {
             .parse::<i32>()
             .with_context(|_| ErrorKind::BrokerIdFormat(name))?;
         let mut shards = Vec::new();
-        for topic in self.zoo.topics(span)? {
+        let topics = self.zoo.topics(span)?;
+        for topic in topics {
             self.push_shard(&mut shards, broker_id, &topic, span)?;
         }
         Ok(Shards::new(shards))
