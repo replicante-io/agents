@@ -33,6 +33,8 @@ extern crate replicante_util_iron;
 extern crate replicante_util_tracing;
 extern crate replicante_util_upkeep;
 
+pub use replicante_util_tracing::fail_span;
+
 mod api;
 mod context;
 mod error;
@@ -41,13 +43,11 @@ mod versioned;
 
 pub mod config;
 pub mod process;
-pub mod util;
 
 #[cfg(debug_assertions)]
 pub mod testing;
 
 pub use self::context::AgentContext;
-pub use self::error::fail_span;
 pub use self::error::Error;
 pub use self::error::ErrorKind;
 pub use self::error::Result;

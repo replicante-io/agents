@@ -33,7 +33,11 @@ use super::Result;
 /// Mount all API endpoints into an Iron Chain.
 pub fn mount(agent: Arc<Agent>, context: AgentContext) -> Chain {
     let logger = context.logger.clone();
-    let mut router = Router::new(context.config.api.trees.clone().into());
+    let mut router = Router::new(
+        context.config.api.trees.clone().into(),
+        logger.clone(),
+        Arc::clone(&context.tracer),
+    );
     let sentry_capture_api = context
         .config
         .sentry
@@ -163,6 +167,13 @@ impl RootDescriptor for APIRoot {
         match self {
             APIRoot::UnstableAPI => "/api/unstable",
             APIRoot::UnstableIntrospect => "/api/unstable/introspect",
+        }
+    }
+
+    fn trace(&self) -> bool {
+        match self {
+            APIRoot::UnstableIntrospect => false,
+            _ => true,
         }
     }
 }

@@ -1,21 +1,10 @@
 use std::fmt;
 
-use failure::err_msg;
 use failure::Backtrace;
 use failure::Context;
 use failure::Fail;
-
-use iron::status;
 use iron::IronError;
-use iron::Response;
-use iron::Set;
-use iron_json_response::JsonResponse;
 
-use opentracingrust::Error as OTError;
-use opentracingrust::Log;
-use opentracingrust::Span;
-
-use replicante_util_failure::SerializableFail;
 use replicante_util_iron::into_ironerror;
 
 /// Error information returned by functions in case of errors.
@@ -111,40 +100,6 @@ pub type Result<T> = ::std::result::Result<T, Error>;
 impl From<Error> for IronError {
     fn from(error: Error) -> IronError {
         into_ironerror(error)
-    }
-}
-
-// OpenTracing compatibility code.
-/// Re-implement `FailSpan` for `Fail` errors :-(
-pub fn fail_span<E: Fail>(error: E, span: &mut Span) -> E {
-    span.tag("error", true);
-    span.log(
-        Log::new()
-            .log("event", "error")
-            .log("message", error.to_string())
-            .log("error.object", format!("{:?}", error)),
-    );
-    error
-}
-
-/// Convert an OpenTracingRust error into an IronError.
-#[allow(clippy::needless_pass_by_value)]
-pub fn otr_to_iron(error: OTError) -> IronError {
-    let error = format!("{:?}", error);
-    let wrapper = SerializableFail {
-        error: error.clone(),
-        layers: vec![error.clone()],
-        trace: None,
-    };
-    let mut response = Response::new();
-    response
-        .set_mut(JsonResponse::json(wrapper))
-        .set_mut(status::BadRequest);
-    // OTError should really have implemented `Error` :-(
-    let error = err_msg(error).compat();
-    IronError {
-        error: Box::new(error),
-        response,
     }
 }
 

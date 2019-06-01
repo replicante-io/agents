@@ -6,57 +6,36 @@ use iron::Handler;
 use iron_json_response::JsonResponse;
 use opentracingrust::Log;
 
-use replicante_util_failure::capture_fail;
-use replicante_util_failure::failure_info;
+use replicante_util_iron::request_span;
+use replicante_util_tracing::fail_span;
 
-use super::super::super::error::fail_span;
-use super::super::super::error::otr_to_iron;
-use super::super::super::util::tracing::HeadersCarrier;
 use super::super::super::Agent;
 use super::super::super::AgentContext;
 
 /// Handler implementing the /api/v1/info/agent endpoint.
 pub struct AgentInfo {
     agent: Arc<Agent>,
-    context: AgentContext,
 }
 
 impl AgentInfo {
-    pub fn make(agent: Arc<Agent>, context: AgentContext) -> AgentInfo {
-        AgentInfo { agent, context }
+    pub fn make(agent: Arc<Agent>) -> AgentInfo {
+        AgentInfo { agent }
     }
 }
 
 impl Handler for AgentInfo {
     fn handle(&self, request: &mut Request) -> IronResult<Response> {
-        let tracer = &self.context.tracer;
-        let mut span = HeadersCarrier::child_of("agent-info", &mut request.headers, tracer)
-            .map_err(otr_to_iron)?
-            .auto_finish();
-
+        let mut span = request_span(request);
         span.log(Log::new().log("span.kind", "server-receive"));
         let info = self
             .agent
             .agent_info(&mut span)
             .map_err(|error| fail_span(error, &mut span))?;
-        span.log(Log::new().log("span.kind", "server-send"));
-
         let mut response = Response::new();
-        match HeadersCarrier::inject(span.context(), &mut response.headers, tracer) {
-            Ok(_) => (),
-            Err(error) => {
-                let error = failure::format_err!("{:?}", error);
-                capture_fail!(
-                    error.as_fail(),
-                    self.context.logger,
-                    "Failed to inject span";
-                    failure_info(error.as_fail()),
-                );
-            }
-        };
         response
             .set_mut(JsonResponse::json(info))
             .set_mut(status::Ok);
+        span.log(Log::new().log("span.kind", "server-send"));
         Ok(response)
     }
 }
@@ -75,17 +54,12 @@ impl DatastoreInfo {
 
 impl Handler for DatastoreInfo {
     fn handle(&self, request: &mut Request) -> IronResult<Response> {
-        let tracer = &self.context.tracer;
-        let mut span = HeadersCarrier::child_of("datastore-info", &mut request.headers, tracer)
-            .map_err(otr_to_iron)?
-            .auto_finish();
-
+        let mut span = request_span(request);
         span.log(Log::new().log("span.kind", "server-receive"));
         let mut info = self
             .agent
             .datastore_info(&mut span)
             .map_err(|error| fail_span(error, &mut span))?;
-        span.log(Log::new().log("span.kind", "server-send"));
 
         // Inject the cluster_display_name override if configured.
         info.cluster_display_name = self
@@ -96,21 +70,10 @@ impl Handler for DatastoreInfo {
             .or(info.cluster_display_name);
 
         let mut response = Response::new();
-        match HeadersCarrier::inject(span.context(), &mut response.headers, tracer) {
-            Ok(_) => (),
-            Err(error) => {
-                let error = failure::format_err!("{:?}", error);
-                capture_fail!(
-                    error.as_fail(),
-                    self.context.logger,
-                    "Failed to inject span";
-                    failure_info(error.as_fail()),
-                );
-            }
-        };
         response
             .set_mut(JsonResponse::json(info))
             .set_mut(status::Ok);
+        span.log(Log::new().log("span.kind", "server-send"));
         Ok(response)
     }
 }
@@ -127,6 +90,8 @@ mod tests {
         use iron_test::request;
         use iron_test::response;
 
+        use replicante_util_iron::mock_request_span;
+
         use super::super::super::super::super::testing::MockAgent;
         use super::super::super::super::super::Agent;
         use super::super::super::super::super::AgentContext;
@@ -136,13 +101,13 @@ mod tests {
         where
             A: Agent + 'static,
         {
-            let context = AgentContext::mock();
-            let handler = AgentInfo::make(Arc::new(agent), context);
+            let handler = AgentInfo::make(Arc::new(agent));
             let handler = {
                 let mut chain = Chain::new(handler);
                 chain.link_after(JsonResponseMiddleware::new());
                 chain
             };
+            let handler = mock_request_span(AgentContext::mock().tracer, handler);
             let response = request::get(
                 "http://localhost:3000/api/v1/info/agent",
                 Headers::new(),
@@ -191,6 +156,8 @@ mod tests {
         use iron_test::request;
         use iron_test::response;
 
+        use replicante_util_iron::mock_request_span;
+
         use super::super::super::super::super::config::Agent as AgentConfig;
         use super::super::super::super::super::testing::MockAgent;
         use super::super::super::super::super::Agent;
@@ -215,6 +182,7 @@ mod tests {
                 chain.link_after(JsonResponseMiddleware::new());
                 chain
             };
+            let handler = mock_request_span(AgentContext::mock().tracer, handler);
             let response = request::get(
                 "http://localhost:3000/api/v1/info/datastore",
                 Headers::new(),

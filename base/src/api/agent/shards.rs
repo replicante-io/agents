@@ -6,57 +6,35 @@ use iron::Handler;
 use iron_json_response::JsonResponse;
 use opentracingrust::Log;
 
-use replicante_util_failure::capture_fail;
-use replicante_util_failure::failure_info;
+use replicante_util_iron::request_span;
+use replicante_util_tracing::fail_span;
 
-use super::super::super::error::fail_span;
-use super::super::super::error::otr_to_iron;
-use super::super::super::util::tracing::HeadersCarrier;
 use super::super::super::Agent;
-use super::super::super::AgentContext;
 
 /// Handler implementing the /api/v1/status endpoint.
 pub struct Shards {
     agent: Arc<Agent>,
-    context: AgentContext,
 }
 
 impl Shards {
-    pub fn make(agent: Arc<Agent>, context: AgentContext) -> Shards {
-        Shards { agent, context }
+    pub fn make(agent: Arc<Agent>) -> Shards {
+        Shards { agent }
     }
 }
 
 impl Handler for Shards {
     fn handle(&self, request: &mut Request) -> IronResult<Response> {
-        let tracer = &self.context.tracer;
-        let mut span = HeadersCarrier::child_of("status", &mut request.headers, tracer)
-            .map_err(otr_to_iron)?
-            .auto_finish();
-
+        let mut span = request_span(request);
         span.log(Log::new().log("span.kind", "server-receive"));
         let shards = self
             .agent
             .shards(&mut span)
             .map_err(|error| fail_span(error, &mut span))?;
-        span.log(Log::new().log("span.kind", "server-send"));
-
         let mut response = Response::new();
-        match HeadersCarrier::inject(span.context(), &mut response.headers, tracer) {
-            Ok(_) => (),
-            Err(error) => {
-                let error = failure::format_err!("{:?}", error);
-                capture_fail!(
-                    error.as_fail(),
-                    self.context.logger,
-                    "Failed to inject span";
-                    failure_info(error.as_fail()),
-                );
-            }
-        };
         response
             .set_mut(JsonResponse::json(&shards))
             .set_mut(status::Ok);
+        span.log(Log::new().log("span.kind", "server-send"));
         Ok(response)
     }
 }
@@ -76,6 +54,7 @@ mod tests {
     use replicante_agent_models::Shard;
     use replicante_agent_models::ShardRole;
     use replicante_agent_models::Shards as ShardsModel;
+    use replicante_util_iron::mock_request_span;
 
     use super::super::super::super::testing::MockAgent;
     use super::super::super::super::Agent;
@@ -86,13 +65,13 @@ mod tests {
     where
         A: Agent + 'static,
     {
-        let context = AgentContext::mock();
-        let handler = Shards::make(Arc::new(agent), context);
+        let handler = Shards::make(Arc::new(agent));
         let handler = {
             let mut chain = Chain::new(handler);
             chain.link_after(JsonResponseMiddleware::new());
             chain
         };
+        let handler = mock_request_span(AgentContext::mock().tracer, handler);
         let response = request::get(
             "http://localhost:3000/api/v1/status",
             Headers::new(),

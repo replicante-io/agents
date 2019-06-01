@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - **BREAKING**: Rename incorrectly named v1 API as unstable.
 - **BREAKING**: Rename model fields to match spec.
 - **BREAKING**: Replaced `AgentRunner` with `::replicante_agent::process::run`.
+- Improved API tracing framework.
 
 ## [0.3.0] - 2019-03-29
 ### Changed
