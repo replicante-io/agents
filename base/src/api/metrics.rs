@@ -1,5 +1,7 @@
+use lazy_static::lazy_static;
 use prometheus::CounterVec;
 use prometheus::HistogramVec;
+use slog::debug;
 
 use replicante_util_iron::MetricsMiddleware;
 

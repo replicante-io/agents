@@ -1,23 +1,21 @@
-#[macro_use(bson, doc)]
 extern crate bson;
 extern crate failure;
-#[macro_use]
 extern crate lazy_static;
 extern crate mongodb;
 extern crate opentracingrust;
 extern crate prometheus;
 extern crate semver;
 extern crate serde;
-#[macro_use]
 extern crate serde_derive;
 extern crate serde_yaml;
-#[macro_use]
 extern crate slog;
 
 extern crate replicante_agent;
 extern crate replicante_agent_models;
 extern crate replicante_util_failure;
 extern crate replicante_util_tracing;
+
+use lazy_static::lazy_static;
 
 use replicante_agent::Result;
 use replicante_agent::VersionedAgent;

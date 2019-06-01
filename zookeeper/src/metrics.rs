@@ -1,14 +1,16 @@
+use lazy_static::lazy_static;
 use prometheus::CounterVec;
 use prometheus::HistogramOpts;
 use prometheus::HistogramVec;
 use prometheus::Opts;
+use slog::debug;
 
 use replicante_agent::AgentContext;
 
 lazy_static! {
     pub static ref OP_ERRORS_COUNT: CounterVec = CounterVec::new(
         Opts::new(
-            "replicante_agent_zookeeper_operation_errors",
+            "repliagent_zookeeper_operation_errors",
             "Number of Zookeeper operations failed"
         ),
         &["operation"]
@@ -16,7 +18,7 @@ lazy_static! {
     .expect("Failed to create OP_ERRORS_COUNT counter");
     pub static ref OPS_COUNT: CounterVec = CounterVec::new(
         Opts::new(
-            "replicante_agent_zookeeper_operations",
+            "repliagent_zookeeper_operations",
             "Number of Zookeeper operations issued"
         ),
         &["operation"]
@@ -24,7 +26,7 @@ lazy_static! {
     .expect("Failed to create OPS_COUNT counter");
     pub static ref OPS_DURATION: HistogramVec = HistogramVec::new(
         HistogramOpts::new(
-            "replicante_agent_zookeeper_operations_duration",
+            "repliagent_zookeeper_operations_duration",
             "Duration (in seconds) of Zookeeper operations"
         ),
         &["operation"]

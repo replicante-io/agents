@@ -1,3 +1,5 @@
+use lazy_static::lazy_static;
+
 use replicante_agent_models::AgentVersion;
 
 lazy_static! {

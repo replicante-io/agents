@@ -9,6 +9,9 @@ use prometheus::process_collector::ProcessCollector;
 use sentry::integrations::failure::capture_fail;
 use sentry::internals::ClientInitGuard;
 use sentry::internals::IntoDsn;
+use slog::debug;
+use slog::info;
+use slog::warn;
 use slog::Logger;
 use slog_scope::GlobalLoggerGuard;
 

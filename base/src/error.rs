@@ -25,6 +25,10 @@ impl Fail for Error {
     fn backtrace(&self) -> Option<&Backtrace> {
         self.0.backtrace()
     }
+
+    fn name(&self) -> Option<&str> {
+        self.kind().kind_name()
+    }
 }
 
 impl fmt::Display for Error {
@@ -90,12 +94,27 @@ pub enum ErrorKind {
     ThreadSpawn(&'static str),
 }
 
+impl ErrorKind {
+    fn kind_name(&self) -> Option<&str> {
+        let name = match self {
+            ErrorKind::ConfigLoad => "ConfigLoad",
+            ErrorKind::ConfigOption(_) => "ConfigOption",
+            ErrorKind::Connection(_, _) => "Connection",
+            ErrorKind::FreeForm(_) => "FreeForm",
+            ErrorKind::Initialisation(_) => "Initialisation",
+            ErrorKind::InvalidStoreState(_) => "InvalidStoreState",
+            ErrorKind::Io(_) => "Io",
+            ErrorKind::ResponseDecode(_, _) => "ResponseDecode",
+            ErrorKind::StoreOpFailed(_) => "StoreOpFailed",
+            ErrorKind::ThreadSpawn(_) => "ThreadSpawn",
+        };
+        Some(name)
+    }
+}
+
 /// Short form alias for functions returning `Error`s.
 pub type Result<T> = ::std::result::Result<T, Error>;
 
-// **********************
-// * Compatibility Code *
-// **********************
 // IronError compatibility code.
 impl From<Error> for IronError {
     fn from(error: Error) -> IronError {

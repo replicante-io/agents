@@ -7,8 +7,10 @@ use mongodb::topology::TopologyType;
 use mongodb::Client;
 use mongodb::ClientOptions;
 use mongodb::ThreadedClient;
-
 use semver::Version;
+use slog::debug;
+use slog::info;
+use slog::warn;
 
 use replicante_agent::ActiveAgent;
 use replicante_agent::Agent;

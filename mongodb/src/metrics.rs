@@ -1,14 +1,16 @@
+use lazy_static::lazy_static;
 use prometheus::CounterVec;
 use prometheus::HistogramOpts;
 use prometheus::HistogramVec;
 use prometheus::Opts;
+use slog::debug;
 
 use replicante_agent::AgentContext;
 
 lazy_static! {
     pub static ref MONGODB_OP_ERRORS_COUNT: CounterVec = CounterVec::new(
         Opts::new(
-            "replicante_agent_mongodb_operation_errors",
+            "repliagent_mongodb_operation_errors",
             "Number of MongoDB operations failed"
         ),
         &["operation"]
@@ -16,7 +18,7 @@ lazy_static! {
     .expect("Failed to create MONGODB_OP_ERRORS_COUNT counter");
     pub static ref MONGODB_OPS_COUNT: CounterVec = CounterVec::new(
         Opts::new(
-            "replicante_agent_mongodb_operations",
+            "repliagent_mongodb_operations",
             "Number of MongoDB operations issued"
         ),
         &["operation"]
@@ -24,7 +26,7 @@ lazy_static! {
     .expect("Failed to create MONGODB_OPS_COUNT counter");
     pub static ref MONGODB_OPS_DURATION: HistogramVec = HistogramVec::new(
         HistogramOpts::new(
-            "replicante_agent_mongodb_operations_duration",
+            "repliagent_mongodb_operations_duration",
             "Duration (in seconds) of MongoDB operations"
         ),
         &["operation"]

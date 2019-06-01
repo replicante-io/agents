@@ -4,6 +4,8 @@ use std::sync::Arc;
 use opentracingrust::Tracer;
 use prometheus::Registry;
 #[cfg(debug_assertions)]
+use slog::o;
+#[cfg(debug_assertions)]
 use slog::Discard;
 use slog::Logger;
 

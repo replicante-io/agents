@@ -6,7 +6,13 @@ use std::sync::Mutex;
 use std::time::Duration;
 
 use failure::ResultExt;
+use serde_derive::Deserialize;
+use serde_derive::Serialize;
 use serde_json;
+use slog::debug;
+use slog::error;
+use slog::info;
+use slog::warn;
 use slog::Logger;
 
 use opentracingrust::Log;

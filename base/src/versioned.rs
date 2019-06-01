@@ -3,6 +3,9 @@ use std::sync::RwLock;
 
 use opentracingrust::Log;
 use opentracingrust::Span;
+use slog::debug;
+use slog::info;
+use slog::warn;
 
 use replicante_agent_models::AgentInfo;
 use replicante_agent_models::DatastoreInfo;

@@ -1,15 +1,15 @@
-use bson;
+use bson::bson;
+use bson::doc;
 use bson::Bson;
 use failure::ResultExt;
-
 use mongodb::db::ThreadedDatabase;
 use mongodb::Client;
 use mongodb::CommandType;
 use mongodb::ThreadedClient;
-
 use opentracingrust::utils::FailSpan;
 use opentracingrust::Log;
 use opentracingrust::Span;
+use slog::error;
 
 use replicante_agent::Agent;
 use replicante_agent::AgentContext;

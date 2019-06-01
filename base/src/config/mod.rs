@@ -1,3 +1,6 @@
+use serde_derive::Deserialize;
+use serde_derive::Serialize;
+
 use replicante_logging::Config as LoggingConfig;
 use replicante_logging::LoggingLevel;
 use replicante_util_tracing::Config as TracerConfig;

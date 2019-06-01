@@ -6,12 +6,12 @@ use failure::ResultExt;
 use failure::SyncFailure;
 use kafka::client::FetchOffset;
 use kafka::client::KafkaClient;
+use lazy_static::lazy_static;
 use opentracingrust::Span;
 
 use replicante_agent::Agent;
 use replicante_agent::AgentContext;
 use replicante_agent::Result;
-
 use replicante_agent_models::AgentInfo;
 use replicante_agent_models::AgentVersion;
 use replicante_agent_models::CommitOffset;

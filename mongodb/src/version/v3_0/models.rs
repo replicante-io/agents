@@ -1,4 +1,5 @@
 use bson::TimeStamp;
+use serde_derive::Deserialize;
 
 use replicante_agent::Result;
 use replicante_agent_models::ShardRole;
@@ -81,8 +82,10 @@ impl ReplSetStatusMember {
 
 #[cfg(test)]
 mod tests {
-    use bson;
+    use bson::bson;
+    use bson::doc;
     use bson::Bson;
+    use lazy_static::lazy_static;
 
     use replicante_agent::ErrorKind;
     use replicante_agent_models::ShardRole;

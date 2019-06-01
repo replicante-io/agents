@@ -1,8 +1,8 @@
+use failure::ResultExt;
+use lazy_static::lazy_static;
 use opentracingrust::Log;
 use opentracingrust::Span;
 use opentracingrust::StartOptions;
-
-use failure::ResultExt;
 use zk_4lw::Client;
 use zk_4lw::FourLetterWord;
 
@@ -10,7 +10,6 @@ use replicante_agent::fail_span;
 use replicante_agent::Agent;
 use replicante_agent::AgentContext;
 use replicante_agent::Result;
-
 use replicante_agent_models::AgentInfo;
 use replicante_agent_models::AgentVersion;
 use replicante_agent_models::CommitOffset;

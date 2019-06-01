@@ -7,6 +7,7 @@ use humthreads::Builder;
 use iron::Chain;
 use iron::Iron;
 use iron_json_response::JsonResponseMiddleware;
+use slog::info;
 
 use replicante_util_failure::capture_fail;
 use replicante_util_failure::failure_info;

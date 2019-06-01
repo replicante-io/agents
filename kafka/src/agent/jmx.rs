@@ -6,9 +6,10 @@ use jmx::MBeanAddress;
 use jmx::MBeanClientTrait;
 use jmx::MBeanThreadedClient;
 use jmx::MBeanThreadedClientOptions;
-
 use opentracingrust::Log;
 use opentracingrust::Span;
+use slog::debug;
+use slog::info;
 
 use replicante_agent::fail_span;
 use replicante_agent::AgentContext;

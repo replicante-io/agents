@@ -1,14 +1,16 @@
+use lazy_static::lazy_static;
 use prometheus::CounterVec;
 use prometheus::HistogramOpts;
 use prometheus::HistogramVec;
 use prometheus::Opts;
+use slog::debug;
 
 use replicante_agent::AgentContext;
 
 lazy_static! {
     pub static ref OP_ERRORS_COUNT: CounterVec = CounterVec::new(
         Opts::new(
-            "replicante_agent_kafka_operation_errors",
+            "repliagent_kafka_operation_errors",
             "Number of Kafka/JMX/Zookeeper operations failed"
         ),
         &["service", "operation"]
@@ -16,7 +18,7 @@ lazy_static! {
     .expect("Failed to create OP_ERRORS_COUNT counter");
     pub static ref OPS_COUNT: CounterVec = CounterVec::new(
         Opts::new(
-            "replicante_agent_kafka_operations",
+            "repliagent_kafka_operations",
             "Number of Kafka/JMX/Zookeeper operations issued"
         ),
         &["service", "operation"]
@@ -24,7 +26,7 @@ lazy_static! {
     .expect("Failed to create OPS_COUNT counter");
     pub static ref OPS_DURATION: HistogramVec = HistogramVec::new(
         HistogramOpts::new(
-            "replicante_agent_kafka_operations_duration",
+            "repliagent_kafka_operations_duration",
             "Duration (in seconds) of Kafka/JMX/Zookeeper operations"
         ),
         &["service", "operation"]
@@ -32,7 +34,7 @@ lazy_static! {
     .expect("Failed to create OPS_DURATION histogram");
     pub static ref RECONNECT_COUNT: CounterVec = CounterVec::new(
         Opts::new(
-            "replicante_agent_kafka_reconnect",
+            "repliagent_kafka_reconnect",
             "Number of Kafka/JMX/Zookeeper reconnect operations"
         ),
         &["service"]
