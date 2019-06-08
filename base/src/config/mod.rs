@@ -38,6 +38,10 @@ pub struct Agent {
     #[serde(default)]
     pub sentry: Option<SentryConfig>,
 
+    /// Enable the update checker (optional).
+    #[serde(default = "Agent::default_update_checker")]
+    pub update_checker: bool,
+
     /// OpenTracing configuration
     #[serde(default)]
     pub tracing: TracerConfig,
@@ -50,12 +54,17 @@ impl Default for Agent {
             cluster_display_name_override: None,
             logging: LoggingConfig::default(),
             sentry: None,
+            update_checker: false,
             tracing: TracerConfig::default(),
         }
     }
 }
 
 impl Agent {
+    fn default_update_checker() -> bool {
+        false
+    }
+
     /// Apply transformations to the configuration to derive some parameters.
     ///
     /// Transformations:

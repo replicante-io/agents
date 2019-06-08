@@ -21,11 +21,9 @@ use replicante_util_upkeep::Upkeep;
 mod agent;
 mod index;
 mod introspect;
-mod metrics;
-
-pub use self::metrics::register_metrics;
 
 use super::config::SentryCaptureApi;
+use super::metrics::MIDDLEWARE;
 use super::Agent;
 use super::AgentContext;
 use super::ErrorKind;
@@ -60,9 +58,9 @@ pub fn mount(agent: Arc<Agent>, context: AgentContext) -> Chain {
     // Build and return the Iron Chain.
     let mut chain = router.build();
     let metrics_middlewere = MetricsMiddleware::new(
-        self::metrics::MIDDLEWARE.0.clone(),
-        self::metrics::MIDDLEWARE.1.clone(),
-        self::metrics::MIDDLEWARE.2.clone(),
+        MIDDLEWARE.0.clone(),
+        MIDDLEWARE.1.clone(),
+        MIDDLEWARE.2.clone(),
         logger.clone(),
     );
     chain.link_after(JsonResponseMiddleware::new());

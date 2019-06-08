@@ -18,6 +18,7 @@ extern crate replicante_util_tracing;
 use lazy_static::lazy_static;
 
 use replicante_agent::Result;
+use replicante_agent::SemVersion;
 
 mod agent;
 mod config;
@@ -27,9 +28,13 @@ mod metrics;
 use agent::KafkaAgent;
 use config::Config;
 
+const UPDATE_META: &str =
+    "https://github.com/replicante-io/metadata/raw/master/replicante/agent/kafka/latest.json";
+
 lazy_static! {
+    static ref CURRENT_VERSION: SemVersion = SemVersion::parse(env!("CARGO_PKG_VERSION")).unwrap();
     static ref RELEASE: String = format!("repliagent-officials@{}", env!("GIT_BUILD_HASH"));
-    pub static ref VERSION: String = format!(
+    static ref VERSION: String = format!(
         "{} [{}; {}]",
         env!("CARGO_PKG_VERSION"),
         env!("GIT_BUILD_HASH"),
@@ -59,9 +64,10 @@ pub fn run() -> Result<bool> {
     // Run the agent using the provided default helper.
     let agent_conf = config.agent.clone();
     let release = RELEASE.as_str();
-    ::replicante_agent::process::run(agent_conf, "repliagent-kafka", release, |context, _| {
+    replicante_agent::process::run(agent_conf, "repliagent-kafka", release, |context, _| {
         metrics::register_metrics(context);
         let agent = KafkaAgent::with_config(config, context.clone())?;
+        replicante_agent::process::update_checker(CURRENT_VERSION.clone(), UPDATE_META, context)?;
         Ok(agent)
     })
 }

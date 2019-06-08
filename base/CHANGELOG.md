@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Introduce an `/api/unstable` API "version".
 - Sentry integration.
 - Threads introspection API.
+- Update checker helper function.
 - `cluster_display_name` override option.
 - `process` module to reduce agent process duplication.
 

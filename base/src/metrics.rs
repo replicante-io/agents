@@ -1,15 +1,21 @@
 use lazy_static::lazy_static;
 use prometheus::CounterVec;
+use prometheus::Gauge;
 use prometheus::HistogramVec;
 use slog::debug;
 
 use replicante_util_iron::MetricsMiddleware;
 
-use super::super::AgentContext;
+use super::AgentContext;
 
 lazy_static! {
     pub static ref MIDDLEWARE: (HistogramVec, CounterVec, CounterVec) =
         MetricsMiddleware::metrics("repliagent");
+    pub static ref UPDATE_AVAILABLE: Gauge = Gauge::new(
+        "repliagent_updateable",
+        "Set to 1 when an updateded version is available (checked at start only)",
+    )
+    .expect("Failed to create UPDATE_AVAILABLE gauge");
 }
 
 /// Attemps to register metrics with the Registry.
@@ -26,5 +32,8 @@ pub fn register_metrics(context: &AgentContext) {
     }
     if let Err(error) = registry.register(Box::new(MIDDLEWARE.2.clone())) {
         debug!(logger, "Failed to register MIDDLEWARE.2"; "error" => ?error);
+    }
+    if let Err(error) = registry.register(Box::new(UPDATE_AVAILABLE.clone())) {
+        debug!(logger, "Failed to register UPDATE_AVAILABLE"; "error" => ?error);
     }
 }

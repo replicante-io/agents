@@ -1,20 +1,26 @@
 use std::borrow::Cow;
+use std::collections::BTreeMap;
 use std::env;
 use std::process::exit;
 
 use clap::App;
 use clap::Arg;
 use failure::ResultExt;
+use humthreads::Builder;
 use prometheus::process_collector::ProcessCollector;
+use semver::Version;
 use sentry::integrations::failure::capture_fail;
 use sentry::internals::ClientInitGuard;
 use sentry::internals::IntoDsn;
+use serde_derive::Deserialize;
 use slog::debug;
 use slog::info;
 use slog::warn;
 use slog::Logger;
 use slog_scope::GlobalLoggerGuard;
 
+use replicante_util_failure::capture_fail;
+use replicante_util_failure::failure_info;
 use replicante_util_failure::format_fail;
 use replicante_util_tracing::tracer;
 use replicante_util_upkeep::Upkeep;
@@ -22,6 +28,7 @@ use replicante_util_upkeep::Upkeep;
 use super::api;
 use super::config::Agent as Config;
 use super::config::SentryConfig;
+use super::metrics::UPDATE_AVAILABLE;
 use super::Agent;
 use super::AgentContext;
 use super::ErrorKind;
@@ -192,4 +199,83 @@ pub fn sentry(
         sentry::integrations::panic::register_panic_handler();
     }
     Ok(client)
+}
+
+/// Check for available updates in the background.
+///
+/// The check is performed once in a background thread that is ignored to avoid
+/// startup or shutdown delays.
+///
+/// The check is only performed if the `update_checker` config option is set to true.
+///
+/// The result of the update, including any error, is reported in the logs.
+/// If updates are available the `repliagent_upgradable` metric is also set to `1`.
+pub fn update_checker(current: Version, url: &'static str, context: &AgentContext) -> Result<()> {
+    if !context.config.update_checker {
+        debug!(
+            &context.logger,
+            "Update checker is disabled, skipping check"
+        );
+        return Ok(());
+    }
+    let logger = context.logger.clone();
+    Builder::new("r:b:update_checker")
+        .full_name("replicante:base:update_checker")
+        .spawn(move |scope| {
+            let _activity = scope.scoped_activity("checking for updates");
+            let response =
+                reqwest::get(url).and_then(|mut response| response.json::<VersionMeta>());
+            let response = match response {
+                Ok(response) => response,
+                Err(error) => {
+                    capture_fail!(
+                        &error,
+                        logger,
+                        "Failed to fetch latest version information";
+                        failure_info(&error)
+                    );
+                    return;
+                }
+            };
+            let latest = match Version::parse(&response.version) {
+                Ok(version) => version,
+                Err(error) => {
+                    capture_fail!(
+                        &error,
+                        logger,
+                        "Failed to parse latest version information";
+                        failure_info(&error)
+                    );
+                    return;
+                }
+            };
+            if current < latest {
+                UPDATE_AVAILABLE.set(1.0);
+                warn!(
+                    logger,
+                    "A new version is available";
+                    "current" => %current,
+                    "latest" => %latest,
+                );
+                sentry::capture_event(sentry::protocol::Event {
+                    level: sentry::Level::Warning,
+                    message: Some("A new version is available".into()),
+                    extra: {
+                        let mut extra = BTreeMap::new();
+                        extra.insert("current".into(), current.to_string().into());
+                        extra.insert("latest".into(), latest.to_string().into());
+                        extra
+                    },
+                    ..Default::default()
+                });
+            }
+        })
+        .with_context(|_| ErrorKind::ThreadSpawn("update_checker"))?;
+    Ok(())
+}
+
+/// Version metadata returned by the server.
+#[derive(Debug, Deserialize)]
+struct VersionMeta {
+    version: String,
 }

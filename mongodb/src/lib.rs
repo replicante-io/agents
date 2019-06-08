@@ -18,6 +18,7 @@ extern crate replicante_util_tracing;
 use lazy_static::lazy_static;
 
 use replicante_agent::Result;
+use replicante_agent::SemVersion;
 use replicante_agent::VersionedAgent;
 
 mod config;
@@ -28,9 +29,13 @@ mod version;
 use config::Config;
 use version::MongoDBFactory;
 
+const UPDATE_META: &str =
+    "https://github.com/replicante-io/metadata/raw/master/replicante/agent/mongodb/latest.json";
+
 lazy_static! {
+    static ref CURRENT_VERSION: SemVersion = SemVersion::parse(env!("CARGO_PKG_VERSION")).unwrap();
     static ref RELEASE: String = format!("repliagent-officials@{}", env!("GIT_BUILD_HASH"));
-    pub static ref VERSION: String = format!(
+    static ref VERSION: String = format!(
         "{} [{}; {}]",
         env!("CARGO_PKG_VERSION"),
         env!("GIT_BUILD_HASH"),
@@ -60,10 +65,11 @@ pub fn run() -> Result<bool> {
     // Run the agent using the provided default helper.
     let agent_conf = config.agent.clone();
     let release = RELEASE.as_str();
-    ::replicante_agent::process::run(agent_conf, "repliagent-mongodb", release, |context, _| {
+    replicante_agent::process::run(agent_conf, "repliagent-mongodb", release, |context, _| {
         metrics::register_metrics(context);
         let factory = MongoDBFactory::with_config(config, context.clone())?;
         let agent = VersionedAgent::new(context.clone(), factory);
+        replicante_agent::process::update_checker(CURRENT_VERSION.clone(), UPDATE_META, context)?;
         Ok(agent)
     })
 }
