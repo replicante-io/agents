@@ -18,7 +18,7 @@ use replicante_agent::AgentContext;
 use replicante_agent::AgentFactory;
 use replicante_agent::Error;
 use replicante_agent::Result;
-use replicante_agent_models::DatastoreInfo;
+use replicante_models_agent::DatastoreInfo;
 use replicante_util_failure::failure_info;
 
 use super::config::Config;
@@ -213,7 +213,7 @@ mod tests {
 
     use replicante_agent::AgentContext;
     use replicante_agent::AgentFactory;
-    use replicante_agent_models::DatastoreInfo;
+    use replicante_models_agent::DatastoreInfo;
 
     use super::Config;
     use super::ErrorKind;

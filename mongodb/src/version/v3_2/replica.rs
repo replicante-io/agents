@@ -5,9 +5,9 @@ use replicante_agent::Agent;
 use replicante_agent::AgentContext;
 use replicante_agent::Result;
 
-use replicante_agent_models::AgentInfo;
-use replicante_agent_models::DatastoreInfo;
-use replicante_agent_models::Shards;
+use replicante_models_agent::AgentInfo;
+use replicante_models_agent::DatastoreInfo;
+use replicante_models_agent::Shards;
 
 use super::common::CommonLogic;
 

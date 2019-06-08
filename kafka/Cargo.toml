@@ -41,7 +41,7 @@ zookeeper = "^0.5.4"
 opentracingrust = "^0.3.3"
 
 replicante_agent = { path = "../base" }
-replicante_agent_models = { path = "../common/agent/models" }
+replicante_models_agent = { path = "../common/models/agent" }
 replicante_util_failure = { path = "../common/util/failure" }
 replicante_util_tracing = { path = "../common/util/tracing" }
 

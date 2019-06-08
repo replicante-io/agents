@@ -9,10 +9,12 @@ members = [
     #"kafka",
 
     # Common crates
-    "common/agent/models",
     "common/logging",
+    "common/models/agent",
+    "common/util/failure",
     "common/util/iron",
-    "common/util/tracing"
+    "common/util/tracing",
+    "common/util/upkeep",
 ]
 
 # This patch is needed to make openssl (needed by kafka) work with openssl 1.0+

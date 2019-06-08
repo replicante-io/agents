@@ -12,7 +12,7 @@ extern crate slog;
 extern crate zookeeper;
 
 extern crate replicante_agent;
-extern crate replicante_agent_models;
+extern crate replicante_models_agent;
 extern crate replicante_util_tracing;
 
 use lazy_static::lazy_static;

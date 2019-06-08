@@ -15,11 +15,11 @@ use slog::error;
 use replicante_agent::AgentContext;
 use replicante_agent::Result;
 
-use replicante_agent_models::AgentInfo;
-use replicante_agent_models::CommitOffset;
-use replicante_agent_models::Shard;
-use replicante_agent_models::ShardRole;
-use replicante_agent_models::Shards;
+use replicante_models_agent::AgentInfo;
+use replicante_models_agent::CommitOffset;
+use replicante_models_agent::Shard;
+use replicante_models_agent::ShardRole;
+use replicante_models_agent::Shards;
 use replicante_util_failure::failure_info;
 
 use super::super::super::error::ErrorKind;

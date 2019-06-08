@@ -1,6 +1,6 @@
 use lazy_static::lazy_static;
 
-use replicante_agent_models::AgentVersion;
+use replicante_models_agent::AgentVersion;
 
 lazy_static! {
     pub static ref AGENT_VERSION: AgentVersion = AgentVersion::new(

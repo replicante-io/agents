@@ -50,10 +50,10 @@ mod tests {
     use iron_test::request;
     use iron_test::response;
 
-    use replicante_agent_models::CommitOffset;
-    use replicante_agent_models::Shard;
-    use replicante_agent_models::ShardRole;
-    use replicante_agent_models::Shards as ShardsModel;
+    use replicante_models_agent::CommitOffset;
+    use replicante_models_agent::Shard;
+    use replicante_models_agent::ShardRole;
+    use replicante_models_agent::Shards as ShardsModel;
     use replicante_util_iron::mock_request_span;
 
     use super::super::super::super::testing::MockAgent;

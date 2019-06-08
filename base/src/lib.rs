@@ -25,8 +25,8 @@ extern crate slog;
 extern crate slog_scope;
 extern crate slog_stdlog;
 
-extern crate replicante_agent_models;
 extern crate replicante_logging;
+extern crate replicante_models_agent;
 extern crate replicante_util_failure;
 extern crate replicante_util_iron;
 extern crate replicante_util_tracing;
