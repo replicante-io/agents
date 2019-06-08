@@ -13,11 +13,11 @@ use super::super::super::Agent;
 
 /// Handler implementing the /api/v1/status endpoint.
 pub struct Shards {
-    agent: Arc<Agent>,
+    agent: Arc<dyn Agent>,
 }
 
 impl Shards {
-    pub fn make(agent: Arc<Agent>) -> Shards {
+    pub fn make(agent: Arc<dyn Agent>) -> Shards {
         Shards { agent }
     }
 }

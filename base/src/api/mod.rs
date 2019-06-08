@@ -30,7 +30,7 @@ use super::ErrorKind;
 use super::Result;
 
 /// Mount all API endpoints into an Iron Chain.
-pub fn mount(agent: Arc<Agent>, context: AgentContext) -> Chain {
+pub fn mount(agent: Arc<dyn Agent>, context: AgentContext) -> Chain {
     let logger = context.logger.clone();
     let mut router = Router::new(
         context.config.api.trees.clone().into(),

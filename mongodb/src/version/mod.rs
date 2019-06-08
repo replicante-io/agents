@@ -76,7 +76,7 @@ impl MongoDBFactory {
 
 impl MongoDBFactory {
     /// Make an agent to be used when a version could not be detected.
-    fn default_agent(&self) -> (Arc<Agent>, &'static str, &'static str) {
+    fn default_agent(&self) -> (Arc<dyn Agent>, &'static str, &'static str) {
         if self.sharded_mode {
             let agent = v3_2::Sharded::new(
                 self.sharding.as_ref().unwrap().clone(),
@@ -163,7 +163,7 @@ impl MongoDBFactory {
     }
 
     /// Make a replica-set compatible agent, if versions allow it.
-    fn make_rs(&self, version: &Version) -> Option<(Arc<Agent>, &'static str)> {
+    fn make_rs(&self, version: &Version) -> Option<(Arc<dyn Agent>, &'static str)> {
         if v3_2::REPLICA_SET_RANGE.matches(version) {
             let agent = v3_2::ReplicaSet::new(self.client.clone(), self.context.clone());
             Some((Arc::new(agent), "3.2.0"))
@@ -176,7 +176,7 @@ impl MongoDBFactory {
     }
 
     /// Make a sharded-cluster compatible agent, if versions allow it.
-    fn make_sharded(&self, version: &Version) -> Option<(Arc<Agent>, &'static str)> {
+    fn make_sharded(&self, version: &Version) -> Option<(Arc<dyn Agent>, &'static str)> {
         if v3_2::SHARDED_RANGE.matches(version) {
             let agent = v3_2::Sharded::new(
                 self.sharding.as_ref().unwrap().clone(),

@@ -20,7 +20,7 @@ use super::Result;
 /// Information about an Agent that is active.
 #[derive(Clone)]
 pub struct ActiveAgent {
-    agent: Arc<Agent>,
+    agent: Arc<dyn Agent>,
     version_id: String,
 }
 
@@ -32,7 +32,7 @@ impl ActiveAgent {
     ///   * The `Agent` implementation to forward method calls too.
     ///   * The `version_id` opaque string to be used by `AgentFactory::should_remake`
     ///     to determine the ID of the active agent version.
-    pub fn new<S: Into<String>>(agent: Arc<Agent>, version_id: S) -> ActiveAgent {
+    pub fn new<S: Into<String>>(agent: Arc<dyn Agent>, version_id: S) -> ActiveAgent {
         ActiveAgent {
             agent,
             version_id: version_id.into(),

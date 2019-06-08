@@ -14,11 +14,11 @@ use super::super::super::AgentContext;
 
 /// Handler implementing the /api/v1/info/agent endpoint.
 pub struct AgentInfo {
-    agent: Arc<Agent>,
+    agent: Arc<dyn Agent>,
 }
 
 impl AgentInfo {
-    pub fn make(agent: Arc<Agent>) -> AgentInfo {
+    pub fn make(agent: Arc<dyn Agent>) -> AgentInfo {
         AgentInfo { agent }
     }
 }
@@ -42,12 +42,12 @@ impl Handler for AgentInfo {
 
 /// Handler implementing the /api/v1/info/datastore endpoint.
 pub struct DatastoreInfo {
-    agent: Arc<Agent>,
+    agent: Arc<dyn Agent>,
     context: AgentContext,
 }
 
 impl DatastoreInfo {
-    pub fn make(agent: Arc<Agent>, context: AgentContext) -> DatastoreInfo {
+    pub fn make(agent: Arc<dyn Agent>, context: AgentContext) -> DatastoreInfo {
         DatastoreInfo { agent, context }
     }
 }

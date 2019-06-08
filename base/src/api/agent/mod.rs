@@ -14,7 +14,7 @@ use super::Agent;
 use super::AgentContext;
 
 /// Mount all agent API endpoints onto the router.
-pub fn mount(agent: Arc<Agent>, context: AgentContext, router: &mut Router) {
+pub fn mount(agent: Arc<dyn Agent>, context: AgentContext, router: &mut Router) {
     let agent_info = AgentInfo::make(Arc::clone(&agent));
     let datastore_info = DatastoreInfo::make(Arc::clone(&agent), context);
     let shards = Shards::make(agent);
