@@ -6,14 +6,14 @@ sidebar_label: Introduction
 
 Agents are the part of the replicante ecosystem that ensure datastores compliance with the model.
 
-Beside the task of exporting datastores metrics in the correct format,
+Beside the task of exporting datastores information in the correct format,
 agents also implement administrate tasks that datastores do not implement directly.
 
 
 ## Existing Agents
 The team behind replicante core provides official support for some agents.
 
-The community is encourage to develop many more agents (see below).
+The community is encouraged to develop many more agents (see below).
 If you know of a community developed agent not listed below please open an
 [issue](https://github.com/replicante-io/agents/issues/new) so it can be included.
 

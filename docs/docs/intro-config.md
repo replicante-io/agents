@@ -23,6 +23,28 @@ agent:
     # Production environments should place an HTTPS proxy in front of the API.
     bind: '127.0.0.1:8000'
 
+    # The number of request handling threads.
+    #
+    # By default this is 8 * number of CPUs.
+    threads_count: ~
+
+    # API server timeouts.
+    timeouts:
+      # Controls the timeout, in seconds, for keep alive connections.
+      #
+      # NOTE: Setting this to null (~) will turn off keep alive.
+      keep_alive: 5
+
+      # Control the timeout, in seconds, for reads on existing connections.
+      #
+      # NOTE: Setting this to null (~) will turn off read timeouts.
+      read: 5
+
+      # Control the timeout, in seconds, for writes on existing connections.
+      #
+      # NOTE: Setting this to null (~) will turn off write timeouts.
+      write: 1
+
     # Enable/disable entire API trees.
     #
     # Useful for advanced operators that which to control access to experimental or legacy
@@ -107,6 +129,54 @@ agent:
     #   * 'debug' (only available in debug builds)
     level: info
 
+    # Advanced level configuration by module prefix.
+    #
+    # The keys in this map are used as prefix matches against log event modules.
+    # If a match is found the mapped level is used for the event.
+    # If no match is found the `level` value is used as the filter.
+    #
+    # Example:
+    #
+    #     modules:
+    #       'hyper::server': debug
+    #       'rdkafka': error
+    #
+    # To find out what modules are available you can set `level` to DEBUG
+    # and enable `verbose` logging to see all logs.
+    # Once you know what logs you are looking for you can undo the changes to `level` and `verbose`
+    # and add the module prefix you need to the `modules` option.
+    modules: {}
+
+    # Enable verbose debug logs.
+    #
+    # When DEBUG level is enabled, things can get loud pretty easily.
+    # To allow DEBUG level to be more useful, only application events are emitted at
+    # DEBUG level while dependency events are emitted at INFO level.
+    #
+    # Verbose mode can be used in cases where DEBUG level should be enabled by default
+    # on all events and not just the application logs.
+    verbose: false
+
+
+  # Optional sentry.io integration configuration (desabled by default).
+  #
+  # Set a DSN parameter to enable centralised error reporting.
+  #sentry:
+  #  # Sentry API response capture filter.
+  #  #
+  #  # When sentry is enabled, API error responses returned to clients can be recorded
+  #  # as sentry events to detect and debug issues.
+  #  #
+  #  # This option sets the severity level of responses that are reported:
+  #  #  * `no`: disable sentry capturing of API error responses.
+  #  #  * `client`: report client side errors and above (status code >= 400).
+  #  #  * `server`: only report server side errors (status code >= 500).
+  #  capture_api_errors: 'server'
+  #
+  #  # (required) The DSN to use to configure sentry.
+  #  dsn: 'https://key@server.domain:port/project'
+  sentry: ~
+
 
   # The section below is for distributed tracing configuration.
   tracing:
@@ -123,14 +193,54 @@ agent:
     #
     # Zipkin options
     #options:
-    #  # (required) The service name for this zipkin endpoint.
-    #  service_name: replicante
+    #  # (required) The transport to send tracing information to zipkin.
+    #  #
+    #  # Available options:
+    #  #
+    #  #  * 'http'
+    #  #  * 'kafka'
+    #  transport: 'http'
     #
-    #  # (required) List of kafka seed hostnames.
-    #  kafka:
-    #    - HOST1:9092
-    #    - HOST2:9092
+    #  # Any transport-specific option is set here.
+    #  # The available options vary and are documented below.
+    #  #
+    #  # HTTP transport options
+    #  options:
+    #    # Number of buffered spans that should trigger a flush.
+    #    #
+    #    # This option is a best-effort configuration and the size of the buffer may grow
+    #    # slightly above this threshold.
+    #    flush_count: 100
     #
-    #  # The kafka topic to publish spans to.
-    #  topic: zipkin
+    #    # Muximum delay between span flushes in milliseconds.
+    #    #
+    #    # This option is a best-effort configuration and the size of the buffer may grow
+    #    # slightly above this threshold.
+    #    flush_timeout_millis: 2000
+    #
+    #    # Custom headers to attach to POST requests.
+    #    headers: {}
+    #
+    #    # (required) Target URL to POST spans to.
+    #    url: 'https://zipkin.corp/'
+    #
+    #  # Kafka transport options
+    #  options:
+    #    # (required) List of kafka seed hostnames.
+    #    kafka:
+    #      - HOST1:9092
+    #      - HOST2:9092
+    #
+    #    # The kafka topic to publish spans to.
+    #    topic: zipkin
+
+  # Enable the update checker (optional).
+  #
+  # The check is performed only once in the background as the process starts.
+  # If a new version is available a notice will be logged and captured as a sentry event.
+  #
+  # This feature is disabled by default to ensure the user privacy is respected
+  # (HTTP requests can be tracked).
+  # If this feature is not enabled, you will have to make sure you keep replicante up to date.
+  update_checker: false
 ```

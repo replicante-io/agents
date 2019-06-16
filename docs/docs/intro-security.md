@@ -7,7 +7,7 @@ sidebar_label: Security Considerations
 This page focuses on security considerations of running agents.
 
 The security considerations for the overall Replicante ecosystem design are documented in the
-security section of the [admin manual](https://www.replicante.io/docs/manual/master/security/considerations.html).
+security section of the [admin manual](https://www.replicante.io/docs/manual/docs/security/).
 
 
 ## HTTPS

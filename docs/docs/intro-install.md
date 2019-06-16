@@ -4,8 +4,11 @@ title: Installation
 sidebar_label: Installation
 ---
 
-Official agents can be installed from code as described below.
-This is currently the only officially supported method.
+Official agents can be installed from code or from pre-built binaries as described below.
+
+Docker images are also provided but mainly meant as an experimentation tool.
+Access to the datastore process and file system will be needed for some features
+to work and container isolation will interfere with them.
 
 
 ## 1. Install
@@ -50,7 +53,7 @@ kafka/replicante-agent-kafka --version
 
 
 ### From code
-The following instructions where executed on a clean Fedora 28 install
+The following instructions where executed on a clean Fedora 30 install
 but should work for any Linux system:
 ```bash
 # Install needed tools and dependencies.
@@ -72,6 +75,14 @@ cargo build --release
 # Ensure the built binaries work.
 target/release/replicante-agent-mongodb --version
 target/release/replicante-agent-zookeeper --version
+
+# Due to additional dependencies of the kafka agent alone,
+# it is managed as a separate project in the same repo.
+# To build it:
+cd kafka/
+cargo build --release
+# NOTE: the kafka agent needs access to JVM libraries and build artifacts.
+target/release/replicante-agent-kafka --version
 ```
 
 You can now install the desired agents by copying the build target to your preferred location.

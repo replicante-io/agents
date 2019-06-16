@@ -14,7 +14,7 @@ information, naming, providing distributed synchronization, and providing group 
 | 0.1.0+        | 3.3+              |
 
 
-## Installation from code
+## Install
 Follow the instructions in the [installation](intro-install.md) page.
 Once the agent is available in `$PATH` check the usage:
 
