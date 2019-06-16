@@ -1,7 +1,7 @@
 //! This crate provides interfaces and structs to build Replicante agents.
 //!
 //! The crate provides a base `Agent` trait defining a common interface.
-#![doc(html_root_url = "https://docs.rs/replicante_agent/0.3.0")]
+#![doc(html_root_url = "https://docs.rs/replicante_agent/0.4.0")]
 extern crate clap;
 extern crate failure;
 extern crate failure_derive;
