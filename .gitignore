@@ -7,4 +7,5 @@ agent-zookeeper.yaml
 node_modules/
 target/
 
+docs/website/package-lock.json
 kafka/agent-kafka.yaml
