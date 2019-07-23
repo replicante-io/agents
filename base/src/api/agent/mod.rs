@@ -1,6 +1,10 @@
 use std::sync::Arc;
 
-use replicante_util_iron::Router;
+use actix_web::web;
+
+use replicante_util_actixweb::APIFlags;
+use replicante_util_actixweb::RootDescriptor;
+use replicante_util_actixweb::TracingMiddleware;
 
 pub mod info;
 pub mod shards;
@@ -10,16 +14,50 @@ use self::info::DatastoreInfo;
 use self::shards::Shards;
 
 use super::APIRoot;
-use super::Agent;
-use super::AgentContext;
+use crate::Agent;
+use crate::AgentContext;
 
-/// Mount all agent API endpoints onto the router.
-pub fn mount(agent: Arc<dyn Agent>, context: AgentContext, router: &mut Router) {
-    let agent_info = AgentInfo::make(Arc::clone(&agent));
-    let datastore_info = DatastoreInfo::make(Arc::clone(&agent), context);
-    let shards = Shards::make(agent);
-    let mut root = router.for_root(&APIRoot::UnstableAPI);
-    root.get("/info/agent", agent_info, "/info/agent");
-    root.get("/info/datastore", datastore_info, "/info/datastore");
-    root.get("/shards", shards, "/shards");
+/// Configure all agent endpoints.
+pub fn configure_app(
+    flags: &APIFlags,
+    app: &mut web::ServiceConfig,
+    agent: Arc<dyn Agent>,
+    context: &AgentContext,
+) {
+    let tracer = Arc::clone(&context.tracer);
+    APIRoot::UnstableAPI.and_then(flags, |root| {
+        let agent_for_agent = Arc::clone(&agent);
+        let agent_for_datastore = Arc::clone(&agent);
+        let agent_for_shards = agent;
+        let cluster_display_name_override = context.config.cluster_display_name_override.clone();
+        app.service(
+            root.resource("/info/agent")
+                .wrap(TracingMiddleware::new(
+                    context.logger.clone(),
+                    Arc::clone(&tracer),
+                ))
+                .route(web::get().to(move || AgentInfo::new(Arc::clone(&agent_for_agent)))),
+        );
+        app.service(
+            root.resource("/info/datastore")
+                .wrap(TracingMiddleware::new(
+                    context.logger.clone(),
+                    Arc::clone(&tracer),
+                ))
+                .route(web::get().to(move || {
+                    DatastoreInfo::new(
+                        Arc::clone(&agent_for_datastore),
+                        cluster_display_name_override.clone(),
+                    )
+                })),
+        );
+        app.service(
+            root.resource("/shards")
+                .wrap(TracingMiddleware::new(
+                    context.logger.clone(),
+                    Arc::clone(&tracer),
+                ))
+                .route(web::get().to(move || Shards::new(Arc::clone(&agent_for_shards)))),
+        );
+    });
 }

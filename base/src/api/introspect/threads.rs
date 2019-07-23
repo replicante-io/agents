@@ -1,23 +1,16 @@
-use iron::status;
-use iron::IronResult;
-use iron::Request;
-use iron::Response;
-use iron::Set;
-use iron_json_response::JsonResponse;
 use serde_derive::Serialize;
 
+use actix_web::HttpResponse;
+use actix_web::Responder;
 use humthreads::registered_threads;
 use humthreads::ThreadStatus;
 
-/// Threads introspection handler (`/introspect/threads`).
-pub fn handler(_: &mut Request) -> IronResult<Response> {
+/// Expose a snaphot view of traked threads states.
+pub fn handler() -> impl Responder {
     let mut threads = registered_threads();
     threads.sort_unstable_by_key(|t| t.name.clone());
     let threads = ThreadsResponse::new(threads);
-    let mut resp = Response::new();
-    resp.set_mut(JsonResponse::json(threads))
-        .set_mut(status::Ok);
-    Ok(resp)
+    HttpResponse::Ok().json(threads)
 }
 
 /// Wrap the `humthreads::registered_threads` list to expose as structured data.

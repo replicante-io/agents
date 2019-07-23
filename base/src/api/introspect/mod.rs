@@ -1,15 +1,25 @@
-use replicante_util_iron::MetricsHandler;
-use replicante_util_iron::Router;
+use actix_web::web;
+
+use replicante_util_actixweb::APIFlags;
+use replicante_util_actixweb::MetricsExporter;
+use replicante_util_actixweb::RootDescriptor;
 
 use super::APIRoot;
-use super::AgentContext;
+use crate::AgentContext;
 
 mod threads;
 
-/// Mount all introspection API endpoints onto the router.
-pub fn mount(context: &AgentContext, router: &mut Router) {
-    let registry = context.metrics.clone();
-    let mut root = router.for_root(&APIRoot::UnstableIntrospect);
-    root.get("/metrics", MetricsHandler::new(registry), "/metrics");
-    root.get("/threads", threads::handler, "/threads");
+/// Configure all introspection endpoints.
+pub fn configure_app(context: &AgentContext, flags: &APIFlags, app: &mut web::ServiceConfig) {
+    APIRoot::UnstableIntrospect.and_then(flags, |root| {
+        let registry = context.metrics.clone();
+        app.service(
+            root.resource("/metrics")
+                .route(web::get().to(move || MetricsExporter::new(registry.clone()))),
+        );
+        app.service(
+            root.resource("/threads")
+                .route(web::get().to(threads::handler)),
+        );
+    });
 }

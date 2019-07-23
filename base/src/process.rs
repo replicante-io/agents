@@ -25,14 +25,14 @@ use replicante_util_failure::format_fail;
 use replicante_util_tracing::tracer;
 use replicante_util_upkeep::Upkeep;
 
-use super::api;
-use super::config::Agent as Config;
-use super::config::SentryConfig;
-use super::metrics::UPDATE_AVAILABLE;
-use super::Agent;
-use super::AgentContext;
-use super::ErrorKind;
-use super::Result;
+use crate::api;
+use crate::config::Agent as Config;
+use crate::config::SentryConfig;
+use crate::metrics::UPDATE_AVAILABLE;
+use crate::Agent;
+use crate::AgentContext;
+use crate::ErrorKind;
+use crate::Result;
 
 /// Configure a command line parser.
 ///

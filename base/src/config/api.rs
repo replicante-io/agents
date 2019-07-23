@@ -114,7 +114,7 @@ impl From<APITrees> for HashMap<&'static str, bool> {
 pub struct Timeouts {
     /// Control the timeout, in seconds, for keep alive connections.
     #[serde(default = "Timeouts::default_keep_alive")]
-    pub keep_alive: Option<u64>,
+    pub keep_alive: Option<usize>,
 
     /// Control the timeout, in seconds, for reads on existing connections.
     #[serde(default = "Timeouts::default_read")]
@@ -136,7 +136,7 @@ impl Default for Timeouts {
 }
 
 impl Timeouts {
-    fn default_keep_alive() -> Option<u64> {
+    fn default_keep_alive() -> Option<usize> {
         Some(5)
     }
 

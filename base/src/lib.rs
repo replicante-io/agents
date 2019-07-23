@@ -2,36 +2,6 @@
 //!
 //! The crate provides a base `Agent` trait defining a common interface.
 #![doc(html_root_url = "https://docs.rs/replicante_agent/0.4.0")]
-extern crate clap;
-extern crate failure;
-extern crate failure_derive;
-extern crate humthreads;
-extern crate iron;
-extern crate iron_json_response;
-#[cfg(test)]
-extern crate iron_test;
-extern crate lazy_static;
-extern crate opentracingrust;
-extern crate prometheus;
-extern crate reqwest;
-extern crate router;
-extern crate semver;
-extern crate sentry;
-extern crate serde;
-extern crate serde_derive;
-extern crate serde_json;
-extern crate serde_yaml;
-extern crate slog;
-extern crate slog_scope;
-extern crate slog_stdlog;
-
-extern crate replicante_logging;
-extern crate replicante_models_agent;
-extern crate replicante_util_failure;
-extern crate replicante_util_iron;
-extern crate replicante_util_tracing;
-extern crate replicante_util_upkeep;
-
 pub use semver::Version as SemVersion;
 
 pub use replicante_util_tracing::fail_span;

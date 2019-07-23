@@ -1,11 +1,12 @@
 use std::fmt;
 
+use actix_web::HttpResponse;
+use actix_web::ResponseError;
 use failure::Backtrace;
 use failure::Context;
 use failure::Fail;
-use iron::IronError;
 
-use replicante_util_iron::into_ironerror;
+use replicante_util_failure::SerializableFail;
 
 /// Error information returned by functions in case of errors.
 #[derive(Debug)]
@@ -40,6 +41,17 @@ impl fmt::Display for Error {
 impl From<ErrorKind> for Error {
     fn from(kind: ErrorKind) -> Error {
         Error(Context::new(kind))
+    }
+}
+
+impl ResponseError for Error {
+    fn error_response(&self) -> HttpResponse {
+        let info = SerializableFail::from(self);
+        HttpResponse::InternalServerError().json(info)
+    }
+
+    fn render_response(&self) -> HttpResponse {
+        self.error_response()
     }
 }
 
@@ -114,53 +126,3 @@ impl ErrorKind {
 
 /// Short form alias for functions returning `Error`s.
 pub type Result<T> = ::std::result::Result<T, Error>;
-
-// IronError compatibility code.
-impl From<Error> for IronError {
-    fn from(error: Error) -> IronError {
-        into_ironerror(error)
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use failure::err_msg;
-    use failure::Fail;
-
-    use iron::headers::ContentType;
-    use iron::Headers;
-    use iron::IronResult;
-    use iron::Request;
-    use iron::Response;
-
-    use iron_test::request;
-    use iron_test::response;
-
-    use super::Error;
-    use super::ErrorKind;
-
-    fn failing(_: &mut Request) -> IronResult<Response> {
-        let error: Error = err_msg("test")
-            .context(ErrorKind::FreeForm("chained".into()))
-            .context(ErrorKind::FreeForm("failures".into()))
-            .into();
-        Err(error.into())
-    }
-
-    #[test]
-    fn error_conversion() {
-        let response = request::get("http://host:16016/", Headers::new(), &failing);
-        let response = match response {
-            Err(error) => error.response,
-            Ok(_) => panic!("Request should fail"),
-        };
-        let content_type = response.headers.get::<ContentType>().unwrap().clone();
-        assert_eq!(content_type, ContentType::json());
-        let result_body = response::extract_body_to_bytes(response);
-        let result_body = String::from_utf8(result_body).unwrap();
-        assert_eq!(
-            result_body,
-            r#"{"error":"failures","layers":["failures","chained","test"],"trace":null}"#
-        );
-    }
-}
