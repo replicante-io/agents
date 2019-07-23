@@ -11,10 +11,11 @@ dist: xenial
 
 # Configure the build jobs.
 language: rust
-cache:
-  cargo: true
-  directories:
-    - kafka/target
+# Disable ovelry large caches to reduce build times
+#cache:
+#  cargo: true
+#  directories:
+#    - kafka/target
 
 rust:
   - stable   # Target rust version.
