@@ -6,6 +6,10 @@ use actix_web::App;
 use actix_web::HttpServer;
 use failure::ResultExt;
 use humthreads::Builder;
+use openssl::ssl::SslAcceptor;
+use openssl::ssl::SslFiletype;
+use openssl::ssl::SslMethod;
+use openssl::ssl::SslVerifyMode;
 use slog::info;
 
 use replicante_util_actixweb::LoggingMiddleware;
@@ -92,8 +96,6 @@ where
                 // Configure and return the ActixWeb App
                 app.configure(config)
             })
-            .bind(&config.bind)
-            .expect("unable to bind API server")
             .keep_alive(config.timeouts.keep_alive);
             if let Some(read) = config.timeouts.read {
                 server = server.client_timeout(read * 1000);
@@ -104,6 +106,33 @@ where
             if let Some(threads_count) = config.threads_count {
                 server = server.workers(threads_count);
             }
+
+            // Configure TLS/HTTPS if enabled and bind to the given address.
+            let server = match config.tls {
+                None => server
+                    .bind(&config.bind)
+                    .expect("unable to bind API server"),
+                Some(tls) => {
+                    let mut builder = SslAcceptor::mozilla_modern(SslMethod::tls())
+                        .expect("unable to initialse TLS acceptor for API server");
+                    builder
+                        .set_certificate_file(&tls.server_cert, SslFiletype::PEM)
+                        .expect("unable to set TLS server public certificate");
+                    builder
+                        .set_private_key_file(&tls.server_key, SslFiletype::PEM)
+                        .expect("unable to set TLS server privte key");
+                    if let Some(bundle) = tls.clients_ca_bundle {
+                        builder
+                            .set_ca_file(&bundle)
+                            .expect("unable to set clients CAs bundle");
+                        builder
+                            .set_verify(SslVerifyMode::PEER | SslVerifyMode::FAIL_IF_NO_PEER_CERT);
+                    }
+                    server
+                        .bind_ssl(&config.bind, builder)
+                        .expect("unable to bind API server")
+                }
+            };
 
             // Start HTTP server and block until shutdown.
             info!(logger, "Starting API server"; "bind" => &config.bind);

@@ -9,6 +9,7 @@ mod api;
 mod sentry;
 
 pub use self::api::APIConfig;
+pub use self::api::TlsConfig;
 pub use self::sentry::SentryCaptureApi;
 pub use self::sentry::SentryConfig;
 

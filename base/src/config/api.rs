@@ -25,6 +25,10 @@ pub struct APIConfig {
     #[serde(default)]
     pub timeouts: Timeouts,
 
+    /// Configure TLS (for HTTPS) certificates.
+    #[serde(default)]
+    pub tls: Option<TlsConfig>,
+
     /// Enable/disable entire API trees.
     #[serde(default)]
     pub trees: APITrees,
@@ -36,6 +40,7 @@ impl Default for APIConfig {
             bind: Self::default_bind(),
             threads_count: None,
             timeouts: Timeouts::default(),
+            tls: None,
             trees: APITrees::default(),
         }
     }
@@ -147,4 +152,18 @@ impl Timeouts {
     fn default_write() -> Option<u64> {
         Some(1)
     }
+}
+
+/// TLS (for HTTPS) certificates configuration.
+#[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
+pub struct TlsConfig {
+    /// Path to a PEM bundle of trusted CAs for client authentication.
+    #[serde(default)]
+    pub clients_ca_bundle: Option<String>,
+
+    /// Path to a PEM file with the server's public certificate.
+    pub server_cert: String,
+
+    /// Path to a PEM file with the server's PRIVATE certificate.
+    pub server_key: String,
 }

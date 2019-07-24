@@ -18,6 +18,10 @@ name = "replicante_agent"
 path = "src/lib.rs"
 
 
+[features]
+journald = ["replicante_logging/journald"]
+
+
 [dependencies]
 actix-web = { version = "^1.0", features = ["ssl"] }
 clap = "^2.32.0"
@@ -27,6 +31,8 @@ humthreads = "^0.1.1"
 iron = "^0.6.0"
 iron-json-response = "^0.6.0"
 lazy_static = "^1.0.1"
+openssl = "^0.10"
+opentracingrust = "^0.3.3"
 prometheus = { version = "^0.7.0", features = ["process"] }
 reqwest = "^0.9.1"
 router = "^0.6.0"
@@ -40,8 +46,6 @@ slog = "^2.2.3"
 slog-scope = "^4.0.1"
 slog-stdlog = "^3.0.2"
 
-opentracingrust = "^0.3.3"
-
 replicante_logging = { path = "../common/logging", version = "0.1.3" }
 replicante_models_agent = { path = "../common/models/agent", version = "0.3.0" }
 replicante_util_actixweb = { path = "../common/util/actixweb", version = "0.1.0" }
@@ -52,7 +56,3 @@ replicante_util_upkeep = { path = "../common/util/upkeep", version = "0.1.0" }
 
 [build-dependencies]
 git2 = "^0.9.0"
-
-
-[features]
-journald = ["replicante_logging/journald"]

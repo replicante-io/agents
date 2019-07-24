@@ -4,6 +4,7 @@
 agent-mongodb.yaml
 agent-zookeeper.yaml
 
+devtools/pki/
 node_modules/
 target/
 
