@@ -5,9 +5,11 @@ use replicante_logging::Config as LoggingConfig;
 use replicante_logging::LoggingLevel;
 use replicante_util_tracing::Config as TracerConfig;
 
+mod actions;
 mod api;
 mod sentry;
 
+pub use self::actions::ActionsConfig;
 pub use self::api::APIConfig;
 pub use self::api::TlsConfig;
 pub use self::sentry::SentryCaptureApi;
@@ -23,6 +25,10 @@ pub use self::sentry::SentryConfig;
 /// changing the attributes as desired.
 #[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
 pub struct Agent {
+    /// Actions configuration
+    #[serde(default)]
+    pub actions: ActionsConfig,
+
     /// API server configuration
     #[serde(default)]
     pub api: APIConfig,
@@ -51,6 +57,7 @@ pub struct Agent {
 impl Default for Agent {
     fn default() -> Self {
         Agent {
+            actions: ActionsConfig::default(),
             api: APIConfig::default(),
             cluster_display_name_override: None,
             logging: LoggingConfig::default(),

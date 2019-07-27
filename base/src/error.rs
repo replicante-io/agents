@@ -71,6 +71,9 @@ where
 /// Exhaustive list of possible errors emitted by this crate.
 #[derive(Debug, Fail)]
 pub enum ErrorKind {
+    #[fail(display = "invalid configuration: {}", _0)]
+    ConfigClash(&'static str),
+
     #[fail(display = "unable to load configuration")]
     ConfigLoad,
 
@@ -109,6 +112,7 @@ pub enum ErrorKind {
 impl ErrorKind {
     fn kind_name(&self) -> Option<&str> {
         let name = match self {
+            ErrorKind::ConfigClash(_) => "ConfigClash",
             ErrorKind::ConfigLoad => "ConfigLoad",
             ErrorKind::ConfigOption(_) => "ConfigOption",
             ErrorKind::Connection(_, _) => "Connection",

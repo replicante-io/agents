@@ -6,8 +6,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 ### Added
+- Action definition.
+- Actions register.
 - API over HTTPS with optional client authentication.
 - DevTool: TLS certificates generation scripts.
+- Initial actions API.
 
 ### Changed
 - Replace Iron web framework with Actix Web.

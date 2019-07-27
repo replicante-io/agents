@@ -30,7 +30,36 @@ use crate::AgentContext;
 use crate::ErrorKind;
 use crate::Result;
 
-use self::roots::APIRoot;
+pub use self::roots::APIRoot;
+
+/// Additional API server configuration handlers.
+#[derive(Clone)]
+pub struct ApiAddons {
+    addons: Vec<Arc<dyn Fn(&mut web::ServiceConfig) + Send + Sync>>,
+}
+
+impl ApiAddons {
+    /// Run all the register handles to configure the given app.
+    pub fn configure_app(&self, app: &mut web::ServiceConfig) {
+        for addon in &self.addons {
+            addon(app);
+        }
+    }
+
+    /// Register an app configuration function to be run later.
+    pub fn register<F>(&mut self, addon: F)
+    where
+        F: Fn(&mut web::ServiceConfig) + 'static + Send + Sync,
+    {
+        self.addons.push(Arc::new(addon));
+    }
+}
+
+impl Default for ApiAddons {
+    fn default() -> Self {
+        ApiAddons { addons: Vec::new() }
+    }
+}
 
 /// Mount all API endpoints.
 fn configure_app(agent: Arc<dyn Agent>, context: AgentContext) -> impl Fn(&mut web::ServiceConfig) {
@@ -47,6 +76,7 @@ fn configure_app(agent: Arc<dyn Agent>, context: AgentContext) -> impl Fn(&mut w
         // Mount other roots.
         agent::configure_app(&flags, app, Arc::clone(&agent), &context);
         introspect::configure_app(&context, &flags, app);
+        context.api_addons.configure_app(app);
     }
 }
 

@@ -25,6 +25,7 @@ use replicante_util_failure::format_fail;
 use replicante_util_tracing::tracer;
 use replicante_util_upkeep::Upkeep;
 
+use crate::actions;
 use crate::api;
 use crate::config::Agent as Config;
 use crate::config::SentryConfig;
@@ -84,10 +85,11 @@ where
     let tracer = tracer(config.tracing.clone(), tracer_opts)
         .with_context(|_| ErrorKind::Initialisation("tracer configuration failed".into()))?;
 
-    let context = AgentContext::new(config, logger.clone(), tracer);
+    let mut context = AgentContext::new(config, logger.clone(), tracer);
     register_process_metrics(&context);
     super::register_metrics(&context);
     let agent = initialise(&context, &mut upkeep)?;
+    actions::initialise(&mut context, &mut upkeep)?;
     api::spawn_server(agent, context, &mut upkeep)?;
     let clean_exit = upkeep.keepalive();
     if clean_exit {

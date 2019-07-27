@@ -9,7 +9,8 @@ use slog::o;
 use slog::Discard;
 use slog::Logger;
 
-use super::config::Agent as AgentConfig;
+use crate::api::ApiAddons;
+use crate::config::Agent as AgentConfig;
 
 /// Agent services injection.
 ///
@@ -19,6 +20,7 @@ use super::config::Agent as AgentConfig;
 // Any new field must be added to the implementation of Debug.
 #[derive(Clone)]
 pub struct AgentContext {
+    pub api_addons: ApiAddons,
     pub config: AgentConfig,
     pub logger: Logger,
 
@@ -51,6 +53,7 @@ impl AgentContext {
     pub fn new(config: AgentConfig, logger: Logger, tracer: Tracer) -> AgentContext {
         let metrics = Registry::new();
         AgentContext {
+            api_addons: ApiAddons::default(),
             config,
             logger,
             metrics,

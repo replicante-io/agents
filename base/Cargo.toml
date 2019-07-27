@@ -20,6 +20,7 @@ path = "src/lib.rs"
 
 [features]
 journald = ["replicante_logging/journald"]
+with_test_support = []
 
 
 [dependencies]

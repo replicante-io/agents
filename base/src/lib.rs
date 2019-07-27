@@ -6,6 +6,7 @@ pub use semver::Version as SemVersion;
 
 pub use replicante_util_tracing::fail_span;
 
+pub mod actions;
 mod api;
 mod context;
 mod error;
