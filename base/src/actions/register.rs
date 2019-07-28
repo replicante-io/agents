@@ -29,9 +29,28 @@ thread_local! {
     static ACTIVE_REG: RefCell<Option<ActionsRegister>> = RefCell::new(None);
 }
 
-/// True if an action ID falls in a reserved scope.
-fn is_reserved_id(id: &str) -> bool {
-    id.starts_with("replicante.") || id.starts_with("io.replicante.")
+/// True if an action Kind falls in a reserved scope.
+fn is_reserved_kind(kind: &str) -> bool {
+    kind.starts_with("replicante.") || kind.starts_with("io.replicante.")
+}
+
+/// Ensure a copy of the action register is available as a thread local.
+///
+/// # Panics
+///
+///   * If the global actions register is poisoned.
+///   * If called while still in the actions registration phase.
+fn ensure_thread_register(register: &RefCell<Option<ActionsRegister>>) {
+    if register.borrow().is_some() {
+        return;
+    }
+    let actions = GLOBAL_ACTIONS
+        .lock()
+        .expect("global actions register poisoned")
+        .as_ref()
+        .expect("attempted to access actions during registration phase")
+        .clone();
+    *register.borrow_mut() = Some(actions);
 }
 
 /// Special interface to a process-global register of actions.
@@ -66,24 +85,28 @@ impl ACTIONS {
         *actions = global;
     }
 
+    /// Fetch an action from the register.
+    ///
+    /// # Panics
+    ///
+    ///   * If the global actions register is poisoned.
+    ///   * If called while still in the actions registration phase.
+    pub fn get(kind: &str) -> Option<Arc<dyn Action>> {
+        ACTIVE_REG.with(|register| {
+            ensure_thread_register(&register);
+            register.borrow().as_ref().unwrap().get(kind)
+        })
+    }
+
     /// Iterate over all registered actions.
     ///
     /// # Panics
     ///
     ///   * If the global actions register is poisoned.
-    ///   * If called while still in the registration phase.
+    ///   * If called while still in the actions registration phase.
     pub fn iter() -> Iter {
         ACTIVE_REG.with(|register| {
-            // Initialise the thread's copy if needed.
-            if register.borrow().is_none() {
-                let actions = GLOBAL_ACTIONS
-                    .lock()
-                    .expect("global actions register poisoned")
-                    .as_ref()
-                    .expect("attempted to access actions during registration phase")
-                    .clone();
-                *register.borrow_mut() = Some(actions);
-            }
+            ensure_thread_register(&register);
             register.borrow().as_ref().unwrap().iter()
         })
     }
@@ -177,6 +200,11 @@ pub struct ActionsRegister {
 }
 
 impl ActionsRegister {
+    /// Fetch an action from the register.
+    pub fn get(&self, kind: &str) -> Option<Arc<dyn Action>> {
+        self.actions.get(kind).cloned()
+    }
+
     /// Iterate over all registered actions.
     pub fn iter(&self) -> Iter {
         Iter(self.actions.clone().into_iter())
@@ -186,23 +214,24 @@ impl ActionsRegister {
     ///
     /// # Panics
     ///
-    ///   * If an action with the same ID is already registered.
-    ///   * If the action ID is not scoped.
+    ///   * If an action with the same Kind is already registered.
+    ///   * If the action Kind is not scoped.
+    ///   * If the action Kind falls in a reserved scope.
     pub fn register<A>(&mut self, action: A)
     where
         A: Action,
     {
-        let id = action.describe().id;
-        if !id.contains('.') {
-            panic!("action ID {} is not scoped", id);
+        let kind = action.describe().kind;
+        if !kind.contains('.') {
+            panic!("action kind {} is not scoped", kind);
         }
-        if is_reserved_id(&id) {
-            panic!("action ID {} is reserved", id);
+        if is_reserved_kind(&kind) {
+            panic!("action kind {} is reserved", kind);
         }
-        match self.actions.entry(id) {
+        match self.actions.entry(kind) {
             Entry::Vacant(entry) => entry.insert(Arc::new(action)),
             Entry::Occupied(entry) => {
-                panic!("action with ID {} is already registered", entry.key())
+                panic!("action with kind {} is already registered", entry.key())
             }
         };
     }
@@ -212,17 +241,17 @@ impl ActionsRegister {
     where
         A: Action,
     {
-        let id = action.describe().id;
-        if !id.contains('.') {
-            panic!("action ID {} is not scoped", id);
+        let kind = action.describe().kind;
+        if !kind.contains('.') {
+            panic!("action kind {} is not scoped", kind);
         }
-        if !is_reserved_id(&id) {
-            panic!("action ID {} is NOT reserved", id);
+        if !is_reserved_kind(&kind) {
+            panic!("action kind {} is NOT reserved", kind);
         }
-        match self.actions.entry(id) {
+        match self.actions.entry(kind) {
             Entry::Vacant(entry) => entry.insert(Arc::new(action)),
             Entry::Occupied(entry) => {
-                panic!("action with ID {} is already registered", entry.key())
+                panic!("action with kind {} is already registered", entry.key())
             }
         };
     }
@@ -250,8 +279,11 @@ impl Iterator for Iter {
 
 #[cfg(test)]
 mod tests {
+    use serde_json::Value as Json;
+
     use super::super::Action;
     use super::super::ActionDescriptor;
+    use super::super::ActionValidity;
     use super::ActionsRegister;
     use super::ACTIONS;
 
@@ -259,9 +291,13 @@ mod tests {
     impl Action for MockAction {
         fn describe(&self) -> ActionDescriptor {
             ActionDescriptor {
-                id: "test.mock.action".into(),
+                kind: "test.mock.action".into(),
                 description: "replicante_agent::actions::register::tests::MockAction".into(),
             }
+        }
+
+        fn validate_args(&self, _: &Json) -> ActionValidity {
+            Ok(())
         }
     }
 
@@ -269,9 +305,13 @@ mod tests {
     impl Action for ReservedAction {
         fn describe(&self) -> ActionDescriptor {
             ActionDescriptor {
-                id: "replicante.mock.action".into(),
+                kind: "replicante.mock.action".into(),
                 description: "replicante_agent::actions::register::tests::ReservedAction".into(),
             }
+        }
+
+        fn validate_args(&self, _: &Json) -> ActionValidity {
+            Ok(())
         }
     }
 
@@ -279,18 +319,35 @@ mod tests {
     impl Action for UnscopedAction {
         fn describe(&self) -> ActionDescriptor {
             ActionDescriptor {
-                id: "mock".into(),
+                kind: "mock".into(),
                 description: "replicante_agent::actions::register::tests::UnscopedAction".into(),
             }
         }
+
+        fn validate_args(&self, _: &Json) -> ActionValidity {
+            Ok(())
+        }
+    }
+
+    #[test]
+    fn get_action() {
+        let mut actions = ActionsRegister::default();
+        actions.register(MockAction {});
+        assert!(actions.get("test.mock.action").is_some(), "action not found");
+    }
+
+    #[test]
+    fn get_action_not_found() {
+        let actions = ActionsRegister::default();
+        assert!(actions.get("test.mock.action").is_none(), "action found");
     }
 
     #[test]
     fn iterate_actions() {
         let mut actions = ActionsRegister::default();
-        assert!(actions.iter().next().is_none());
+        assert!(actions.iter().next().is_none(), "register not empty");
         actions.register(MockAction {});
-        let iter: Vec<String> = actions.iter().map(|action| action.describe().id).collect();
+        let iter: Vec<String> = actions.iter().map(|action| action.describe().kind).collect();
         assert_eq!(iter, vec!["test.mock.action".to_string()]);
     }
 
@@ -302,21 +359,21 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected = "action ID mock is not scoped")]
+    #[should_panic(expected = "action kind mock is not scoped")]
     fn register_action_fail_unscoped() {
         let mut actions = ActionsRegister::default();
         actions.register(UnscopedAction {});
     }
 
     #[test]
-    #[should_panic(expected = "action ID replicante.mock.action is reserved")]
+    #[should_panic(expected = "action kind replicante.mock.action is reserved")]
     fn register_action_fail_reserved() {
         let mut actions = ActionsRegister::default();
         actions.register(ReservedAction {});
     }
 
     #[test]
-    #[should_panic(expected = "action with ID test.mock.action is already registered")]
+    #[should_panic(expected = "action with kind test.mock.action is already registered")]
     fn register_action_twice() {
         let mut actions = ActionsRegister::default();
         actions.register(MockAction {});
@@ -340,21 +397,21 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected = "action ID test.mock.action is NOT reserved")]
+    #[should_panic(expected = "action kind test.mock.action is NOT reserved")]
     fn register_action_fail_not_reserved() {
         let mut actions = ActionsRegister::default();
         actions.register_reserved(MockAction {});
     }
 
     #[test]
-    #[should_panic(expected = "action ID mock is not scoped")]
+    #[should_panic(expected = "action kind mock is not scoped")]
     fn register_reserved_action_fail_unscoped() {
         let mut actions = ActionsRegister::default();
         actions.register_reserved(UnscopedAction {});
     }
 
     #[test]
-    #[should_panic(expected = "action with ID replicante.mock.action is already registered")]
+    #[should_panic(expected = "action with kind replicante.mock.action is already registered")]
     fn register_reserved_action_twice() {
         let mut actions = ActionsRegister::default();
         actions.register_reserved(ReservedAction {});

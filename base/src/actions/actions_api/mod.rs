@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use actix_web::web;
 use actix_web::HttpResponse;
 use actix_web::Responder;
@@ -5,10 +7,14 @@ use serde_json::json;
 
 use replicante_util_actixweb::APIFlags;
 use replicante_util_actixweb::RootDescriptor;
+use replicante_util_actixweb::TracingMiddleware;
 
 use super::ActionDescriptor;
 use super::ACTIONS;
 use crate::api::APIRoot;
+use crate::AgentContext;
+
+mod schedule;
 
 /// Return a list of available agent actions.
 fn available() -> impl Responder {
@@ -22,12 +28,22 @@ fn index() -> impl Responder {
 }
 
 /// Configure the API server with actions API.
-pub fn configure_app(flags: &APIFlags, app: &mut web::ServiceConfig) {
+pub fn configure_app(context: &AgentContext, flags: &APIFlags, app: &mut web::ServiceConfig) {
     APIRoot::UnstableAPI.and_then(flags, |root| {
+        let tracer = Arc::clone(&context.tracer);
         app.service(root.resource("/actions").route(web::get().to(index)));
         app.service(
             root.resource("/actions/available")
                 .route(web::get().to(available)),
+        );
+        app.service(
+            root.resource("/actions/schedule/{kind}")
+                .wrap(TracingMiddleware::with_name(
+                    context.logger.clone(),
+                    Arc::clone(&tracer),
+                    "/actions/schedule/{kind}",
+                ))
+                .route(web::post().to(schedule::responder)),
         );
     })
 }

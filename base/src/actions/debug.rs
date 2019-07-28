@@ -1,7 +1,9 @@
+use serde_json::Value as Json;
 use slog::debug;
 
 use crate::actions::Action;
 use crate::actions::ActionDescriptor;
+use crate::actions::ActionValidity;
 use crate::actions::ACTIONS;
 use crate::AgentContext;
 
@@ -19,9 +21,13 @@ struct Fail {}
 impl Action for Fail {
     fn describe(&self) -> ActionDescriptor {
         ActionDescriptor {
-            id: "replicante.debug.fail".into(),
+            kind: "replicante.debug.fail".into(),
             description: "Debugging action that always fails".into(),
         }
+    }
+
+    fn validate_args(&self, _: &Json) -> ActionValidity {
+        Ok(())
     }
 }
 
@@ -31,9 +37,13 @@ struct Progress {}
 impl Action for Progress {
     fn describe(&self) -> ActionDescriptor {
         ActionDescriptor {
-            id: "replicante.debug.process".into(),
+            kind: "replicante.debug.process".into(),
             description: "Debugging action that progresses over time".into(),
         }
+    }
+
+    fn validate_args(&self, _: &Json) -> ActionValidity {
+        Ok(())
     }
 }
 
@@ -43,8 +53,12 @@ struct Success {}
 impl Action for Success {
     fn describe(&self) -> ActionDescriptor {
         ActionDescriptor {
-            id: "replicante.debug.succeed".into(),
+            kind: "replicante.debug.succeed".into(),
             description: "Debugging action that always succeed".into(),
         }
+    }
+
+    fn validate_args(&self, _: &Json) -> ActionValidity {
+        Ok(())
     }
 }

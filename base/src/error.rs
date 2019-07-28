@@ -1,5 +1,6 @@
 use std::fmt;
 
+use actix_web::http::StatusCode;
 use actix_web::HttpResponse;
 use actix_web::ResponseError;
 use failure::Backtrace;
@@ -47,7 +48,8 @@ impl From<ErrorKind> for Error {
 impl ResponseError for Error {
     fn error_response(&self) -> HttpResponse {
         let info = SerializableFail::from(self);
-        HttpResponse::InternalServerError().json(info)
+        let status = self.kind().http_status();
+        HttpResponse::build(status).json(info)
     }
 
     fn render_response(&self) -> HttpResponse {
@@ -71,6 +73,9 @@ where
 /// Exhaustive list of possible errors emitted by this crate.
 #[derive(Debug, Fail)]
 pub enum ErrorKind {
+    #[fail(display = "actions with kind {} are not available", _0)]
+    ActionNotAvailable(String),
+
     #[fail(display = "invalid configuration: {}", _0)]
     ConfigClash(&'static str),
 
@@ -110,8 +115,16 @@ pub enum ErrorKind {
 }
 
 impl ErrorKind {
+    fn http_status(&self) -> StatusCode {
+        match self {
+            ErrorKind::ActionNotAvailable(_) => StatusCode::BAD_REQUEST,
+            _ => StatusCode::INTERNAL_SERVER_ERROR,
+        }
+    }
+
     fn kind_name(&self) -> Option<&str> {
         let name = match self {
+            ErrorKind::ActionNotAvailable(_) => "ActionNotAvailable",
             ErrorKind::ConfigClash(_) => "ConfigClash",
             ErrorKind::ConfigLoad => "ConfigLoad",
             ErrorKind::ConfigOption(_) => "ConfigOption",

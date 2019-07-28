@@ -20,7 +20,7 @@ use crate::config::Agent as AgentConfig;
 // Any new field must be added to the implementation of Debug.
 #[derive(Clone)]
 pub struct AgentContext {
-    pub api_addons: ApiAddons,
+    pub api_addons: ApiAddons<AgentContext>,
     pub config: AgentConfig,
     pub logger: Logger,
 
