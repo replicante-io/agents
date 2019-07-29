@@ -11,6 +11,7 @@ mod api;
 mod context;
 mod error;
 mod metrics;
+mod store;
 mod traits;
 mod versioned;
 

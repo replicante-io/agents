@@ -19,6 +19,10 @@ name = "replicante-agent-mongodb"
 path = "src/main.rs"
 
 
+[features]
+journald = ["replicante_agent/journald"]
+
+
 [dependencies]
 bson = "^0.13.0"  # Limited by MongoDB crate.
 failure = "^0.1.5"
@@ -41,7 +45,4 @@ replicante_util_tracing = { path = "../common/util/tracing" }
 
 [build-dependencies]
 git2 = "^0.9.0"
-
-
-[features]
-journald = ["replicante_agent/journald"]
+replicante_agent = { path = "../base", features = ["with_test_support"] }

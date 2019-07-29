@@ -1,11 +1,16 @@
+use std::collections::HashMap;
+
 use actix_web::http::StatusCode;
 use actix_web::HttpResponse;
 use actix_web::ResponseError;
+use chrono::DateTime;
+use chrono::Utc;
 use failure::Fail;
 use serde_derive::Deserialize;
 use serde_derive::Serialize;
 use serde_json::json;
 use serde_json::Value as Json;
+use uuid::Uuid;
 
 /// Abstraction of any action the agent can perform.
 ///
@@ -35,6 +40,48 @@ pub trait Action: Send + Sync + 'static {
 pub struct ActionDescriptor {
     pub kind: String,
     pub description: String,
+}
+
+/// Action state and metadata information.
+#[derive(Clone, PartialEq, Debug, Serialize, Deserialize)]
+pub struct ActionRecord {
+    pub action: String,
+    pub agent_version: String,
+    pub args: Json,
+    pub created_ts: DateTime<Utc>,
+    pub headers: HashMap<String, String>,
+    pub id: Uuid,
+    pub requester: ActionRequester,
+    pub state: ActionState,
+}
+
+impl ActionRecord {
+    pub fn new(action: String, args: Json, requester: ActionRequester) -> ActionRecord {
+        ActionRecord {
+            action,
+            agent_version: env!("CARGO_PKG_VERSION").to_string(),
+            args,
+            created_ts: Utc::now(),
+            headers: HashMap::new(),
+            id: Uuid::new_v4(),
+            requester,
+            state: ActionState::New,
+        }
+    }
+}
+
+/// Entity (system, user, ...) that requested the action to be performed.
+#[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
+pub enum ActionRequester {
+    #[serde(rename = "API")]
+    Api,
+}
+
+/// Current state of an action execution.
+#[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
+pub enum ActionState {
+    #[serde(rename = "NEW")]
+    New,
 }
 
 /// Result alias for methods that return an ActionValidityError.

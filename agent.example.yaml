@@ -93,6 +93,9 @@ agent:
   # clusters in a single Replicante Core instance.
   cluster_display_name_override: ~
 
+  # (required) Location for the agent to store persistent data.
+  db: 'path/to/agent.db'
+
   # The section below is for logging configuration.
   logging:
     # Flush logs asynchronously.

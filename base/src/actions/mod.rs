@@ -20,6 +20,9 @@ pub mod utils;
 
 pub use self::definition::Action;
 pub use self::definition::ActionDescriptor;
+pub use self::definition::ActionRecord;
+pub use self::definition::ActionRequester;
+pub use self::definition::ActionState;
 pub use self::definition::ActionValidity;
 pub use self::definition::ActionValidityError;
 pub use self::register::ActionsRegister;

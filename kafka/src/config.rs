@@ -14,10 +14,9 @@ use replicante_agent::Result;
 use super::error::ErrorKind;
 
 /// Kafka Agent configuration
-#[derive(Clone, Default, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
+#[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
 pub struct Config {
     /// Common agent options.
-    #[serde(default)]
     pub agent: Agent,
 
     /// Kafka related options.
@@ -176,7 +175,7 @@ mod tests {
 
     #[test]
     fn from_reader_ok() {
-        let cursor = Cursor::new("{kafka: {cluster: test}}");
+        let cursor = Cursor::new("{agent: {db: test}, kafka: {cluster: test}}");
         Config::from_reader(cursor).unwrap();
     }
 }

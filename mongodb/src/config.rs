@@ -17,21 +17,11 @@ use super::error::ErrorKind;
 #[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
 pub struct Config {
     /// Common agent options.
-    #[serde(default)]
     pub agent: Agent,
 
     /// MongoDB options.
     #[serde(default)]
     pub mongo: MongoDB,
-}
-
-impl Default for Config {
-    fn default() -> Self {
-        Config {
-            agent: Agent::default(),
-            mongo: MongoDB::default(),
-        }
-    }
 }
 
 impl Config {
@@ -60,6 +50,15 @@ impl Config {
     pub fn transform(mut self) -> Self {
         self.agent = self.agent.transform();
         self
+    }
+
+    /// Return a mocked configuration.
+    #[cfg(test)]
+    pub fn mock() -> Config {
+        Config {
+            agent: Agent::mock(),
+            mongo: MongoDB::default(),
+        }
     }
 }
 
@@ -148,7 +147,7 @@ mod tests {
 
     #[test]
     fn from_reader_ok() {
-        let cursor = Cursor::new("{}");
+        let cursor = Cursor::new("agent: {db: 'test.db'}");
         Config::from_reader(cursor).unwrap();
     }
 }

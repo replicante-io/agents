@@ -17,7 +17,6 @@ use super::error::ErrorKind;
 #[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
 pub struct Config {
     /// Common agent options.
-    #[serde(default)]
     pub agent: Agent,
 
     /// Zookeeper related options.
@@ -92,7 +91,7 @@ mod tests {
 
     #[test]
     fn from_reader_ok() {
-        let cursor = Cursor::new("{zookeeper: {cluster: test}}");
+        let cursor = Cursor::new("{agent: {db: 'test'}, zookeeper: {cluster: test}}");
         Config::from_reader(cursor).unwrap();
     }
 }

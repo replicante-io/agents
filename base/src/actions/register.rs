@@ -333,7 +333,10 @@ mod tests {
     fn get_action() {
         let mut actions = ActionsRegister::default();
         actions.register(MockAction {});
-        assert!(actions.get("test.mock.action").is_some(), "action not found");
+        assert!(
+            actions.get("test.mock.action").is_some(),
+            "action not found"
+        );
     }
 
     #[test]
@@ -347,7 +350,10 @@ mod tests {
         let mut actions = ActionsRegister::default();
         assert!(actions.iter().next().is_none(), "register not empty");
         actions.register(MockAction {});
-        let iter: Vec<String> = actions.iter().map(|action| action.describe().kind).collect();
+        let iter: Vec<String> = actions
+            .iter()
+            .map(|action| action.describe().kind)
+            .collect();
         assert_eq!(iter, vec!["test.mock.action".to_string()]);
     }
 

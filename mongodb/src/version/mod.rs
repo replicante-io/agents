@@ -222,7 +222,7 @@ mod tests {
     #[test]
     fn make_from_error() {
         let context = AgentContext::mock();
-        let config = Config::default();
+        let config = Config::mock();
         let factory = MongoDBFactory::with_config(config, context).unwrap();
         let active = factory.make_agent(Err(ErrorKind::MembersNoPrimary.into()));
         let error = ErrorKind::MembersNoPrimary.into();
@@ -235,7 +235,7 @@ mod tests {
     #[test]
     fn make_from_version_above_32() {
         let context = AgentContext::mock();
-        let config = Config::default();
+        let config = Config::mock();
         let version = Version::parse("3.3.0").unwrap();
         let factory = MongoDBFactory::with_config(config, context).unwrap();
         let active = factory.make_agent(Ok(version));
@@ -249,7 +249,7 @@ mod tests {
     #[test]
     fn make_from_version_exact_32() {
         let context = AgentContext::mock();
-        let config = Config::default();
+        let config = Config::mock();
         let version = Version::parse("3.2.0").unwrap();
         let factory = MongoDBFactory::with_config(config, context).unwrap();
         let active = factory.make_agent(Ok(version));
@@ -263,7 +263,7 @@ mod tests {
     #[test]
     fn should_always_remake_unknown_version() {
         let context = AgentContext::mock();
-        let config = Config::default();
+        let config = Config::mock();
         let info = DatastoreInfo::new("test", "MongoDB", "name", "unknown", None);
         let factory = MongoDBFactory::with_config(config, context).unwrap();
         let active = factory.make_agent(Err(ErrorKind::MembersNoPrimary.into()));
@@ -275,7 +275,7 @@ mod tests {
     #[test]
     fn should_remake_changed_version() {
         let context = AgentContext::mock();
-        let config = Config::default();
+        let config = Config::mock();
         let info = DatastoreInfo::new("test", "MongoDB", "name", "3.6.0", None);
         let version = Version::parse("3.3.0").unwrap();
         let factory = MongoDBFactory::with_config(config, context).unwrap();
@@ -288,7 +288,7 @@ mod tests {
     #[test]
     fn should_remake_same_version() {
         let context = AgentContext::mock();
-        let config = Config::default();
+        let config = Config::mock();
         let info = DatastoreInfo::new("test", "MongoDB", "name", "3.3.0", None);
         let version = Version::parse("3.3.0").unwrap();
         let factory = MongoDBFactory::with_config(config, context).unwrap();

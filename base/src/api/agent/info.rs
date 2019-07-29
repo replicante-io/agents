@@ -3,6 +3,7 @@ use std::sync::Arc;
 use actix_web::HttpRequest;
 use actix_web::HttpResponse;
 use actix_web::Responder;
+use actix_web::Result;
 use opentracingrust::Log;
 
 use replicante_util_actixweb::request_span;
@@ -11,32 +12,18 @@ use replicante_util_tracing::fail_span;
 use crate::Agent;
 
 /// API interface to Agent::agent_info
-pub struct AgentInfo {
-    agent: Arc<dyn Agent>,
-}
-
-impl AgentInfo {
-    pub fn new(agent: Arc<dyn Agent>) -> AgentInfo {
-        AgentInfo { agent }
-    }
-}
-
-impl Responder for AgentInfo {
-    type Error = actix_web::Error;
-    type Future = Result<HttpResponse, actix_web::Error>;
-
-    fn respond_to(self, request: &HttpRequest) -> Self::Future {
-        let mut exts = request.extensions_mut();
-        let mut span = request_span(&mut exts);
-        span.log(Log::new().log("span.kind", "server-receive"));
-        let info = self
-            .agent
-            .agent_info(&mut span)
-            .map_err(|error| fail_span(error, &mut span))?;
-        let response = HttpResponse::Ok().json(info);
-        span.log(Log::new().log("span.kind", "server-send"));
-        Ok(response)
-    }
+pub fn agent(request: HttpRequest) -> Result<impl Responder> {
+    let mut exts = request.extensions_mut();
+    let mut span = request_span(&mut exts);
+    span.log(Log::new().log("span.kind", "server-receive"));
+    let info = request
+        .app_data::<Arc<dyn Agent>>()
+        .expect("dyn Agent must be available as App::data")
+        .agent_info(&mut span)
+        .map_err(|error| fail_span(error, &mut span))?;
+    let response = HttpResponse::Ok().json(info);
+    span.log(Log::new().log("span.kind", "server-send"));
+    Ok(response)
 }
 
 /// API interface to Agent::datastore_info

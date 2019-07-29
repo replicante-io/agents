@@ -3,6 +3,7 @@
 
 agent-mongodb.yaml
 agent-zookeeper.yaml
+devtools/*.db
 
 devtools/pki/
 node_modules/

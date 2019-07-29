@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - API over HTTPS with optional client authentication.
 - DevTool: TLS certificates generation scripts.
 - Initial actions API.
+- Persistent DB with support for migrations.
 
 ### Changed
 - Replace Iron web framework with Actix Web.

@@ -37,6 +37,9 @@ pub struct Agent {
     #[serde(default)]
     pub cluster_display_name_override: Option<String>,
 
+    /// Location for the agent to store persistent data.
+    pub db: String,
+
     /// Logging configuration
     #[serde(default)]
     pub logging: LoggingConfig,
@@ -52,20 +55,6 @@ pub struct Agent {
     /// OpenTracing configuration
     #[serde(default)]
     pub tracing: TracerConfig,
-}
-
-impl Default for Agent {
-    fn default() -> Self {
-        Agent {
-            actions: ActionsConfig::default(),
-            api: APIConfig::default(),
-            cluster_display_name_override: None,
-            logging: LoggingConfig::default(),
-            sentry: None,
-            update_checker: false,
-            tracing: TracerConfig::default(),
-        }
-    }
 }
 
 impl Agent {
@@ -88,6 +77,21 @@ impl Agent {
         }
         self
     }
+
+    /// Mock an agent configuration.
+    #[cfg(any(test, feature = "with_test_support"))]
+    pub fn mock() -> Self {
+        Agent {
+            actions: ActionsConfig::default(),
+            api: APIConfig::default(),
+            cluster_display_name_override: None,
+            db: "mock.db".into(),
+            logging: LoggingConfig::default(),
+            sentry: None,
+            update_checker: false,
+            tracing: TracerConfig::default(),
+        }
+    }
 }
 
 #[cfg(test)]
@@ -98,7 +102,7 @@ mod tests {
     #[test]
     fn override_defauts() {
         APIConfig::set_default_bind(String::from("1.2.3.4:5678"));
-        let agent = Agent::default();
+        let agent = Agent::mock();
         assert_eq!(agent.api.bind, "1.2.3.4:5678");
     }
 }

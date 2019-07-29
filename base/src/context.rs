@@ -3,14 +3,17 @@ use std::sync::Arc;
 
 use opentracingrust::Tracer;
 use prometheus::Registry;
-#[cfg(debug_assertions)]
+#[cfg(any(test, feature = "with_test_support"))]
 use slog::o;
-#[cfg(debug_assertions)]
+#[cfg(any(test, feature = "with_test_support"))]
 use slog::Discard;
 use slog::Logger;
 
 use crate::api::ApiAddons;
 use crate::config::Agent as AgentConfig;
+use crate::store::backend_factory;
+use crate::store::Store;
+use crate::Result;
 
 /// Agent services injection.
 ///
@@ -24,12 +27,15 @@ pub struct AgentContext {
     pub config: AgentConfig,
     pub logger: Logger,
 
-    /// Acess the agent's metrics [`Registry`].
+    /// Access the agent's metrics [`Registry`].
     ///
     /// Agents MUST register their metrics at creation time and as part of the same [`Registry`].
     ///
     /// [`Registry`]: https://docs.rs/prometheus/0.3.13/prometheus/struct.Registry.html
     pub metrics: Registry,
+
+    /// Access the agent's persistent store.
+    pub store: Store,
 
     /// Access the agent's [`Tracer`].
     ///
@@ -41,39 +47,54 @@ pub struct AgentContext {
 
 impl fmt::Debug for AgentContext {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(
-            f,
-            "AgentContext{{config:{:?},logger:{:?},metrics:Registry,tracer:Tracer}}",
-            self.config, self.logger,
-        )
+        f.debug_struct("AgentContext")
+            .field("config", &self.config)
+            .field("logger", &self.logger)
+            .field("metrics", &"<Registry>")
+            .field("store", &"<Store>")
+            .field("tracer", &"<Tracer>")
+            .finish()
     }
 }
 
 impl AgentContext {
-    pub fn new(config: AgentConfig, logger: Logger, tracer: Tracer) -> AgentContext {
+    pub fn new(config: AgentConfig, logger: Logger, tracer: Tracer) -> Result<AgentContext> {
         let metrics = Registry::new();
+        let tracer = Arc::new(tracer);
+        let store = backend_factory(&config, logger.clone(), Arc::clone(&tracer))?;
+        Ok(AgentContext {
+            api_addons: ApiAddons::default(),
+            config,
+            logger,
+            metrics,
+            store,
+            tracer,
+        })
+    }
+
+    #[cfg(any(test, feature = "with_test_support"))]
+    pub fn mock() -> AgentContext {
+        AgentContext::mock_with_config(AgentConfig::mock())
+    }
+
+    #[cfg(any(test, feature = "with_test_support"))]
+    pub fn mock_with_config(config: AgentConfig) -> AgentContext {
+        let mut upkeep = ::replicante_util_upkeep::Upkeep::new();
+        let logger = Logger::root(Discard, o!());
+        let metrics = Registry::new();
+        let store = Store::mock();
+        let opts = ::replicante_util_tracing::Opts::new("test", logger.clone(), &mut upkeep);
+        let tracer =
+            ::replicante_util_tracing::tracer(::replicante_util_tracing::Config::Noop, opts)
+                .unwrap();
+        let tracer = Arc::new(tracer);
         AgentContext {
             api_addons: ApiAddons::default(),
             config,
             logger,
             metrics,
-            tracer: Arc::new(tracer),
+            store,
+            tracer,
         }
-    }
-
-    #[cfg(debug_assertions)]
-    pub fn mock() -> AgentContext {
-        AgentContext::mock_with_config(AgentConfig::default())
-    }
-
-    #[cfg(debug_assertions)]
-    pub fn mock_with_config(config: AgentConfig) -> AgentContext {
-        let logger = Logger::root(Discard, o!());
-        let mut upkeep = ::replicante_util_upkeep::Upkeep::new();
-        let opts = ::replicante_util_tracing::Opts::new("test", logger.clone(), &mut upkeep);
-        let tracer =
-            ::replicante_util_tracing::tracer(::replicante_util_tracing::Config::Noop, opts)
-                .unwrap();
-        AgentContext::new(config, logger, tracer)
     }
 }

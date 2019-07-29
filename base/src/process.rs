@@ -85,9 +85,10 @@ where
     let tracer = tracer(config.tracing.clone(), tracer_opts)
         .with_context(|_| ErrorKind::Initialisation("tracer configuration failed".into()))?;
 
-    let mut context = AgentContext::new(config, logger.clone(), tracer);
+    let mut context = AgentContext::new(config, logger.clone(), tracer)?;
     register_process_metrics(&context);
     super::register_metrics(&context);
+    context.store.migrate()?;
     let agent = initialise(&context, &mut upkeep)?;
     actions::initialise(&mut context, &mut upkeep)?;
     api::spawn_server(agent, context, &mut upkeep)?;

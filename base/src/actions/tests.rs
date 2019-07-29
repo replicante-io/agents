@@ -33,14 +33,14 @@ impl Action for TestAction {
 
 #[test]
 fn disabled_by_default() {
-    let config = Config::default();
+    let config = Config::mock();
     let enabled = super::actions_enabled(&config);
     assert!(!enabled.unwrap(), "actions should be disabled by default");
 }
 
 #[test]
 fn disabled_explicitly_with_tls() {
-    let mut config = Config::default();
+    let mut config = Config::mock();
     let tls = TlsConfig {
         clients_ca_bundle: Some("clients".to_string()),
         server_cert: "server.crt".to_string(),
@@ -54,7 +54,7 @@ fn disabled_explicitly_with_tls() {
 
 #[test]
 fn enabled_implicitly_by_tls() {
-    let mut config = Config::default();
+    let mut config = Config::mock();
     let tls = TlsConfig {
         clients_ca_bundle: Some("clients".to_string()),
         server_cert: "server.crt".to_string(),
@@ -70,7 +70,7 @@ fn enabled_implicitly_by_tls() {
 
 #[test]
 fn enabled_explicitly_without_tls() {
-    let mut config = Config::default();
+    let mut config = Config::mock();
     config.actions.enabled = Some(true);
     match super::actions_enabled(&config) {
         Ok(_) => panic!("expected configuration error"),
@@ -80,14 +80,14 @@ fn enabled_explicitly_without_tls() {
 
 #[test]
 fn validation_fails() {
-    let mut app = test::init_service(
-        App::new()
-            .route("/", web::get().to(|| -> actix_web::Result<HttpResponse> {
-                let action = TestAction {};
-                action.validate_args(&json!({}))?;
-                Ok(HttpResponse::Ok().json(json!({})))
-            }))
-    );
+    let mut app = test::init_service(App::new().route(
+        "/",
+        web::get().to(|| -> actix_web::Result<HttpResponse> {
+            let action = TestAction {};
+            action.validate_args(&json!({}))?;
+            Ok(HttpResponse::Ok().json(json!({})))
+        }),
+    ));
     let req = TestRequest::get().uri("/").to_request();
     let mut resp = test::block_on(app.call(req)).unwrap();
     assert_eq!(resp.status().as_u16(), 400);
@@ -95,5 +95,8 @@ fn validation_fails() {
         Body::Bytes(body) => String::from_utf8(body.to_vec()).unwrap(),
         _ => panic!("invalid body type"),
     };
-    assert_eq!(body, r#"{"error":"invalid action arguments: test","kind":"InvalidArgs"}"#);
+    assert_eq!(
+        body,
+        r#"{"error":"invalid action arguments: test","kind":"InvalidArgs"}"#
+    );
 }

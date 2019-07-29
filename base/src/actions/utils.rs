@@ -46,9 +46,12 @@ mod tests {
             "b": true,
         });
         let args: TestArgs = super::validate_action_args(args).unwrap();
-        assert_eq!(args, TestArgs {
-            a: "c".into(),
-            b: true,
-        });
+        assert_eq!(
+            args,
+            TestArgs {
+                a: "c".into(),
+                b: true,
+            }
+        );
     }
 }
