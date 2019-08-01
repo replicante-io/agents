@@ -101,11 +101,23 @@ pub enum ErrorKind {
     #[fail(display = "I/O error on file {}", _0)]
     Io(String),
 
+    #[fail(display = "unable to commit transaction to persistent DB")]
+    PersistentCommit,
+
     #[fail(display = "unable to migrate persistent DB")]
     PersistentMigrate,
 
+    #[fail(display = "connection to persistent DB available")]
+    PersistentNoConnection,
+
+    #[fail(display = "failed to write {} to persistent store", _0)]
+    PersistentWrite(&'static str),
+
     #[fail(display = "unable to open persistent DB {}", _0)]
     PersistentOpen(String),
+
+    #[fail(display = "unable to initialse persistent DB connections pool")]
+    PersistentPool,
 
     #[fail(
         display = "could not decode {} response from store for '{}' operation",
@@ -139,8 +151,12 @@ impl ErrorKind {
             ErrorKind::Initialisation(_) => "Initialisation",
             ErrorKind::InvalidStoreState(_) => "InvalidStoreState",
             ErrorKind::Io(_) => "Io",
+            ErrorKind::PersistentCommit => "PersistentCommit",
             ErrorKind::PersistentMigrate => "PersistentMigrate",
+            ErrorKind::PersistentNoConnection => "PersistentNoConnection",
             ErrorKind::PersistentOpen(_) => "PersistentOpen",
+            ErrorKind::PersistentPool => "PersistentPool",
+            ErrorKind::PersistentWrite(_) => "PersistentWrite",
             ErrorKind::ResponseDecode(_, _) => "ResponseDecode",
             ErrorKind::StoreOpFailed(_) => "StoreOpFailed",
             ErrorKind::ThreadSpawn(_) => "ThreadSpawn",

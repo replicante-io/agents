@@ -3,11 +3,12 @@ use actix_web::HttpRequest;
 use actix_web::HttpResponse;
 use actix_web::Responder;
 use actix_web::Result;
+use serde_json::json;
 use serde_json::Value;
 
-use crate::actions::ACTIONS;
 use crate::actions::ActionRecord;
 use crate::actions::ActionRequester;
+use crate::actions::ACTIONS;
 use crate::AgentContext;
 use crate::Error;
 use crate::ErrorKind;
@@ -27,10 +28,9 @@ pub fn responder(
         .map_err(Error::from)?;
     action.validate_args(&args)?;
     let record = ActionRecord::new(kind, args.into_inner(), ActionRequester::Api);
-    context.store.with_transaction(|_tx| {
-        println!("{:?}", record);
-        //tx.persist().action(record)
-        Ok(())
-    })?;
-    Ok(HttpResponse::Ok())
+    let id = record.id;
+    context
+        .store
+        .with_transaction(|tx| tx.persist().action(record))?;
+    Ok(HttpResponse::Ok().json(json!({ "id": id })))
 }

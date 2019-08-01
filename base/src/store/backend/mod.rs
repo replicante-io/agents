@@ -17,7 +17,7 @@ pub fn backend_factory<T>(config: &Config, logger: Logger, _tracer: T) -> Result
 where
     T: Into<Option<Arc<Tracer>>>,
 {
-    let inner = self::sqlite3::Store::new(logger, config.db.clone())?;
+    let inner = self::sqlite3::Store::new(logger.clone(), config.db.clone())?;
     let inner = StoreImpl::new(inner);
-    Ok(Store { inner })
+    Ok(Store { inner, logger })
 }

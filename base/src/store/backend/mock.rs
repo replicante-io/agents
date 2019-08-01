@@ -1,3 +1,4 @@
+use crate::store::interface::ConnectionImpl;
 use crate::store::interface::StoreInterface;
 use crate::Result;
 
@@ -11,6 +12,10 @@ impl MockStore {
 }
 
 impl StoreInterface for MockStore {
+    fn connection(&self) -> Result<ConnectionImpl> {
+        panic!("NotImplemented: MockStore::connection")
+    }
+
     fn migrate(&self) -> Result<()> {
         Ok(())
     }

@@ -109,9 +109,7 @@ where
             let mut server = HttpServer::new(move || {
                 let config = configure_app(Arc::clone(&agent), context.clone());
                 // Give every mounted route access to the global context.
-                let app = App::new()
-                    .data(Arc::clone(&agent))
-                    .data(context.clone());
+                let app = App::new().data(Arc::clone(&agent)).data(context.clone());
                 // Register application middlewares.
                 // Remember that middlewares are executed in reverse registration order.
                 let app = app
