@@ -10,17 +10,21 @@ use slog::debug;
 use slog::info;
 use slog::Logger;
 
-use crate::actions::ActionRecord;
+use crate::store::interface::ActionImpl;
+use crate::store::interface::ActionsImpl;
 use crate::store::interface::ConnectionImpl;
 use crate::store::interface::ConnectionInterface;
 use crate::store::interface::PersistImpl;
-use crate::store::interface::PersistInterface;
 use crate::store::interface::StoreInterface;
 use crate::store::interface::TransactionImpl;
 use crate::store::interface::TransactionInterface;
 use crate::Error;
 use crate::ErrorKind;
 use crate::Result;
+
+mod action;
+mod actions;
+mod persist;
 
 struct Connection {
     connection: PooledConnection<SqliteConnectionManager>,
@@ -34,45 +38,6 @@ impl ConnectionInterface for Connection {
             .with_context(|_| ErrorKind::PersistentNoConnection)?;
         let inner = Some(inner);
         Ok(TransactionImpl::new(Transaction { inner }))
-    }
-}
-
-struct Persist<'a, 'b: 'a> {
-    inner: &'a rusqlite::Transaction<'b>,
-}
-
-impl<'a, 'b: 'a> PersistInterface for Persist<'a, 'b> {
-    fn action(&self, action: ActionRecord) -> Result<()> {
-        let args = serde_json::to_string(&action.args)
-            .with_context(|_| ErrorKind::PersistentWrite("new action"))?;
-        let headers = serde_json::to_string(&action.headers)
-            .with_context(|_| ErrorKind::PersistentWrite("new action"))?;
-        let requester = serde_json::to_string(&action.requester)
-            .with_context(|_| ErrorKind::PersistentWrite("new action"))?;
-        let state = serde_json::to_string(&action.state)
-            .with_context(|_| ErrorKind::PersistentWrite("new action"))?;
-        let mut statement = self
-            .inner
-            .prepare_cached(
-                r#"INSERT INTO actions
-                    (action, agent_version, args, created_ts, headers, id, requester, state)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-                "#,
-            )
-            .with_context(|_| ErrorKind::PersistentWrite("new action"))?;
-        statement
-            .execute(&[
-                action.action,
-                action.agent_version,
-                args,
-                action.created_ts.to_rfc3339(),
-                headers,
-                action.id.to_string(),
-                requester,
-                state,
-            ])
-            .with_context(|_| ErrorKind::PersistentWrite("new action"))?;
-        Ok(())
     }
 }
 
@@ -159,7 +124,27 @@ struct Transaction<'a> {
     inner: Option<rusqlite::Transaction<'a>>,
 }
 
+impl<'a> Transaction<'a> {
+    fn tx(&self) -> &rusqlite::Transaction<'a> {
+        self.inner
+            .as_ref()
+            .expect("cannot use committed/rolled back transaction")
+    }
+}
+
 impl<'a> TransactionInterface for Transaction<'a> {
+    fn action(&mut self) -> ActionImpl {
+        let inner = self.tx();
+        let inner = self::action::Action::new(inner);
+        ActionImpl::new(inner)
+    }
+
+    fn actions(&mut self) -> ActionsImpl {
+        let inner = self.tx();
+        let inner = self::actions::Actions::new(inner);
+        ActionsImpl::new(inner)
+    }
+
     fn commit(&mut self) -> Result<()> {
         self.inner
             .take()
@@ -170,11 +155,8 @@ impl<'a> TransactionInterface for Transaction<'a> {
     }
 
     fn persist(&mut self) -> PersistImpl {
-        let inner = self
-            .inner
-            .as_mut()
-            .expect("cannot use committed/rolled back transaction");
-        let inner = Persist { inner };
+        let inner = self.tx();
+        let inner = self::persist::Persist::new(inner);
         PersistImpl::new(inner)
     }
 

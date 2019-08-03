@@ -42,6 +42,14 @@ pub struct ActionDescriptor {
     pub description: String,
 }
 
+/// Summary info about an action returned in lists.
+#[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
+pub struct ActionListItem {
+    pub action: String,
+    pub id: Uuid,
+    pub state: ActionState,
+}
+
 /// Action state and metadata information.
 #[derive(Clone, PartialEq, Debug, Serialize, Deserialize)]
 pub struct ActionRecord {

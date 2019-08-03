@@ -14,7 +14,8 @@ use super::ACTIONS;
 use crate::api::APIRoot;
 use crate::AgentContext;
 
-mod schedule;
+mod action;
+mod list;
 
 /// Return a list of available agent actions.
 fn available() -> impl Responder {
@@ -37,13 +38,38 @@ pub fn configure_app(context: &AgentContext, flags: &APIFlags, app: &mut web::Se
                 .route(web::get().to(available)),
         );
         app.service(
+            root.resource("/actions/finished")
+                .wrap(TracingMiddleware::new(
+                    context.logger.clone(),
+                    Arc::clone(&tracer),
+                ))
+                .route(web::get().to(list::finished)),
+        );
+        app.service(
+            root.resource("/actions/info/{id}")
+                .wrap(TracingMiddleware::with_name(
+                    context.logger.clone(),
+                    Arc::clone(&tracer),
+                    "/actions/info/{id}",
+                ))
+                .route(web::get().to(action::info)),
+        );
+        app.service(
+            root.resource("/actions/queue")
+                .wrap(TracingMiddleware::new(
+                    context.logger.clone(),
+                    Arc::clone(&tracer),
+                ))
+                .route(web::get().to(list::queue)),
+        );
+        app.service(
             root.resource("/actions/schedule/{kind}")
                 .wrap(TracingMiddleware::with_name(
                     context.logger.clone(),
                     Arc::clone(&tracer),
                     "/actions/schedule/{kind}",
                 ))
-                .route(web::post().to(schedule::responder)),
+                .route(web::post().to(action::schedule)),
         );
     })
 }

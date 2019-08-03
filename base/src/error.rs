@@ -110,6 +110,9 @@ pub enum ErrorKind {
     #[fail(display = "connection to persistent DB available")]
     PersistentNoConnection,
 
+    #[fail(display = "failed to read {} from persistent store", _0)]
+    PersistentRead(&'static str),
+
     #[fail(display = "failed to write {} to persistent store", _0)]
     PersistentWrite(&'static str),
 
@@ -156,6 +159,7 @@ impl ErrorKind {
             ErrorKind::PersistentNoConnection => "PersistentNoConnection",
             ErrorKind::PersistentOpen(_) => "PersistentOpen",
             ErrorKind::PersistentPool => "PersistentPool",
+            ErrorKind::PersistentRead(_) => "PersistentRead",
             ErrorKind::PersistentWrite(_) => "PersistentWrite",
             ErrorKind::ResponseDecode(_, _) => "ResponseDecode",
             ErrorKind::StoreOpFailed(_) => "StoreOpFailed",

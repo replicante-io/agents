@@ -20,6 +20,7 @@ pub mod utils;
 
 pub use self::definition::Action;
 pub use self::definition::ActionDescriptor;
+pub use self::definition::ActionListItem;
 pub use self::definition::ActionRecord;
 pub use self::definition::ActionRequester;
 pub use self::definition::ActionState;

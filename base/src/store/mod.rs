@@ -8,15 +8,63 @@ mod interface;
 
 pub use self::backend::backend_factory;
 
-use self::interface::PersistImpl;
 use self::interface::StoreImpl;
 use self::interface::TransactionImpl;
+use crate::actions::ActionListItem;
 use crate::actions::ActionRecord;
 use crate::Result;
 
+/// Single Action query interface.
+pub struct Action<'a> {
+    inner: self::interface::ActionImpl<'a>,
+}
+
+impl<'a> Action<'a> {
+    /// Fetch an action record by ID.
+    pub fn get(&self, id: &str) -> Result<Option<ActionRecord>> {
+        self.inner.get(id)
+    }
+}
+
+/// Actions query interface.
+pub struct Actions<'a> {
+    inner: self::interface::ActionsImpl<'a>,
+}
+
+impl<'a> Actions<'a> {
+    /// Iterate over the most recent 100 finished actions.
+    pub fn finished(&self) -> Result<Iter<ActionListItem>> {
+        self.inner.finished()
+    }
+
+    /// Iterate over running and pending actions.
+    pub fn queue(&self) -> Result<Iter<ActionListItem>> {
+        self.inner.queue()
+    }
+}
+
+/// Iterator over store results.
+pub struct Iter<T>(Box<dyn Iterator<Item = Result<T>>>);
+
+impl<T> Iter<T> {
+    fn new<I>(iter: I) -> Iter<T>
+    where
+        I: Iterator<Item = Result<T>> + 'static,
+    {
+        Iter(Box::new(iter))
+    }
+}
+
+impl<T> Iterator for Iter<T> {
+    type Item = Result<T>;
+    fn next(&mut self) -> Option<Self::Item> {
+        self.0.next()
+    }
+}
+
 /// Interface to persist data to the store.
 pub struct Persist<'a> {
-    inner: PersistImpl<'a>,
+    inner: self::interface::PersistImpl<'a>,
 }
 
 impl<'a> Persist<'a> {
@@ -83,12 +131,24 @@ pub struct Transaction<'a> {
 }
 
 impl<'a> Transaction<'a> {
+    /// Access single action query interface.
+    pub fn action(&mut self) -> Action {
+        let inner = self.inner.action();
+        Action { inner }
+    }
+
+    /// Access the actions query interface.
+    pub fn actions(&mut self) -> Actions {
+        let inner = self.inner.actions();
+        Actions { inner }
+    }
+
     /// Commit and consume the transaction.
     pub fn commit(mut self) -> Result<()> {
         self.inner.commit()
     }
 
-    /// Access the interface to persist data to the store.
+    /// Access the data persistence interface.
     pub fn persist(&mut self) -> Persist {
         let inner = self.inner.persist();
         Persist { inner }

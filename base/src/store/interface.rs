@@ -2,6 +2,8 @@ use std::ops::Deref;
 use std::ops::DerefMut;
 use std::sync::Arc;
 
+use super::Iter;
+use crate::actions::ActionListItem;
 use crate::actions::ActionRecord;
 use crate::Result;
 
@@ -141,6 +143,39 @@ box_interface! {
     lifetime 'a,
 
     /// Dynamic dispatch all operations to a backend-specific implementation.
+    struct ActionImpl,
+
+    /// Interface to fetch actions from the store.
+    trait ActionInterface,
+
+    interface {
+        /// Fetch an action record by ID.
+        fn get(&self, id: &str) -> Result<Option<ActionRecord>>;
+    }
+}
+
+box_interface! {
+    lifetime 'a,
+
+    /// Dynamic dispatch all operations to a backend-specific implementation.
+    struct ActionsImpl,
+
+    /// Interface to fetch actions from the store.
+    trait ActionsInterface,
+
+    interface {
+        /// Iterate over the most recent 100 finished actions.
+        fn finished(&self) -> Result<Iter<ActionListItem>>;
+
+        /// Iterate over running and pending actions.
+        fn queue(&self) -> Result<Iter<ActionListItem>>;
+    }
+}
+
+box_interface! {
+    lifetime 'a,
+
+    /// Dynamic dispatch all operations to a backend-specific implementation.
     struct PersistImpl,
 
     /// Interface to persist data to the store.
@@ -162,6 +197,12 @@ box_interface! {
     trait TransactionInterface,
 
     interface {
+        /// Access single action query interface.
+        fn action(&mut self) -> ActionImpl;
+
+        /// Access the actions query interface.
+        fn actions(&mut self) -> ActionsImpl;
+
         /// Commit and invalidate the transaction.
         fn commit(&mut self) -> Result<()>;
 

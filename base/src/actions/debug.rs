@@ -53,7 +53,7 @@ struct Success {}
 impl Action for Success {
     fn describe(&self) -> ActionDescriptor {
         ActionDescriptor {
-            kind: "replicante.debug.succeed".into(),
+            kind: "replicante.debug.success".into(),
             description: "Debugging action that always succeed".into(),
         }
     }

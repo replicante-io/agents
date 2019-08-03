@@ -4,8 +4,10 @@ CREATE TABLE IF NOT EXISTS actions(
   action TEXT NOT NULL,
   agent_version TEXT NOT NULL,
   args TEXT NOT NULL,
-  created_ts TEXT NOT NULL,
+  created_ts INTEGER NOT NULL,
   headers TEXT NOT NULL,
   requester TEXT NOT NULL,
   state TEXT NOT NULL
 );
+CREATE INDEX actions_created_ts ON actions(created_ts);
+CREATE INDEX actions_state ON actions(state);
