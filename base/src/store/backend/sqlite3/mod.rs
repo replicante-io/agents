@@ -10,6 +10,12 @@ use slog::debug;
 use slog::info;
 use slog::Logger;
 
+use replicante_util_tracing::MaybeTracer;
+
+use crate::metrics::SQLITE_CONNECTION_ERRORS;
+use crate::metrics::SQLITE_OPS_COUNT;
+use crate::metrics::SQLITE_OPS_DURATION;
+use crate::metrics::SQLITE_OP_ERRORS_COUNT;
 use crate::store::interface::ActionImpl;
 use crate::store::interface::ActionsImpl;
 use crate::store::interface::ConnectionImpl;
@@ -28,16 +34,27 @@ mod persist;
 
 struct Connection {
     connection: PooledConnection<SqliteConnectionManager>,
+    tracer: MaybeTracer,
 }
 
 impl ConnectionInterface for Connection {
     fn transaction(&mut self) -> Result<TransactionImpl> {
+        SQLITE_OPS_COUNT.with_label_values(&["BEGIN"]).inc();
+        let timer = SQLITE_OPS_DURATION
+            .with_label_values(&["BEGIN"])
+            .start_timer();
         let inner = self
             .connection
             .transaction()
-            .with_context(|_| ErrorKind::PersistentNoConnection)?;
+            .with_context(|_| ErrorKind::PersistentNoConnection)
+            .map_err(|error| {
+                SQLITE_OP_ERRORS_COUNT.with_label_values(&["BEGIN"]).inc();
+                error
+            })?;
+        timer.observe_duration();
         let inner = Some(inner);
-        Ok(TransactionImpl::new(Transaction { inner }))
+        let tracer = self.tracer.clone();
+        Ok(TransactionImpl::new(Transaction { inner, tracer }))
     }
 }
 
@@ -46,17 +63,23 @@ pub struct Store {
     logger: Logger,
     path: String,
     pool: Pool<SqliteConnectionManager>,
+    tracer: MaybeTracer,
 }
 
 impl Store {
-    pub fn new(logger: Logger, path: String) -> Result<Store> {
+    pub fn new(logger: Logger, path: String, tracer: MaybeTracer) -> Result<Store> {
         // Create a connection manager and ensure foreign keys are checked.
         let manager = SqliteConnectionManager::file(&path)
             .with_init(|c| c.execute_batch("PRAGMA foreign_keys=1;"));
         let pool = Pool::builder()
             .build(manager)
             .with_context(|_| ErrorKind::PersistentPool)?;
-        Ok(Store { logger, path, pool })
+        Ok(Store {
+            logger,
+            path,
+            pool,
+            tracer,
+        })
     }
 }
 
@@ -65,8 +88,13 @@ impl StoreInterface for Store {
         let connection = self
             .pool
             .get()
-            .with_context(|_| ErrorKind::PersistentNoConnection)?;
-        Ok(ConnectionImpl::new(Connection { connection }))
+            .with_context(|_| ErrorKind::PersistentNoConnection)
+            .map_err(|error| {
+                SQLITE_CONNECTION_ERRORS.inc();
+                error
+            })?;
+        let tracer = self.tracer.clone();
+        Ok(ConnectionImpl::new(Connection { connection, tracer }))
     }
 
     fn migrate(&self) -> Result<()> {
@@ -122,6 +150,7 @@ impl StoreInterface for Store {
 /// Wrap all operations in a SQLite3 transaction.
 struct Transaction<'a> {
     inner: Option<rusqlite::Transaction<'a>>,
+    tracer: MaybeTracer,
 }
 
 impl<'a> Transaction<'a> {
@@ -135,37 +164,53 @@ impl<'a> Transaction<'a> {
 impl<'a> TransactionInterface for Transaction<'a> {
     fn action(&mut self) -> ActionImpl {
         let inner = self.tx();
-        let inner = self::action::Action::new(inner);
+        let inner = self::action::Action::new(inner, self.tracer.clone());
         ActionImpl::new(inner)
     }
 
     fn actions(&mut self) -> ActionsImpl {
         let inner = self.tx();
-        let inner = self::actions::Actions::new(inner);
+        let inner = self::actions::Actions::new(inner, self.tracer.clone());
         ActionsImpl::new(inner)
     }
 
     fn commit(&mut self) -> Result<()> {
+        SQLITE_OPS_COUNT.with_label_values(&["COMMIT"]).inc();
+        let _timer = SQLITE_OPS_DURATION
+            .with_label_values(&["COMMIT"])
+            .start_timer();
         self.inner
             .take()
             .expect("cannot use committed/rolled back transaction")
             .commit()
             .with_context(|_| ErrorKind::PersistentCommit)
-            .map_err(Error::from)
+            .map_err(|error| {
+                SQLITE_OP_ERRORS_COUNT.with_label_values(&["COMMIT"]).inc();
+                Error::from(error)
+            })
     }
 
     fn persist(&mut self) -> PersistImpl {
         let inner = self.tx();
-        let inner = self::persist::Persist::new(inner);
+        let inner = self::persist::Persist::new(inner, self.tracer.clone());
         PersistImpl::new(inner)
     }
 
     fn rollback(&mut self) -> Result<()> {
+        SQLITE_OPS_COUNT.with_label_values(&["ROLLBACK"]).inc();
+        let _timer = SQLITE_OPS_DURATION
+            .with_label_values(&["ROLLBACK"])
+            .start_timer();
         self.inner
             .take()
             .expect("cannot use committed/rolled back transaction")
             .rollback()
             .with_context(|_| ErrorKind::PersistentCommit)
-            .map_err(Error::from)
+            .map_err(|error| {
+                SQLITE_OP_ERRORS_COUNT
+                    .with_label_values(&["ROLLBACK"])
+                    .inc();
+                Error::from(error)
+            })
     }
 }

@@ -57,7 +57,7 @@ replicante_logging = { path = "../common/logging", version = "0.1.3" }
 replicante_models_agent = { path = "../common/models/agent", version = "0.3.0" }
 replicante_util_actixweb = { path = "../common/util/actixweb", version = "0.1.0" }
 replicante_util_failure = { path = "../common/util/failure", version = "0.1.2" }
-replicante_util_tracing = { path = "../common/util/tracing", version = "0.3.0" }
+replicante_util_tracing = { path = "../common/util/tracing", version = "0.3.2" }
 replicante_util_upkeep = { path = "../common/util/upkeep", version = "0.1.0" }
 
 

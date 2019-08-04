@@ -1,12 +1,19 @@
 use std::str::FromStr;
 
 use failure::ResultExt;
+use opentracingrust::SpanContext;
+use opentracingrust::StartOptions;
 use rusqlite::Statement;
 use rusqlite::NO_PARAMS;
 use uuid::Uuid;
 
+use replicante_util_tracing::MaybeTracer;
+
 use crate::actions::ActionListItem;
 use crate::actions::ActionState;
+use crate::metrics::SQLITE_OPS_COUNT;
+use crate::metrics::SQLITE_OPS_DURATION;
+use crate::metrics::SQLITE_OP_ERRORS_COUNT;
 use crate::store::interface::ActionsInterface;
 use crate::store::Iter;
 use crate::Error;
@@ -14,7 +21,33 @@ use crate::ErrorKind;
 use crate::Result;
 
 const ACTIONS_FINISHED: &str = "action.finished";
+const ACTIONS_FINISHED_SQL: &str = r#"
+SELECT
+    action, id, state
+FROM actions
+WHERE
+    state == '"SUCCESS"'
+    OR state == '"FAILED"'
+    OR state == '"CANCELLED"'
+ORDER BY created_ts ASC
+-- Limit result as a form of blast radius containment from bugs or overload.
+-- There really should not be many finished actions still on the agent DB.
+LIMIT 100;
+"#;
 const ACTIONS_QUEUE: &str = "action.queue";
+const ACTIONS_QUEUE_SQL: &str = r#"
+SELECT
+    action, id, state
+FROM actions
+WHERE
+    state != '"SUCCESS"'
+    AND state != '"FAILED"'
+    AND state != '"CANCELLED"'
+ORDER BY created_ts ASC
+-- Limit result as a form of blast radius containment in case of bugs.
+-- There really should not be many running/pending actions on an agent.
+LIMIT 100;
+"#;
 
 /// Helper macro to avoid writing the same match every time.
 macro_rules! decode_or_continue {
@@ -57,48 +90,69 @@ fn parse_actions_list(statement: &mut Statement, op: &'static str) -> Result<Ite
 
 pub struct Actions<'a, 'b: 'a> {
     inner: &'a rusqlite::Transaction<'b>,
+    tracer: MaybeTracer,
 }
 
 impl<'a, 'b: 'a> Actions<'a, 'b> {
-    pub fn new(inner: &'a rusqlite::Transaction<'b>) -> Actions<'a, 'b> {
-        Actions { inner }
+    pub fn new(inner: &'a rusqlite::Transaction<'b>, tracer: MaybeTracer) -> Actions<'a, 'b> {
+        Actions { inner, tracer }
     }
 }
 
 impl<'a, 'b: 'a> ActionsInterface for Actions<'a, 'b> {
-    fn finished(&self) -> Result<Iter<ActionListItem>> {
+    fn finished(&self, span: Option<SpanContext>) -> Result<Iter<ActionListItem>> {
+        let _span = self.tracer.with(|tracer| {
+            let mut opts = StartOptions::default();
+            if let Some(context) = span {
+                opts = opts.child_of(context);
+            }
+            let mut span = tracer.span_with_options("store.sqlite.select", opts);
+            span.tag("sql", ACTIONS_FINISHED_SQL);
+            span.auto_finish()
+        });
+        SQLITE_OPS_COUNT.with_label_values(&["SELECT"]).inc();
+        let _timer = SQLITE_OPS_DURATION
+            .with_label_values(&["SELECT"])
+            .start_timer();
         let mut statement = self
             .inner
-            .prepare_cached(
-                r#"SELECT action, id, state FROM actions
-                    WHERE state == '"SUCCESS"'
-                    OR state == '"FAILED"'
-                    OR state == '"CANCELLED"'
-                    ORDER BY created_ts ASC
-                    -- Limit result as a form of blast radius containment from bugs or overload.
-                    -- There really should not be many finished actions still on the agent DB.
-                    LIMIT 100;
-                "#,
-            )
-            .with_context(|_| ErrorKind::PersistentRead(ACTIONS_FINISHED))?;
-        parse_actions_list(&mut statement, ACTIONS_FINISHED)
+            .prepare_cached(ACTIONS_FINISHED_SQL)
+            .with_context(|_| ErrorKind::PersistentRead(ACTIONS_FINISHED))
+            .map_err(|error| {
+                SQLITE_OP_ERRORS_COUNT.with_label_values(&["SELECT"]).inc();
+                error
+            })?;
+        parse_actions_list(&mut statement, ACTIONS_FINISHED).map_err(|error| {
+            SQLITE_OP_ERRORS_COUNT.with_label_values(&["SELECT"]).inc();
+            error
+        })
     }
 
-    fn queue(&self) -> Result<Iter<ActionListItem>> {
+    fn queue(&self, span: Option<SpanContext>) -> Result<Iter<ActionListItem>> {
+        let _span = self.tracer.with(|tracer| {
+            let mut opts = StartOptions::default();
+            if let Some(context) = span {
+                opts = opts.child_of(context);
+            }
+            let mut span = tracer.span_with_options("store.sqlite.select", opts);
+            span.tag("sql", ACTIONS_QUEUE_SQL);
+            span.auto_finish()
+        });
+        SQLITE_OPS_COUNT.with_label_values(&["SELECT"]).inc();
+        let _timer = SQLITE_OPS_DURATION
+            .with_label_values(&["SELECT"])
+            .start_timer();
         let mut statement = self
             .inner
-            .prepare_cached(
-                r#"SELECT action, id, state FROM actions
-                    WHERE state != '"SUCCESS"'
-                    AND state != '"FAILED"'
-                    AND state != '"CANCELLED"'
-                    ORDER BY created_ts ASC
-                    -- Limit result as a form of blast radius containment in case of bugs.
-                    -- There really should not be many running/pending actions on an agent.
-                    LIMIT 100;
-                "#,
-            )
-            .with_context(|_| ErrorKind::PersistentRead(ACTIONS_QUEUE))?;
-        parse_actions_list(&mut statement, ACTIONS_QUEUE)
+            .prepare_cached(ACTIONS_QUEUE_SQL)
+            .with_context(|_| ErrorKind::PersistentRead(ACTIONS_QUEUE))
+            .map_err(|error| {
+                SQLITE_OP_ERRORS_COUNT.with_label_values(&["SELECT"]).inc();
+                error
+            })?;
+        parse_actions_list(&mut statement, ACTIONS_QUEUE).map_err(|error| {
+            SQLITE_OP_ERRORS_COUNT.with_label_values(&["SELECT"]).inc();
+            error
+        })
     }
 }

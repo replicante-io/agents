@@ -1,3 +1,4 @@
+use opentracingrust::SpanContext;
 use slog::Logger;
 
 use replicante_util_failure::capture_fail;
@@ -21,8 +22,11 @@ pub struct Action<'a> {
 
 impl<'a> Action<'a> {
     /// Fetch an action record by ID.
-    pub fn get(&self, id: &str) -> Result<Option<ActionRecord>> {
-        self.inner.get(id)
+    pub fn get<S>(&self, id: &str, span: S) -> Result<Option<ActionRecord>>
+    where
+        S: Into<Option<SpanContext>>,
+    {
+        self.inner.get(id, span.into())
     }
 }
 
@@ -33,13 +37,19 @@ pub struct Actions<'a> {
 
 impl<'a> Actions<'a> {
     /// Iterate over the most recent 100 finished actions.
-    pub fn finished(&self) -> Result<Iter<ActionListItem>> {
-        self.inner.finished()
+    pub fn finished<S>(&self, span: S) -> Result<Iter<ActionListItem>>
+    where
+        S: Into<Option<SpanContext>>,
+    {
+        self.inner.finished(span.into())
     }
 
     /// Iterate over running and pending actions.
-    pub fn queue(&self) -> Result<Iter<ActionListItem>> {
-        self.inner.queue()
+    pub fn queue<S>(&self, span: S) -> Result<Iter<ActionListItem>>
+    where
+        S: Into<Option<SpanContext>>,
+    {
+        self.inner.queue(span.into())
     }
 }
 
@@ -69,8 +79,11 @@ pub struct Persist<'a> {
 
 impl<'a> Persist<'a> {
     /// Persist a NEW action to the store.
-    pub fn action(&self, action: ActionRecord) -> Result<()> {
-        self.inner.action(action)
+    pub fn action<S>(&self, action: ActionRecord, span: S) -> Result<()>
+    where
+        S: Into<Option<SpanContext>>,
+    {
+        self.inner.action(action, span.into())
     }
 }
 

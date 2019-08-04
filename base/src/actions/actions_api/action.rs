@@ -8,6 +8,9 @@ use serde_derive::Serialize;
 use serde_json::json;
 use serde_json::Value;
 
+use replicante_util_actixweb::request_span;
+use replicante_util_tracing::fail_span;
+
 use crate::actions::ActionRecord;
 use crate::actions::ActionRequester;
 use crate::actions::ACTIONS;
@@ -28,7 +31,12 @@ pub fn info(id: web::Path<String>, request: HttpRequest) -> Result<impl Responde
         .app_data::<AgentContext>()
         .expect("AgentContext must be available as App::data");
     let id = id.into_inner();
-    let action = context.store.with_transaction(|tx| tx.action().get(&id))?;
+    let mut exts = request.extensions_mut();
+    let mut span = request_span(&mut exts);
+    let action = context
+        .store
+        .with_transaction(|tx| tx.action().get(&id, span.context().clone()))
+        .map_err(|error| fail_span(error, &mut span))?;
     let action = match action {
         None => return Ok(HttpResponse::NotFound().finish()),
         Some(action) => action,
@@ -46,15 +54,19 @@ pub fn schedule(
     let context = request
         .app_data::<AgentContext>()
         .expect("AgentContext must be available as App::data");
+    let mut exts = request.extensions_mut();
+    let mut span = request_span(&mut exts);
     let kind = kind.into_inner();
     let action = ACTIONS::get(&kind)
         .ok_or_else(|| ErrorKind::ActionNotAvailable(kind.clone()))
-        .map_err(Error::from)?;
+        .map_err(Error::from)
+        .map_err(|error| fail_span(error, &mut span))?;
     action.validate_args(&args)?;
     let record = ActionRecord::new(kind, args.into_inner(), ActionRequester::Api);
     let id = record.id;
     context
         .store
-        .with_transaction(|tx| tx.persist().action(record))?;
+        .with_transaction(|tx| tx.persist().action(record, span.context().clone()))
+        .map_err(|error| fail_span(error, &mut span))?;
     Ok(HttpResponse::Ok().json(json!({ "id": id })))
 }

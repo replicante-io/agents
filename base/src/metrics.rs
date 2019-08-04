@@ -1,5 +1,10 @@
 use lazy_static::lazy_static;
+use prometheus::Counter;
+use prometheus::CounterVec;
 use prometheus::Gauge;
+use prometheus::HistogramOpts;
+use prometheus::HistogramVec;
+use prometheus::Opts;
 use slog::debug;
 
 use replicante_util_actixweb::MetricsCollector;
@@ -8,6 +13,35 @@ use crate::AgentContext;
 
 lazy_static! {
     pub static ref REQUESTS: MetricsCollector = MetricsCollector::new("repliagent");
+    pub static ref SQLITE_CONNECTION_ERRORS: Counter = Counter::new(
+        "repliagent_sqlite_connection_errors",
+        "Number of SQLite connection errors",
+    )
+    .expect("Failed to create UPDATE_AVAILABLE gauge");
+    pub static ref SQLITE_OP_ERRORS_COUNT: CounterVec = CounterVec::new(
+        Opts::new(
+            "repliagent_sqlite_operation_errors",
+            "Number of SQLite operations failed",
+        ),
+        &["operation"]
+    )
+    .expect("Failed to create SQLITE_OP_ERRORS_COUNT counter");
+    pub static ref SQLITE_OPS_COUNT: CounterVec = CounterVec::new(
+        Opts::new(
+            "repliagent_sqlite_operations",
+            "Number of SQLite operations issued",
+        ),
+        &["operation"]
+    )
+    .expect("Failed to create SQLITE_OPS_COUNT counter");
+    pub static ref SQLITE_OPS_DURATION: HistogramVec = HistogramVec::new(
+        HistogramOpts::new(
+            "repliagent_sqlite_operations_duration",
+            "Duration (in seconds) of SQLite operations"
+        ),
+        &["operation"]
+    )
+    .expect("Failed to create SQLITE_OPS_DURATION histogram");
     pub static ref UPDATE_AVAILABLE: Gauge = Gauge::new(
         "repliagent_updateable",
         "Set to 1 when an updateded version is available (checked at start only)",
@@ -22,6 +56,15 @@ pub fn register_metrics(context: &AgentContext) {
     let logger = &context.logger;
     let registry = &context.metrics;
     REQUESTS.register(logger, registry);
+    if let Err(error) = registry.register(Box::new(SQLITE_OP_ERRORS_COUNT.clone())) {
+        debug!(logger, "Failed to register SQLITE_OP_ERRORS_COUNT"; "error" => ?error);
+    }
+    if let Err(error) = registry.register(Box::new(SQLITE_OPS_COUNT.clone())) {
+        debug!(logger, "Failed to register SQLITE_OPS_COUNT"; "error" => ?error);
+    }
+    if let Err(error) = registry.register(Box::new(SQLITE_OPS_DURATION.clone())) {
+        debug!(logger, "Failed to register SQLITE_OPS_DURATION"; "error" => ?error);
+    }
     if let Err(error) = registry.register(Box::new(UPDATE_AVAILABLE.clone())) {
         debug!(logger, "Failed to register UPDATE_AVAILABLE"; "error" => ?error);
     }

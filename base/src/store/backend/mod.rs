@@ -1,7 +1,6 @@
-use std::sync::Arc;
-
-use opentracingrust::Tracer;
 use slog::Logger;
+
+use replicante_util_tracing::MaybeTracer;
 
 use crate::config::Agent as Config;
 use crate::store::interface::StoreImpl;
@@ -13,11 +12,8 @@ pub mod mock;
 mod sqlite3;
 
 /// Instantiate a new storage backend based on the given configuration.
-pub fn backend_factory<T>(config: &Config, logger: Logger, _tracer: T) -> Result<Store>
-where
-    T: Into<Option<Arc<Tracer>>>,
-{
-    let inner = self::sqlite3::Store::new(logger.clone(), config.db.clone())?;
+pub fn backend_factory(config: &Config, logger: Logger, tracer: MaybeTracer) -> Result<Store> {
+    let inner = self::sqlite3::Store::new(logger.clone(), config.db.clone(), tracer)?;
     let inner = StoreImpl::new(inner);
     Ok(Store { inner, logger })
 }

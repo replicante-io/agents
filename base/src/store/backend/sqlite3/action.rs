@@ -3,16 +3,36 @@ use std::str::FromStr;
 use chrono::TimeZone;
 use chrono::Utc;
 use failure::ResultExt;
+use opentracingrust::SpanContext;
+use opentracingrust::StartOptions;
 use rusqlite::params;
 use uuid::Uuid;
 
+use replicante_util_tracing::MaybeTracer;
+
 use crate::actions::ActionRecord;
+use crate::metrics::SQLITE_OPS_COUNT;
+use crate::metrics::SQLITE_OPS_DURATION;
+use crate::metrics::SQLITE_OP_ERRORS_COUNT;
 use crate::store::interface::ActionInterface;
 use crate::Error;
 use crate::ErrorKind;
 use crate::Result;
 
 const ACTION_GET: &str = "action.get";
+const ACTION_GET_SQL: &str = r#"
+SELECT
+    action,
+    agent_version,
+    args,
+    created_ts,
+    headers,
+    id,
+    requester,
+    state
+FROM actions
+WHERE id = ?;
+"#;
 
 /// Helper macro to avoid writing the same match every time.
 macro_rules! decode_or_return {
@@ -31,39 +51,53 @@ macro_rules! decode_or_return {
 
 pub struct Action<'a, 'b: 'a> {
     inner: &'a rusqlite::Transaction<'b>,
+    tracer: MaybeTracer,
 }
 
 impl<'a, 'b: 'a> Action<'a, 'b> {
-    pub fn new(inner: &'a rusqlite::Transaction<'b>) -> Action<'a, 'b> {
-        Action { inner }
+    pub fn new(inner: &'a rusqlite::Transaction<'b>, tracer: MaybeTracer) -> Action<'a, 'b> {
+        Action { inner, tracer }
     }
 }
 
 impl<'a, 'b: 'a> ActionInterface for Action<'a, 'b> {
-    fn get(&self, id: &str) -> Result<Option<ActionRecord>> {
+    fn get(&self, id: &str, span: Option<SpanContext>) -> Result<Option<ActionRecord>> {
+        let _span = self.tracer.with(|tracer| {
+            let mut opts = StartOptions::default();
+            if let Some(context) = span {
+                opts = opts.child_of(context);
+            }
+            let mut span = tracer.span_with_options("store.sqlite.select", opts);
+            span.tag("sql", ACTION_GET_SQL);
+            span.auto_finish()
+        });
+        SQLITE_OPS_COUNT.with_label_values(&["SELECT"]).inc();
+        let timer = SQLITE_OPS_DURATION
+            .with_label_values(&["SELECT"])
+            .start_timer();
         let mut statement = self
             .inner
-            .prepare_cached(
-                r#"SELECT
-                        action,
-                        agent_version,
-                        args,
-                        created_ts,
-                        headers,
-                        id,
-                        requester,
-                        state
-                    FROM actions
-                    WHERE id = ?;
-                "#,
-            )
-            .with_context(|_| ErrorKind::PersistentRead(ACTION_GET))?;
+            .prepare_cached(ACTION_GET_SQL)
+            .with_context(|_| ErrorKind::PersistentRead(ACTION_GET))
+            .map_err(|error| {
+                SQLITE_OP_ERRORS_COUNT.with_label_values(&["SELECT"]).inc();
+                error
+            })?;
         let mut rows = statement
             .query(params![id])
-            .with_context(|_| ErrorKind::PersistentRead(ACTION_GET))?;
+            .with_context(|_| ErrorKind::PersistentRead(ACTION_GET))
+            .map_err(|error| {
+                SQLITE_OP_ERRORS_COUNT.with_label_values(&["SELECT"]).inc();
+                error
+            })?;
         let row = rows
             .next()
-            .with_context(|_| ErrorKind::PersistentRead(ACTION_GET))?;
+            .with_context(|_| ErrorKind::PersistentRead(ACTION_GET))
+            .map_err(|error| {
+                SQLITE_OP_ERRORS_COUNT.with_label_values(&["SELECT"]).inc();
+                error
+            })?;
+        timer.observe_duration();
         let row = match row {
             None => return Ok(None),
             Some(row) => row,

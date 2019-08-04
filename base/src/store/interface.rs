@@ -2,6 +2,8 @@ use std::ops::Deref;
 use std::ops::DerefMut;
 use std::sync::Arc;
 
+use opentracingrust::SpanContext;
+
 use super::Iter;
 use crate::actions::ActionListItem;
 use crate::actions::ActionRecord;
@@ -150,7 +152,7 @@ box_interface! {
 
     interface {
         /// Fetch an action record by ID.
-        fn get(&self, id: &str) -> Result<Option<ActionRecord>>;
+        fn get(&self, id: &str, span: Option<SpanContext>) -> Result<Option<ActionRecord>>;
     }
 }
 
@@ -165,10 +167,10 @@ box_interface! {
 
     interface {
         /// Iterate over the most recent 100 finished actions.
-        fn finished(&self) -> Result<Iter<ActionListItem>>;
+        fn finished(&self, span: Option<SpanContext>) -> Result<Iter<ActionListItem>>;
 
         /// Iterate over running and pending actions.
-        fn queue(&self) -> Result<Iter<ActionListItem>>;
+        fn queue(&self, span: Option<SpanContext>) -> Result<Iter<ActionListItem>>;
     }
 }
 
@@ -183,7 +185,7 @@ box_interface! {
 
     interface {
         /// Persist a NEW action to the store.
-        fn action(&self, action: ActionRecord) -> Result<()>;
+        fn action(&self, action: ActionRecord, span: Option<SpanContext>) -> Result<()>;
     }
 }
 

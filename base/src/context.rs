@@ -9,6 +9,8 @@ use slog::o;
 use slog::Discard;
 use slog::Logger;
 
+use replicante_util_tracing::MaybeTracer;
+
 use crate::api::ApiAddons;
 use crate::config::Agent as AgentConfig;
 use crate::store::backend_factory;
@@ -61,7 +63,11 @@ impl AgentContext {
     pub fn new(config: AgentConfig, logger: Logger, tracer: Tracer) -> Result<AgentContext> {
         let metrics = Registry::new();
         let tracer = Arc::new(tracer);
-        let store = backend_factory(&config, logger.clone(), Arc::clone(&tracer))?;
+        let store = backend_factory(
+            &config,
+            logger.clone(),
+            MaybeTracer::new(Arc::clone(&tracer)),
+        )?;
         Ok(AgentContext {
             api_addons: ApiAddons::default(),
             config,
