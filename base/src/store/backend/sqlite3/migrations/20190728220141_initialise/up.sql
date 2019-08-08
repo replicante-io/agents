@@ -7,7 +7,8 @@ CREATE TABLE IF NOT EXISTS actions(
   created_ts INTEGER NOT NULL,
   headers TEXT NOT NULL,
   requester TEXT NOT NULL,
-  state TEXT NOT NULL
+  state TEXT NOT NULL,
+  state_payload TEXT,
 );
 CREATE INDEX actions_created_ts ON actions(created_ts);
 CREATE INDEX actions_state ON actions(state);

@@ -283,9 +283,12 @@ mod tests {
 
     use super::super::Action;
     use super::super::ActionDescriptor;
+    use super::super::ActionRecord;
     use super::super::ActionValidity;
     use super::ActionsRegister;
     use super::ACTIONS;
+    use crate::store::Transaction;
+    use crate::Result;
 
     struct MockAction {}
     impl Action for MockAction {
@@ -294,6 +297,10 @@ mod tests {
                 kind: "test.mock.action".into(),
                 description: "replicante_agent::actions::register::tests::MockAction".into(),
             }
+        }
+
+        fn invoke(&self, _: &mut Transaction, _: &ActionRecord) -> Result<()> {
+            panic!("TODO: MockAction::invoke")
         }
 
         fn validate_args(&self, _: &Json) -> ActionValidity {
@@ -310,6 +317,10 @@ mod tests {
             }
         }
 
+        fn invoke(&self, _: &mut Transaction, _: &ActionRecord) -> Result<()> {
+            panic!("TODO: ReservedAction::invoke")
+        }
+
         fn validate_args(&self, _: &Json) -> ActionValidity {
             Ok(())
         }
@@ -322,6 +333,10 @@ mod tests {
                 kind: "mock".into(),
                 description: "replicante_agent::actions::register::tests::UnscopedAction".into(),
             }
+        }
+
+        fn invoke(&self, _: &mut Transaction, _: &ActionRecord) -> Result<()> {
+            panic!("TODO: UnscopedAction::invoke")
         }
 
         fn validate_args(&self, _: &Json) -> ActionValidity {

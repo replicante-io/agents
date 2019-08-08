@@ -11,10 +11,13 @@ use serde_json::Value as Json;
 
 use super::Action;
 use super::ActionDescriptor;
+use super::ActionRecord;
 use super::ActionValidity;
 use super::ActionValidityError;
 use crate::config::Agent as Config;
 use crate::config::TlsConfig;
+use crate::store::Transaction;
+use crate::Result;
 
 struct TestAction {}
 
@@ -24,6 +27,10 @@ impl Action for TestAction {
             kind: "".into(),
             description: "".into(),
         }
+    }
+
+    fn invoke(&self, _: &mut Transaction, _: &ActionRecord) -> Result<()> {
+        panic!("TODO: TestAction::invoke")
     }
 
     fn validate_args(&self, _: &Json) -> ActionValidity {

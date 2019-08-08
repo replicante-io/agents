@@ -1,4 +1,5 @@
 use opentracingrust::SpanContext;
+use serde_json::Value as Json;
 use slog::Logger;
 
 use replicante_util_failure::capture_fail;
@@ -13,6 +14,7 @@ use self::interface::StoreImpl;
 use self::interface::TransactionImpl;
 use crate::actions::ActionListItem;
 use crate::actions::ActionRecord;
+use crate::actions::ActionState;
 use crate::Result;
 
 /// Single Action query interface.
@@ -27,6 +29,54 @@ impl<'a> Action<'a> {
         S: Into<Option<SpanContext>>,
     {
         self.inner.get(id, span.into())
+    }
+
+    /// Persist a NEW action to the store.
+    pub fn insert<S>(&self, action: ActionRecord, span: S) -> Result<()>
+    where
+        S: Into<Option<SpanContext>>,
+    {
+        self.inner.insert(action, span.into())
+    }
+
+    /// Fetch the next RUNNING or NEW action.
+    pub fn next<S>(&self, span: S) -> Result<Option<ActionRecord>>
+    where
+        S: Into<Option<SpanContext>>,
+    {
+        self.inner.next(span.into())
+    }
+
+    /// Transition the action to a new state.
+    ///
+    /// # Allowed transitions
+    /// Actions cannot transition from one arbitrary state to another.
+    /// Restrictions apply to ensure that actions can only transition from
+    /// one state to another if it makes logical sense for the transition.
+    ///
+    /// For example, and action can transtion from `New` to `Failed` if
+    /// the action is invalid or cannot be otherwise executed.
+    /// On the other hand an action cannot go from `Failed` to `New`.
+    ///
+    /// For a diagram of valid state transitions see
+    /// `docs/docs/assets/action-states.dot`.
+    ///
+    /// # Panics
+    /// If the state transition is not allowd this method panics.
+    pub fn transition<P, S>(
+        &self,
+        action: &ActionRecord,
+        transition_to: ActionState,
+        payload: P,
+        span: S,
+    ) -> Result<()>
+    where
+        P: Into<Option<Json>>,
+        S: Into<Option<SpanContext>>,
+    {
+        // TODO: validate state transition.
+        self.inner
+            .transition(action, transition_to, payload.into(), span.into())
     }
 }
 
@@ -69,21 +119,6 @@ impl<T> Iterator for Iter<T> {
     type Item = Result<T>;
     fn next(&mut self) -> Option<Self::Item> {
         self.0.next()
-    }
-}
-
-/// Interface to persist data to the store.
-pub struct Persist<'a> {
-    inner: self::interface::PersistImpl<'a>,
-}
-
-impl<'a> Persist<'a> {
-    /// Persist a NEW action to the store.
-    pub fn action<S>(&self, action: ActionRecord, span: S) -> Result<()>
-    where
-        S: Into<Option<SpanContext>>,
-    {
-        self.inner.action(action, span.into())
     }
 }
 
@@ -159,12 +194,6 @@ impl<'a> Transaction<'a> {
     /// Commit and consume the transaction.
     pub fn commit(mut self) -> Result<()> {
         self.inner.commit()
-    }
-
-    /// Access the data persistence interface.
-    pub fn persist(&mut self) -> Persist {
-        let inner = self.inner.persist();
-        Persist { inner }
     }
 
     /// Rollback and consume the transaction.

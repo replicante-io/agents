@@ -12,6 +12,9 @@ use serde_json::json;
 use serde_json::Value as Json;
 use uuid::Uuid;
 
+use crate::store::Transaction;
+use crate::Result;
+
 /// Abstraction of any action the agent can perform.
 ///
 /// # Action Kinds
@@ -26,6 +29,9 @@ use uuid::Uuid;
 pub trait Action: Send + Sync + 'static {
     /// Action metadata and attributes.
     fn describe(&self) -> ActionDescriptor;
+
+    /// TODO
+    fn invoke(&self, tx: &mut Transaction, record: &ActionRecord) -> Result<()>;
 
     /// Validate the arguments passed to an action request.
     fn validate_args(&self, args: &Json) -> ActionValidity;
@@ -53,14 +59,32 @@ pub struct ActionListItem {
 /// Action state and metadata information.
 #[derive(Clone, PartialEq, Debug, Serialize, Deserialize)]
 pub struct ActionRecord {
+    /// Type ID of the action to run.
     pub action: String,
+
+    /// Version of the agent that last validated the action.
     pub agent_version: String,
+
+    /// Arguments passed to the action when invoked.
     pub args: Json,
+
+    /// Time the agent recorded the action in the DB.
     pub created_ts: DateTime<Utc>,
+
+    /// Additional metadata headers attached to the action.
     pub headers: HashMap<String, String>,
+
+    /// Unique ID of the action.
     pub id: Uuid,
+
+    /// Entity (system or user) requesting the execution of the action.
     pub requester: ActionRequester,
+
+    /// State the action is currently in.
     pub state: ActionState,
+
+    /// Optional payload attached to the current state.
+    pub state_payload: Option<Json>,
 }
 
 impl ActionRecord {
@@ -74,6 +98,7 @@ impl ActionRecord {
             id: Uuid::new_v4(),
             requester,
             state: ActionState::New,
+            state_payload: None,
         }
     }
 }
@@ -87,13 +112,30 @@ pub enum ActionRequester {
 
 /// Current state of an action execution.
 #[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "UPPERCASE")]
 pub enum ActionState {
-    #[serde(rename = "NEW")]
+    /// The action ended with an error.
+    Failed,
+
+    /// The action has just been sheduled and is not being executed yet.
     New,
+
+    /// The action was started by the agent and is in progress.
+    Running,
+}
+
+impl ActionState {
+    /// True if the action is finished (failed or succeeded).
+    pub fn is_finished(&self) -> bool {
+        match self {
+            ActionState::Failed => true,
+            _ => false,
+        }
+    }
 }
 
 /// Result alias for methods that return an ActionValidityError.
-pub type ActionValidity<T = ()> = Result<T, ActionValidityError>;
+pub type ActionValidity<T = ()> = std::result::Result<T, ActionValidityError>;
 
 /// Result of action validation process.
 #[derive(Debug, Fail)]

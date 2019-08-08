@@ -13,6 +13,7 @@ mod actions_api;
 #[cfg(any(debug_assertions, test))]
 mod debug;
 mod definition;
+mod engine;
 mod register;
 #[cfg(test)]
 mod tests;
@@ -57,7 +58,7 @@ pub fn actions_enabled(config: &Config) -> Result<bool> {
 }
 
 /// Initialise the actions system based on configuration.
-pub fn initialise(context: &mut AgentContext, _upkeep: &mut Upkeep) -> Result<()> {
+pub fn initialise(context: &mut AgentContext, upkeep: &mut Upkeep) -> Result<()> {
     let enabled = actions_enabled(&context.config)?;
     if !enabled {
         warn!(context.logger, "Actions system not enabled");
@@ -71,8 +72,9 @@ pub fn initialise(context: &mut AgentContext, _upkeep: &mut Upkeep) -> Result<()
         .register(move |app, context| actions_api::configure_app(context, &flags, app));
     register_std_actions(context);
     ACTIONS::complete_registration();
-    // TODO: spawn actions engine thread.
+    debug!(context.logger, "Actions registration phase completed");
 
+    self::engine::spawn(context.clone(), upkeep)?;
     info!(context.logger, "Actions system initialised");
     Ok(())
 }

@@ -73,6 +73,9 @@ where
 /// Exhaustive list of possible errors emitted by this crate.
 #[derive(Debug, Fail)]
 pub enum ErrorKind {
+    #[fail(display = "unable with encode action information")]
+    ActionEncode,
+
     #[fail(display = "actions with kind {} are not available", _0)]
     ActionNotAvailable(String),
 
@@ -145,6 +148,7 @@ impl ErrorKind {
 
     fn kind_name(&self) -> Option<&str> {
         let name = match self {
+            ErrorKind::ActionEncode => "ActionEncode",
             ErrorKind::ActionNotAvailable(_) => "ActionNotAvailable",
             ErrorKind::ConfigClash(_) => "ConfigClash",
             ErrorKind::ConfigLoad => "ConfigLoad",

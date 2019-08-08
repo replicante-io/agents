@@ -3,10 +3,12 @@ use std::ops::DerefMut;
 use std::sync::Arc;
 
 use opentracingrust::SpanContext;
+use serde_json::Value as Json;
 
 use super::Iter;
 use crate::actions::ActionListItem;
 use crate::actions::ActionRecord;
+use crate::actions::ActionState;
 use crate::Result;
 
 // Macro definition to generate an interface trait with a wrapping wrapper
@@ -153,6 +155,21 @@ box_interface! {
     interface {
         /// Fetch an action record by ID.
         fn get(&self, id: &str, span: Option<SpanContext>) -> Result<Option<ActionRecord>>;
+
+        /// Persist a NEW action to the store.
+        fn insert(&self, action: ActionRecord, span: Option<SpanContext>) -> Result<()>;
+
+        /// Fetch the next RUNNING or NEW action.
+        fn next(&self, span: Option<SpanContext>) -> Result<Option<ActionRecord>>;
+
+        /// Transition the action to a new state.
+        fn transition(
+            &self,
+            action: &ActionRecord,
+            transition_to: ActionState,
+            payload: Option<Json>,
+            span: Option<SpanContext>,
+        ) -> Result<()>;
     }
 }
 
@@ -178,21 +195,6 @@ box_interface! {
     lifetime 'a,
 
     /// Dynamic dispatch all operations to a backend-specific implementation.
-    struct PersistImpl,
-
-    /// Interface to persist data to the store.
-    trait PersistInterface,
-
-    interface {
-        /// Persist a NEW action to the store.
-        fn action(&self, action: ActionRecord, span: Option<SpanContext>) -> Result<()>;
-    }
-}
-
-box_interface! {
-    lifetime 'a,
-
-    /// Dynamic dispatch all operations to a backend-specific implementation.
     struct TransactionImpl,
 
     /// Interface to transactional operations on the store.
@@ -207,9 +209,6 @@ box_interface! {
 
         /// Commit and invalidate the transaction.
         fn commit(&mut self) -> Result<()>;
-
-        /// Access the interface to persist data to the store.
-        fn persist(&mut self) -> PersistImpl;
 
         /// Rollback and invalidate the transaction.
         fn rollback(&mut self) -> Result<()>;

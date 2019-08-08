@@ -20,7 +20,6 @@ use crate::store::interface::ActionImpl;
 use crate::store::interface::ActionsImpl;
 use crate::store::interface::ConnectionImpl;
 use crate::store::interface::ConnectionInterface;
-use crate::store::interface::PersistImpl;
 use crate::store::interface::StoreInterface;
 use crate::store::interface::TransactionImpl;
 use crate::store::interface::TransactionInterface;
@@ -30,7 +29,6 @@ use crate::Result;
 
 mod action;
 mod actions;
-mod persist;
 
 struct Connection {
     connection: PooledConnection<SqliteConnectionManager>,
@@ -188,12 +186,6 @@ impl<'a> TransactionInterface for Transaction<'a> {
                 SQLITE_OP_ERRORS_COUNT.with_label_values(&["COMMIT"]).inc();
                 Error::from(error)
             })
-    }
-
-    fn persist(&mut self) -> PersistImpl {
-        let inner = self.tx();
-        let inner = self::persist::Persist::new(inner, self.tracer.clone());
-        PersistImpl::new(inner)
     }
 
     fn rollback(&mut self) -> Result<()> {

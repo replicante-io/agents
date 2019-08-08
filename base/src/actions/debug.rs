@@ -3,9 +3,13 @@ use slog::debug;
 
 use crate::actions::Action;
 use crate::actions::ActionDescriptor;
+use crate::actions::ActionRecord;
+use crate::actions::ActionState;
 use crate::actions::ActionValidity;
 use crate::actions::ACTIONS;
+use crate::store::Transaction;
 use crate::AgentContext;
+use crate::Result;
 
 /// Register debugging actions.
 pub fn register_debug_actions(context: &AgentContext) {
@@ -16,7 +20,7 @@ pub fn register_debug_actions(context: &AgentContext) {
 }
 
 /// Debugging action that always fails.
-struct Fail {}
+pub(super) struct Fail {}
 
 impl Action for Fail {
     fn describe(&self) -> ActionDescriptor {
@@ -26,20 +30,35 @@ impl Action for Fail {
         }
     }
 
+    fn invoke(&self, _: &mut Transaction, _: &ActionRecord) -> Result<()> {
+        panic!("TODO: Fail::invoke")
+    }
+
     fn validate_args(&self, _: &Json) -> ActionValidity {
         Ok(())
     }
 }
 
 /// Debugging action that progresses over time.
-struct Progress {}
+pub(super) struct Progress {}
 
 impl Action for Progress {
     fn describe(&self) -> ActionDescriptor {
         ActionDescriptor {
-            kind: "replicante.debug.process".into(),
+            kind: "replicante.debug.progress".into(),
             description: "Debugging action that progresses over time".into(),
         }
+    }
+
+    fn invoke(&self, tx: &mut Transaction, record: &ActionRecord) -> Result<()> {
+        // TODO: when added, go to success if ! new.
+        let next_state = ActionState::Running;
+        //let next_state = if record.state == ActionState::New {
+        //    ActionState::Running
+        //} else {
+        //    ActionState::Running
+        //};
+        tx.action().transition(record, next_state, None, None)
     }
 
     fn validate_args(&self, _: &Json) -> ActionValidity {
@@ -48,7 +67,7 @@ impl Action for Progress {
 }
 
 /// Debugging action that always succeed.
-struct Success {}
+pub(super) struct Success {}
 
 impl Action for Success {
     fn describe(&self) -> ActionDescriptor {
@@ -56,6 +75,10 @@ impl Action for Success {
             kind: "replicante.debug.success".into(),
             description: "Debugging action that always succeed".into(),
         }
+    }
+
+    fn invoke(&self, _: &mut Transaction, _: &ActionRecord) -> Result<()> {
+        panic!("TODO: Success::invoke")
     }
 
     fn validate_args(&self, _: &Json) -> ActionValidity {

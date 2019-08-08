@@ -66,7 +66,7 @@ pub fn schedule(
     let id = record.id;
     context
         .store
-        .with_transaction(|tx| tx.persist().action(record, span.context().clone()))
+        .with_transaction(|tx| tx.action().insert(record, span.context().clone()))
         .map_err(|error| fail_span(error, &mut span))?;
     Ok(HttpResponse::Ok().json(json!({ "id": id })))
 }
