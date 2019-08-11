@@ -8,6 +8,7 @@ use serde_json::Value as Json;
 use super::Iter;
 use crate::actions::ActionListItem;
 use crate::actions::ActionRecord;
+use crate::actions::ActionRecordHistory;
 use crate::actions::ActionState;
 use crate::Result;
 
@@ -155,6 +156,13 @@ box_interface! {
     interface {
         /// Fetch an action record by ID.
         fn get(&self, id: &str, span: Option<SpanContext>) -> Result<Option<ActionRecord>>;
+
+        /// Fetch an action record's transition history.
+        fn history(
+            &self,
+            id: &str,
+            span: Option<SpanContext>,
+        ) -> Result<Iter<ActionRecordHistory>>;
 
         /// Persist a NEW action to the store.
         fn insert(&self, action: ActionRecord, span: Option<SpanContext>) -> Result<()>;

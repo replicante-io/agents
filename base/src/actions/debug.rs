@@ -1,3 +1,4 @@
+use opentracingrust::Span;
 use serde_json::Value as Json;
 use slog::debug;
 
@@ -9,6 +10,7 @@ use crate::actions::ActionValidity;
 use crate::actions::ACTIONS;
 use crate::store::Transaction;
 use crate::AgentContext;
+use crate::ErrorKind;
 use crate::Result;
 
 /// Register debugging actions.
@@ -30,8 +32,9 @@ impl Action for Fail {
         }
     }
 
-    fn invoke(&self, _: &mut Transaction, _: &ActionRecord) -> Result<()> {
-        panic!("TODO: Fail::invoke")
+    fn invoke(&self, _: &mut Transaction, _: &ActionRecord, _: Option<&mut Span>) -> Result<()> {
+        let error = "triggered debugging action that fails".into();
+        Err(ErrorKind::FreeForm(error).into())
     }
 
     fn validate_args(&self, _: &Json) -> ActionValidity {
@@ -50,15 +53,23 @@ impl Action for Progress {
         }
     }
 
-    fn invoke(&self, tx: &mut Transaction, record: &ActionRecord) -> Result<()> {
-        // TODO: when added, go to success if ! new.
-        let next_state = ActionState::Running;
-        //let next_state = if record.state == ActionState::New {
-        //    ActionState::Running
-        //} else {
-        //    ActionState::Running
-        //};
-        tx.action().transition(record, next_state, None, None)
+    fn invoke(
+        &self,
+        tx: &mut Transaction,
+        record: &ActionRecord,
+        span: Option<&mut Span>,
+    ) -> Result<()> {
+        let next_state = if record.state == ActionState::New {
+            ActionState::Running
+        } else {
+            ActionState::Done
+        };
+        tx.action().transition(
+            record,
+            next_state,
+            None,
+            span.map(|span| span.context().clone()),
+        )
     }
 
     fn validate_args(&self, _: &Json) -> ActionValidity {
@@ -77,8 +88,18 @@ impl Action for Success {
         }
     }
 
-    fn invoke(&self, _: &mut Transaction, _: &ActionRecord) -> Result<()> {
-        panic!("TODO: Success::invoke")
+    fn invoke(
+        &self,
+        tx: &mut Transaction,
+        record: &ActionRecord,
+        span: Option<&mut Span>,
+    ) -> Result<()> {
+        tx.action().transition(
+            record,
+            ActionState::Done,
+            None,
+            span.map(|span| span.context().clone()),
+        )
     }
 
     fn validate_args(&self, _: &Json) -> ActionValidity {

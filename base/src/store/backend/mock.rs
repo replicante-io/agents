@@ -7,6 +7,7 @@ use opentracingrust::SpanContext;
 use serde_json::Value as Json;
 
 use crate::actions::ActionRecord;
+use crate::actions::ActionRecordHistory;
 use crate::actions::ActionState;
 use crate::store::interface::ActionImpl;
 use crate::store::interface::ActionInterface;
@@ -16,6 +17,7 @@ use crate::store::interface::ConnectionInterface;
 use crate::store::interface::StoreInterface;
 use crate::store::interface::TransactionImpl;
 use crate::store::interface::TransactionInterface;
+use crate::store::Iter;
 use crate::Result;
 
 #[derive(Clone)]
@@ -118,6 +120,10 @@ impl ActionInterface for Action {
         let state = self.state.lock().unwrap();
         let action = state.actions.get(id).cloned();
         Ok(action)
+    }
+
+    fn history(&self, _id: &str, _: Option<SpanContext>) -> Result<Iter<ActionRecordHistory>> {
+        panic!("TODO: MockStore::action::history")
     }
 
     fn insert(&self, action: ActionRecord, _: Option<SpanContext>) -> Result<()> {

@@ -9,8 +9,9 @@ use replicante_util_actixweb::APIFlags;
 use replicante_util_actixweb::RootDescriptor;
 use replicante_util_actixweb::TracingMiddleware;
 
-use super::ActionDescriptor;
-use super::ACTIONS;
+use crate::actions::actions_enabled;
+use crate::actions::ActionDescriptor;
+use crate::actions::ACTIONS;
 use crate::api::APIRoot;
 use crate::AgentContext;
 
@@ -23,16 +24,43 @@ fn available() -> impl Responder {
     HttpResponse::Ok().json(actions)
 }
 
+/// Static 2xx response to confirm the actions API is NOT enabled.
+fn index_disabled() -> impl Responder {
+    HttpResponse::Ok().json(json!({"actions": false}))
+}
+
 /// Static 2xx response to confirm the actions API is enabled.
-fn index() -> impl Responder {
+fn index_enabled() -> impl Responder {
     HttpResponse::Ok().json(json!({"actions": true}))
 }
 
 /// Configure the API server with actions API.
-pub fn configure_app(context: &AgentContext, flags: &APIFlags, app: &mut web::ServiceConfig) {
+pub fn configure_app(flags: &APIFlags, app: &mut web::ServiceConfig, context: &AgentContext) {
+    if actions_enabled(&context.config).unwrap_or(false) {
+        configure_enabled(flags, app, context)
+    } else {
+        configure_disabled(flags, app)
+    }
+}
+
+/// Configure the API server with actions API disabled.
+fn configure_disabled(flags: &APIFlags, app: &mut web::ServiceConfig) {
+    APIRoot::UnstableAPI.and_then(flags, |root| {
+        app.service(
+            root.resource("/actions")
+                .route(web::get().to(index_disabled)),
+        );
+    });
+}
+
+/// Configure the API server with actions API enabled.
+fn configure_enabled(flags: &APIFlags, app: &mut web::ServiceConfig, context: &AgentContext) {
     APIRoot::UnstableAPI.and_then(flags, |root| {
         let tracer = Arc::clone(&context.tracer);
-        app.service(root.resource("/actions").route(web::get().to(index)));
+        app.service(
+            root.resource("/actions")
+                .route(web::get().to(index_enabled)),
+        );
         app.service(
             root.resource("/actions/available")
                 .route(web::get().to(available)),
@@ -71,5 +99,5 @@ pub fn configure_app(context: &AgentContext, flags: &APIFlags, app: &mut web::Se
                 ))
                 .route(web::post().to(action::schedule)),
         );
-    })
+    });
 }

@@ -12,6 +12,7 @@ use replicante_util_actixweb::request_span;
 use replicante_util_tracing::fail_span;
 
 use crate::actions::ActionRecord;
+use crate::actions::ActionRecordHistory;
 use crate::actions::ActionRequester;
 use crate::actions::ACTIONS;
 use crate::AgentContext;
@@ -22,7 +23,7 @@ use crate::ErrorKind;
 #[derive(Clone, PartialEq, Debug, Serialize, Deserialize)]
 pub struct ActionInfo {
     action: ActionRecord,
-    // TODO: add action history.
+    history: Vec<ActionRecordHistory>,
 }
 
 /// Fetch an action details.
@@ -33,16 +34,27 @@ pub fn info(id: web::Path<String>, request: HttpRequest) -> Result<impl Responde
     let id = id.into_inner();
     let mut exts = request.extensions_mut();
     let mut span = request_span(&mut exts);
-    let action = context
+    let info = context
         .store
-        .with_transaction(|tx| tx.action().get(&id, span.context().clone()))
+        .with_transaction(|tx| {
+            let action = tx.action().get(&id, span.context().clone())?;
+            let action = match action {
+                None => return Ok(None),
+                Some(action) => action,
+            };
+            let iter = tx.action().history(&id, span.context().clone())?;
+            let mut history = Vec::new();
+            for item in iter {
+                history.push(item?);
+            }
+            let info = ActionInfo { action, history };
+            Ok(Some(info))
+        })
         .map_err(|error| fail_span(error, &mut span))?;
-    let action = match action {
-        None => return Ok(HttpResponse::NotFound().finish()),
-        Some(action) => action,
-    };
-    let info = ActionInfo { action };
-    Ok(HttpResponse::Ok().json(info))
+    match info {
+        None => Ok(HttpResponse::NotFound().finish()),
+        Some(info) => Ok(HttpResponse::Ok().json(info)),
+    }
 }
 
 /// Attempt to schedule an action.

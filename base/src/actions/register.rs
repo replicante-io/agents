@@ -279,6 +279,7 @@ impl Iterator for Iter {
 
 #[cfg(test)]
 mod tests {
+    use opentracingrust::Span;
     use serde_json::Value as Json;
 
     use super::super::Action;
@@ -299,7 +300,12 @@ mod tests {
             }
         }
 
-        fn invoke(&self, _: &mut Transaction, _: &ActionRecord) -> Result<()> {
+        fn invoke(
+            &self,
+            _: &mut Transaction,
+            _: &ActionRecord,
+            _: Option<&mut Span>,
+        ) -> Result<()> {
             panic!("TODO: MockAction::invoke")
         }
 
@@ -317,7 +323,12 @@ mod tests {
             }
         }
 
-        fn invoke(&self, _: &mut Transaction, _: &ActionRecord) -> Result<()> {
+        fn invoke(
+            &self,
+            _: &mut Transaction,
+            _: &ActionRecord,
+            _: Option<&mut Span>,
+        ) -> Result<()> {
             panic!("TODO: ReservedAction::invoke")
         }
 
@@ -335,7 +346,12 @@ mod tests {
             }
         }
 
-        fn invoke(&self, _: &mut Transaction, _: &ActionRecord) -> Result<()> {
+        fn invoke(
+            &self,
+            _: &mut Transaction,
+            _: &ActionRecord,
+            _: Option<&mut Span>,
+        ) -> Result<()> {
             panic!("TODO: UnscopedAction::invoke")
         }
 

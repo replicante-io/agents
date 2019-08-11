@@ -6,6 +6,7 @@ use actix_web::web;
 use actix_web::App;
 use actix_web::HttpResponse;
 use failure::Fail;
+use opentracingrust::Span;
 use serde_json::json;
 use serde_json::Value as Json;
 
@@ -29,7 +30,7 @@ impl Action for TestAction {
         }
     }
 
-    fn invoke(&self, _: &mut Transaction, _: &ActionRecord) -> Result<()> {
+    fn invoke(&self, _: &mut Transaction, _: &ActionRecord, _: Option<&mut Span>) -> Result<()> {
         panic!("TODO: TestAction::invoke")
     }
 

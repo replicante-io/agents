@@ -25,11 +25,8 @@ const ACTIONS_FINISHED_SQL: &str = r#"
 SELECT
     action, id, state
 FROM actions
-WHERE
-    state == '"SUCCESS"'
-    OR state == '"FAILED"'
-    OR state == '"CANCELLED"'
-ORDER BY created_ts ASC
+WHERE finished_ts IS NOT NULL
+ORDER BY created_ts DESC
 -- Limit result as a form of blast radius containment from bugs or overload.
 -- There really should not be many finished actions still on the agent DB.
 LIMIT 100;
@@ -39,10 +36,7 @@ const ACTIONS_QUEUE_SQL: &str = r#"
 SELECT
     action, id, state
 FROM actions
-WHERE
-    state != '"SUCCESS"'
-    AND state != '"FAILED"'
-    AND state != '"CANCELLED"'
+WHERE finished_ts IS NULL
 ORDER BY created_ts ASC
 -- Limit result as a form of blast radius containment in case of bugs.
 -- There really should not be many running/pending actions on an agent.

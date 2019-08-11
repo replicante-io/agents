@@ -1,3 +1,6 @@
+use std::collections::HashMap;
+use std::collections::HashSet;
+
 use slog::debug;
 use slog::info;
 use slog::warn;
@@ -9,7 +12,6 @@ use crate::AgentContext;
 use crate::ErrorKind;
 use crate::Result;
 
-mod actions_api;
 #[cfg(any(debug_assertions, test))]
 mod debug;
 mod definition;
@@ -23,12 +25,42 @@ pub use self::definition::Action;
 pub use self::definition::ActionDescriptor;
 pub use self::definition::ActionListItem;
 pub use self::definition::ActionRecord;
+pub use self::definition::ActionRecordHistory;
 pub use self::definition::ActionRequester;
 pub use self::definition::ActionState;
 pub use self::definition::ActionValidity;
 pub use self::definition::ActionValidityError;
 pub use self::register::ActionsRegister;
 pub use self::register::ACTIONS;
+
+lazy_static::lazy_static! {
+    /// Codified version of the state transitions from docs/docs/assets/action-states.dot
+    static ref ALLOWED_TRANSITIONS: HashMap<ActionState, HashSet<ActionState>> = {
+        let mut transitions = HashMap::new();
+        transitions.insert(ActionState::New, {
+            let mut allowed = HashSet::new();
+            allowed.insert(ActionState::Cancel);
+            allowed.insert(ActionState::Done);
+            allowed.insert(ActionState::Failed);
+            allowed.insert(ActionState::Running);
+            allowed
+        });
+        transitions.insert(ActionState::Cancel, {
+            let mut allowed = HashSet::new();
+            allowed.insert(ActionState::Cancelled);
+            allowed.insert(ActionState::Failed);
+            allowed
+        });
+        transitions.insert(ActionState::Running, {
+            let mut allowed = HashSet::new();
+            allowed.insert(ActionState::Done);
+            allowed.insert(ActionState::Failed);
+            allowed.insert(ActionState::Running);
+            allowed
+        });
+        transitions
+    };
+}
 
 /// Checks if agent actions are enabled.
 ///
@@ -57,6 +89,23 @@ pub fn actions_enabled(config: &Config) -> Result<bool> {
     Ok(mutual_tls)
 }
 
+/// Ensure the action state transition is allowed.
+///
+/// # Panics
+/// If the state transition is not allowed this function panics.
+pub fn ensure_transition_allowed(from: &ActionState, to: &ActionState) {
+    let allowed = ALLOWED_TRANSITIONS
+        .get(from)
+        .map(|from| from.contains(to))
+        .unwrap_or(false);
+    if !allowed {
+        panic!(
+            "actions are not allowed to transition from {:?} to {:?}",
+            from, to
+        );
+    }
+}
+
 /// Initialise the actions system based on configuration.
 pub fn initialise(context: &mut AgentContext, upkeep: &mut Upkeep) -> Result<()> {
     let enabled = actions_enabled(&context.config)?;
@@ -66,10 +115,6 @@ pub fn initialise(context: &mut AgentContext, upkeep: &mut Upkeep) -> Result<()>
     }
 
     debug!(context.logger, "Initialising actions system ...");
-    let flags = context.config.api.trees.clone().into();
-    context
-        .api_addons
-        .register(move |app, context| actions_api::configure_app(context, &flags, app));
     register_std_actions(context);
     ACTIONS::complete_registration();
     debug!(context.logger, "Actions registration phase completed");

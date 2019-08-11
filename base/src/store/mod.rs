@@ -12,8 +12,10 @@ pub use self::backend::backend_factory;
 
 use self::interface::StoreImpl;
 use self::interface::TransactionImpl;
+use crate::actions::ensure_transition_allowed;
 use crate::actions::ActionListItem;
 use crate::actions::ActionRecord;
+use crate::actions::ActionRecordHistory;
 use crate::actions::ActionState;
 use crate::Result;
 
@@ -29,6 +31,14 @@ impl<'a> Action<'a> {
         S: Into<Option<SpanContext>>,
     {
         self.inner.get(id, span.into())
+    }
+
+    /// Fetch an action record's transition history.
+    pub fn history<S>(&self, id: &str, span: S) -> Result<Iter<ActionRecordHistory>>
+    where
+        S: Into<Option<SpanContext>>,
+    {
+        self.inner.history(id, span.into())
     }
 
     /// Persist a NEW action to the store.
@@ -74,7 +84,7 @@ impl<'a> Action<'a> {
         P: Into<Option<Json>>,
         S: Into<Option<SpanContext>>,
     {
-        // TODO: validate state transition.
+        ensure_transition_allowed(&action.state, &transition_to);
         self.inner
             .transition(action, transition_to, payload.into(), span.into())
     }
@@ -199,5 +209,42 @@ impl<'a> Transaction<'a> {
     /// Rollback and consume the transaction.
     pub fn rollback(mut self) -> Result<()> {
         self.inner.rollback()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use serde_json::json;
+
+    use super::Store;
+    use crate::actions::ActionRecord;
+    use crate::actions::ActionRequester;
+    use crate::actions::ActionState;
+
+    #[test]
+    #[should_panic(expected = "actions are not allowed to transition from New to Cancelled")]
+    fn transition_forbidden() {
+        let record = ActionRecord::new("test", json!(null), ActionRequester::Api);
+        let store = Store::mock();
+        store
+            .with_transaction(|tx| {
+                tx.action().insert(record.clone(), None)?;
+                tx.action()
+                    .transition(&record, ActionState::Cancelled, None, None)
+            })
+            .unwrap();
+    }
+
+    #[test]
+    fn transition_success() {
+        let record = ActionRecord::new("test", json!(null), ActionRequester::Api);
+        let store = Store::mock();
+        store
+            .with_transaction(|tx| {
+                tx.action().insert(record.clone(), None)?;
+                tx.action()
+                    .transition(&record, ActionState::Done, None, None)
+            })
+            .unwrap();
     }
 }

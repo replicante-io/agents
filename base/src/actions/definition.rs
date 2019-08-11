@@ -6,6 +6,7 @@ use actix_web::ResponseError;
 use chrono::DateTime;
 use chrono::Utc;
 use failure::Fail;
+use opentracingrust::Span;
 use serde_derive::Deserialize;
 use serde_derive::Serialize;
 use serde_json::json;
@@ -30,8 +31,13 @@ pub trait Action: Send + Sync + 'static {
     /// Action metadata and attributes.
     fn describe(&self) -> ActionDescriptor;
 
-    /// TODO
-    fn invoke(&self, tx: &mut Transaction, record: &ActionRecord) -> Result<()>;
+    /// Invoke the action to advance the given `ActionRecord`.
+    fn invoke(
+        &self,
+        tx: &mut Transaction,
+        record: &ActionRecord,
+        span: Option<&mut Span>,
+    ) -> Result<()>;
 
     /// Validate the arguments passed to an action request.
     fn validate_args(&self, args: &Json) -> ActionValidity;
@@ -88,7 +94,11 @@ pub struct ActionRecord {
 }
 
 impl ActionRecord {
-    pub fn new(action: String, args: Json, requester: ActionRequester) -> ActionRecord {
+    pub fn new<S>(action: S, args: Json, requester: ActionRequester) -> ActionRecord
+    where
+        S: Into<String>,
+    {
+        let action = action.into();
         ActionRecord {
             action,
             agent_version: env!("CARGO_PKG_VERSION").to_string(),
@@ -103,10 +113,26 @@ impl ActionRecord {
     }
 }
 
+/// Transition history records for actions.
+#[derive(Clone, PartialEq, Debug, Serialize, Deserialize)]
+pub struct ActionRecordHistory {
+    /// ID of the action that transitioned.
+    pub action_id: Uuid,
+
+    /// Time the agent transitioned into this state.
+    pub timestamp: DateTime<Utc>,
+
+    /// State the action is currently in.
+    pub state: ActionState,
+
+    /// Optional payload attached to the current state.
+    pub state_payload: Option<Json>,
+}
+
 /// Entity (system, user, ...) that requested the action to be performed.
 #[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "UPPERCASE")]
 pub enum ActionRequester {
-    #[serde(rename = "API")]
     Api,
 }
 
@@ -114,6 +140,15 @@ pub enum ActionRequester {
 #[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
 #[serde(rename_all = "UPPERCASE")]
 pub enum ActionState {
+    /// The action is to be cancelled, but that has not happened yet.
+    Cancel,
+
+    /// The action was successfully cancelled.
+    Cancelled,
+
+    /// The action was successfully completed.
+    Done,
+
     /// The action ended with an error.
     Failed,
 
@@ -128,6 +163,8 @@ impl ActionState {
     /// True if the action is finished (failed or succeeded).
     pub fn is_finished(&self) -> bool {
         match self {
+            ActionState::Cancelled => true,
+            ActionState::Done => true,
             ActionState::Failed => true,
             _ => false,
         }

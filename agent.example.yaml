@@ -1,5 +1,18 @@
 # Datastore independent agent configuration.
 agent:
+  # The section below is for agent actions configuration.
+  actions:
+    # Enable/disable agent actions.
+    #
+    # Actions can only be enable if the API server is secured with HTTPS certificates.
+    # See the `agent.api.tls` for HTTPS configuration options.
+    # If the actions system is enabled but HTTPS is not configured for mutual authentication
+    # the agent process will refuse to start.
+    #
+    # By default the actions system is disabled unless HTTPS with mutual authentication is enabled.
+    # When HTTPS with manual authentication is enabled the actions system is automatically enabled.
+    enabled: ~
+
   # The section below is for the API interface configuration.
   api:
     # The network interface and port to bind the API server onto.

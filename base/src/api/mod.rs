@@ -18,6 +18,7 @@ use replicante_util_actixweb::RootDescriptor;
 use replicante_util_actixweb::SentryMiddleware;
 use replicante_util_upkeep::Upkeep;
 
+mod actions;
 mod agent;
 mod index;
 mod introspect;
@@ -74,6 +75,7 @@ fn configure_app(agent: Arc<dyn Agent>, context: AgentContext) -> impl Fn(&mut w
         }
 
         // Mount other roots.
+        actions::configure_app(&flags, app, &context);
         agent::configure_app(&flags, app, Arc::clone(&agent), &context);
         introspect::configure_app(&context, &flags, app);
         context.api_addons.configure_app(app, &context);
