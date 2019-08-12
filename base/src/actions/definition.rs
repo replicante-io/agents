@@ -6,7 +6,12 @@ use actix_web::ResponseError;
 use chrono::DateTime;
 use chrono::Utc;
 use failure::Fail;
+use failure::ResultExt;
+use opentracingrust::ExtractFormat;
+use opentracingrust::InjectFormat;
 use opentracingrust::Span;
+use opentracingrust::SpanContext;
+use opentracingrust::Tracer;
 use serde_derive::Deserialize;
 use serde_derive::Serialize;
 use serde_json::json;
@@ -14,6 +19,7 @@ use serde_json::Value as Json;
 use uuid::Uuid;
 
 use crate::store::Transaction;
+use crate::ErrorKind;
 use crate::Result;
 
 /// Abstraction of any action the agent can perform.
@@ -94,6 +100,7 @@ pub struct ActionRecord {
 }
 
 impl ActionRecord {
+    /// Initialise a new action to be executed.
     pub fn new<S>(action: S, args: Json, requester: ActionRequester) -> ActionRecord
     where
         S: Into<String>,
@@ -110,6 +117,26 @@ impl ActionRecord {
             state: ActionState::New,
             state_payload: None,
         }
+    }
+
+    /// Extract the tracing context, if any is available.
+    pub fn trace_get(&self, tracer: &Tracer) -> Result<Option<SpanContext>> {
+        let format = ExtractFormat::TextMap(Box::new(&self.headers));
+        let context = tracer
+            .extract(format)
+            .map_err(failure::SyncFailure::new)
+            .with_context(|_| ErrorKind::ActionDecode)?;
+        Ok(context)
+    }
+
+    /// Set the tracing context on the action record for propagation.
+    pub fn trace_set(&mut self, context: &SpanContext, tracer: &Tracer) -> Result<()> {
+        let format = InjectFormat::TextMap(Box::new(&mut self.headers));
+        tracer
+            .inject(context, format)
+            .map_err(failure::SyncFailure::new)
+            .with_context(|_| ErrorKind::ActionEncode)?;
+        Ok(())
     }
 }
 

@@ -79,6 +79,20 @@ impl Engine {
             if let Some(span) = span.as_mut() {
                 span.tag("action.kind", record.action.clone());
                 span.tag("action.id", record.id.to_string());
+                match record.trace_get(&self.context.tracer) {
+                    Ok(None) => (),
+                    Ok(Some(context)) => span.follows(context),
+                    Err(error) => {
+                        capture_fail!(
+                            &error,
+                            self.context.logger,
+                            "Failed to extract tracing context from action record";
+                            failure_info(&error),
+                            "id" => %&record.id,
+                            "kind" => &record.action,
+                        );
+                    }
+                };
             }
             ACTION_COUNT.with_label_values(&[&record.action]).inc();
             let action = match ACTIONS::get(&record.action) {

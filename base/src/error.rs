@@ -73,7 +73,10 @@ where
 /// Exhaustive list of possible errors emitted by this crate.
 #[derive(Debug, Fail)]
 pub enum ErrorKind {
-    #[fail(display = "unable with encode action information")]
+    #[fail(display = "unable to decode action information")]
+    ActionDecode,
+
+    #[fail(display = "unable to encode action information")]
     ActionEncode,
 
     #[fail(display = "actions with kind {} are not available", _0)]
@@ -141,6 +144,7 @@ pub enum ErrorKind {
 impl ErrorKind {
     fn http_status(&self) -> StatusCode {
         match self {
+            ErrorKind::ActionEncode => StatusCode::BAD_REQUEST,
             ErrorKind::ActionNotAvailable(_) => StatusCode::BAD_REQUEST,
             _ => StatusCode::INTERNAL_SERVER_ERROR,
         }
@@ -148,6 +152,7 @@ impl ErrorKind {
 
     fn kind_name(&self) -> Option<&str> {
         let name = match self {
+            ErrorKind::ActionDecode => "ActionDecode",
             ErrorKind::ActionEncode => "ActionEncode",
             ErrorKind::ActionNotAvailable(_) => "ActionNotAvailable",
             ErrorKind::ConfigClash(_) => "ConfigClash",
