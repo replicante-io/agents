@@ -13,6 +13,18 @@ agent:
     # When HTTPS with manual authentication is enabled the actions system is automatically enabled.
     enabled: ~
 
+    # Delay, in seconds, between action executions.
+    execute_interval: 1
+
+    # Delay, in seconds, between historical action prune cycles.
+    prune_interval: 3600
+
+    # Number of finished actions to keep as history.
+    prune_keep: 100
+
+    # Number of finished actions to prune from the history in one cycle.
+    prune_limit: 500
+
   # The section below is for the API interface configuration.
   api:
     # The network interface and port to bind the API server onto.

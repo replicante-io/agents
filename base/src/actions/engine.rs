@@ -3,6 +3,7 @@ use std::ops::DerefMut;
 use std::sync::Arc;
 use std::thread;
 use std::time::Duration;
+use std::time::Instant;
 
 use failure::ResultExt;
 use humthreads::Builder;
@@ -23,6 +24,7 @@ use crate::actions::ACTIONS;
 use crate::metrics::ACTION_COUNT;
 use crate::metrics::ACTION_DURATION;
 use crate::metrics::ACTION_ERRORS;
+use crate::metrics::ACTION_PRUNE_DURATION;
 use crate::store::Transaction;
 use crate::AgentContext;
 use crate::Error;
@@ -35,9 +37,14 @@ pub fn spawn(context: AgentContext, upkeep: &mut Upkeep) -> Result<()> {
         .full_name("replicante:base:actions:engine")
         .spawn(move |scope| {
             let logger = context.logger.clone();
+            let execute_interval = Duration::from_secs(context.config.actions.execute_interval);
+            let prune_interval = Duration::from_secs(context.config.actions.prune_interval);
             let engine = Engine::new(context);
+            // Initialise last_prune to 2 * prune_interval ago to prune after start.
+            let mut last_prune = Instant::now() - (2 * prune_interval);
             scope.activity("waiting to poll for actions");
             while !scope.should_shutdown() {
+                let _activity = scope.scoped_activity("handling actions");
                 if let Err(error) = engine.poll() {
                     capture_fail!(
                         &error,
@@ -46,7 +53,19 @@ pub fn spawn(context: AgentContext, upkeep: &mut Upkeep) -> Result<()> {
                         failure_info(&error),
                     );
                 }
-                thread::sleep(Duration::from_secs(1));
+                if last_prune.elapsed() > prune_interval {
+                    last_prune = Instant::now();
+                    let _activity = scope.scoped_activity("pruning actions history");
+                    if let Err(error) = engine.clean() {
+                        capture_fail!(
+                            &error,
+                            logger,
+                            "Error while cleaning up historic actions";
+                            failure_info(&error),
+                        );
+                    }
+                }
+                thread::sleep(execute_interval);
             }
         })
         .with_context(|_| ErrorKind::ThreadSpawn("actions engine"))?;
@@ -62,6 +81,17 @@ struct Engine {
 impl Engine {
     pub fn new(context: AgentContext) -> Engine {
         Engine { context }
+    }
+
+    /// Perform historic actions cleanup to prevent endless DB growth.
+    pub fn clean(&self) -> Result<()> {
+        debug!(self.context.logger, "Pruning actions history");
+        let keep = self.context.config.actions.prune_keep;
+        let limit = self.context.config.actions.prune_limit;
+        let _timer = ACTION_PRUNE_DURATION.start_timer();
+        self.context
+            .store
+            .with_transaction(|tx| tx.actions().prune(keep, limit, None))
     }
 
     /// Looks for running or pending actions and processes them.

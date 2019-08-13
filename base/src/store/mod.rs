@@ -111,6 +111,14 @@ impl<'a> Actions<'a> {
     {
         self.inner.queue(span.into())
     }
+
+    /// Prune finished historic actions to prevent endless DB growth.
+    pub fn prune<S>(&self, keep: u32, limit: u32, span: S) -> Result<()>
+    where
+        S: Into<Option<SpanContext>>,
+    {
+        self.inner.prune(keep, limit, span.into())
+    }
 }
 
 /// Iterator over store results.

@@ -3,6 +3,7 @@ use std::str::FromStr;
 use failure::ResultExt;
 use opentracingrust::SpanContext;
 use opentracingrust::StartOptions;
+use rusqlite::params;
 use rusqlite::Statement;
 use rusqlite::NO_PARAMS;
 use uuid::Uuid;
@@ -41,6 +42,21 @@ ORDER BY created_ts ASC
 -- Limit result as a form of blast radius containment in case of bugs.
 -- There really should not be many running/pending actions on an agent.
 LIMIT 100;
+"#;
+const ACTIONS_PRUNE: &str = "action.prune";
+const ACTIONS_PRUNE_SQL: &str = r#"
+DELETE FROM actions
+WHERE id IN (
+    SELECT id
+    FROM actions
+    WHERE finished_ts IS NOT NULL
+    ORDER BY finished_ts DESC
+    -- Limit result as a form of blast radius containment in case of bugs.
+    -- There really should not be many finished actions to clean up on an agent.
+    LIMIT ?1
+    -- Keep some history in the DB for sync with Core.
+    OFFSET ?2
+);
 "#;
 
 /// Helper macro to avoid writing the same match every time.
@@ -148,5 +164,37 @@ impl<'a, 'b: 'a> ActionsInterface for Actions<'a, 'b> {
             SQLITE_OP_ERRORS_COUNT.with_label_values(&["SELECT"]).inc();
             error
         })
+    }
+
+    fn prune(&self, keep: u32, limit: u32, span: Option<SpanContext>) -> Result<()> {
+        let _span = self.tracer.with(|tracer| {
+            let mut opts = StartOptions::default();
+            if let Some(context) = span {
+                opts = opts.child_of(context);
+            }
+            let mut span = tracer.span_with_options("store.sqlite.delete", opts);
+            span.tag("sql", ACTIONS_PRUNE_SQL);
+            span.auto_finish()
+        });
+        SQLITE_OPS_COUNT.with_label_values(&["DELETE"]).inc();
+        let _timer = SQLITE_OPS_DURATION
+            .with_label_values(&["DELETE"])
+            .start_timer();
+        let mut statement = self
+            .inner
+            .prepare_cached(ACTIONS_PRUNE_SQL)
+            .with_context(|_| ErrorKind::PersistentWrite(ACTIONS_PRUNE))
+            .map_err(|error| {
+                SQLITE_OP_ERRORS_COUNT.with_label_values(&["DELETE"]).inc();
+                error
+            })?;
+        statement
+            .execute(params![limit, keep])
+            .with_context(|_| ErrorKind::PersistentWrite(ACTIONS_PRUNE))
+            .map_err(|error| {
+                SQLITE_OP_ERRORS_COUNT.with_label_values(&["DELETE"]).inc();
+                error
+            })?;
+        Ok(())
     }
 }

@@ -196,6 +196,9 @@ box_interface! {
 
         /// Iterate over running and pending actions.
         fn queue(&self, span: Option<SpanContext>) -> Result<Iter<ActionListItem>>;
+
+        /// Prune finished historic actions to prevent endless DB growth.
+        fn prune(&self, keep: u32, limit: u32, span: Option<SpanContext>) -> Result<()>;
     }
 }
 
