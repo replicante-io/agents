@@ -12,10 +12,9 @@ use crate::AgentContext;
 use crate::ErrorKind;
 use crate::Result;
 
-#[cfg(any(debug_assertions, test))]
-mod debug;
 mod definition;
 mod engine;
+mod impls;
 mod register;
 #[cfg(test)]
 mod tests;
@@ -115,18 +114,11 @@ pub fn initialise(context: &mut AgentContext, upkeep: &mut Upkeep) -> Result<()>
     }
 
     debug!(context.logger, "Initialising actions system ...");
-    register_std_actions(context);
+    self::impls::register_std_actions(context);
     ACTIONS::complete_registration();
     debug!(context.logger, "Actions registration phase completed");
 
     self::engine::spawn(context.clone(), upkeep)?;
     info!(context.logger, "Actions system initialised");
     Ok(())
-}
-
-/// Register standard agent actions.
-fn register_std_actions(context: &AgentContext) {
-    debug!(context.logger, "Registering standard actions");
-    #[cfg(any(debug_assertions, test))]
-    self::debug::register_debug_actions(context);
 }

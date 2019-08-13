@@ -1,3 +1,4 @@
+use std::sync::mpsc::sync_channel;
 use std::sync::Arc;
 
 use actix_web::middleware;
@@ -5,6 +6,7 @@ use actix_web::web;
 use actix_web::App;
 use actix_web::HttpServer;
 use failure::ResultExt;
+use futures::future::Future;
 use humthreads::Builder;
 use openssl::ssl::SslAcceptor;
 use openssl::ssl::SslFiletype;
@@ -95,6 +97,7 @@ where
     A: Agent + 'static,
 {
     let agent: Arc<dyn Agent> = Arc::new(agent);
+    let (send_server, receive_server) = sync_channel(0);
     let thread = Builder::new("r:b:api")
         .full_name("replicante:base:api")
         .spawn(move |scope| {
@@ -170,10 +173,22 @@ where
 
             // Start HTTP server and block until shutdown.
             info!(logger, "Starting API server"; "bind" => &config.bind);
-            scope.activity("running https://actix.rs/ HTTP server");
-            server.run().expect("unable to start API server");
+            scope.activity("running https://actix.rs/ HTTP(S) server");
+            let runner = actix_rt::System::new("replicante:base:api");
+            let system = actix_rt::System::current();
+            send_server
+                .send((server.start(), system))
+                .expect("unable to send back server handle");
+            runner.run().expect("unable to run API server");
         })
         .with_context(|_| ErrorKind::ThreadSpawn("api server"))?;
     upkeep.register_thread(thread);
+    let (server, system) = receive_server
+        .recv()
+        .with_context(|_| ErrorKind::Initialisation("failed to spawn API server".into()))?;
+    upkeep.on_shutdown(move || {
+        let _ = server.stop(true).wait();
+        system.stop();
+    });
     Ok(())
 }

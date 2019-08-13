@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [Unreleased]
 ### Added
 - Action definition.
+- Action engine.
 - Actions register.
 - API over HTTPS with optional client authentication.
 - DevTool: TLS certificates generation scripts.

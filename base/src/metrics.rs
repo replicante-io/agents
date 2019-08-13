@@ -2,8 +2,8 @@ use lazy_static::lazy_static;
 use prometheus::Counter;
 use prometheus::CounterVec;
 use prometheus::Gauge;
-use prometheus::HistogramOpts;
 use prometheus::Histogram;
+use prometheus::HistogramOpts;
 use prometheus::HistogramVec;
 use prometheus::Opts;
 use slog::debug;
@@ -34,12 +34,10 @@ lazy_static! {
         &["action"],
     )
     .expect("Failed to create ACTION_ERRORS histogram");
-    pub static ref ACTION_PRUNE_DURATION: Histogram = Histogram::with_opts(
-        HistogramOpts::new(
-            "repliagent_action_prune_duration",
-            "Duration (in seconds) of actions DB pruning"
-        ),
-    )
+    pub static ref ACTION_PRUNE_DURATION: Histogram = Histogram::with_opts(HistogramOpts::new(
+        "repliagent_action_prune_duration",
+        "Duration (in seconds) of actions DB pruning"
+    ))
     .expect("Failed to create ACTION_DURATION histogram");
     pub static ref REQUESTS: MetricsCollector = MetricsCollector::new("repliagent");
     pub static ref SQLITE_CONNECTION_ERRORS: Counter = Counter::new(

@@ -22,7 +22,7 @@ pub fn register_debug_actions(context: &AgentContext) {
 }
 
 /// Debugging action that always fails.
-pub(super) struct Fail {}
+pub(crate) struct Fail {}
 
 impl Action for Fail {
     fn describe(&self) -> ActionDescriptor {
@@ -43,7 +43,7 @@ impl Action for Fail {
 }
 
 /// Debugging action that progresses over time.
-pub(super) struct Progress {}
+pub(crate) struct Progress {}
 
 impl Action for Progress {
     fn describe(&self) -> ActionDescriptor {
@@ -78,7 +78,7 @@ impl Action for Progress {
 }
 
 /// Debugging action that always succeed.
-pub(super) struct Success {}
+pub(crate) struct Success {}
 
 impl Action for Success {
     fn describe(&self) -> ActionDescriptor {

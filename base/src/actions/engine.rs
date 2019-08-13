@@ -199,7 +199,7 @@ mod tests {
 
     use replicante_util_failure::SerializableFail;
 
-    use super::super::debug::Progress;
+    use super::super::impls::debug::Progress;
     use super::Engine;
     use crate::actions::ActionRecord;
     use crate::actions::ActionRequester;
