@@ -181,7 +181,7 @@ impl ACTIONS {
         ACTIVE_REG.with(|local| {
             let original = local.borrow_mut().take();
             *local.borrow_mut() = Some(register);
-            let rv = panic::catch_unwind(panic::AssertUnwindSafe(|| block()));
+            let rv = panic::catch_unwind(panic::AssertUnwindSafe(block));
             let register = local.borrow_mut().take();
             *local.borrow_mut() = original;
             match rv {

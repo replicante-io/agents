@@ -52,7 +52,7 @@ serde_json = "^1.0.8"
 serde_yaml = "^0.8.0"
 slog = "^2.2.3"
 slog-scope = "^4.0.1"
-slog-stdlog = "^3.0.2"
+slog-stdlog = "^4.0.0"
 uuid = { version = "0.7", features = ["serde", "v4"] }
 
 replicante_logging = { path = "../common/logging", version = "0.1.3" }

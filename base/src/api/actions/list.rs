@@ -19,7 +19,8 @@ pub fn finished(request: HttpRequest) -> Result<impl Responder> {
         .store
         .with_transaction(|tx| {
             let mut actions = Vec::new();
-            for action in tx.actions().finished(span.context().clone())? {
+            let iter = tx.actions().finished(span.context().clone())?;
+            for action in iter {
                 actions.push(action?);
             }
             Ok(actions)
