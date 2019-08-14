@@ -49,7 +49,7 @@ pub fn info(id: web::Path<String>, request: HttpRequest) -> Result<impl Responde
         .expect("AgentContext must be available as App::data");
     let id = id.into_inner();
     let mut exts = request.extensions_mut();
-    let mut span = request_span(&mut exts);
+    let span = request_span(&mut exts);
     let info = context
         .store
         .with_transaction(|tx| {
@@ -66,7 +66,7 @@ pub fn info(id: web::Path<String>, request: HttpRequest) -> Result<impl Responde
             let info = ActionInfo { action, history };
             Ok(Some(info))
         })
-        .map_err(|error| fail_span(error, &mut span))?;
+        .map_err(|error| fail_span(error, span))?;
     match info {
         None => Ok(HttpResponse::NotFound().finish()),
         Some(info) => Ok(HttpResponse::Ok().json(info)),
@@ -83,12 +83,12 @@ pub fn schedule(
         .app_data::<AgentContext>()
         .expect("AgentContext must be available as App::data");
     let mut exts = request.extensions_mut();
-    let mut span = request_span(&mut exts);
+    let span = request_span(&mut exts);
     let kind = kind.into_inner();
     let action = ACTIONS::get(&kind)
         .ok_or_else(|| ErrorKind::ActionNotAvailable(kind.clone()))
         .map_err(Error::from)
-        .map_err(|error| fail_span(error, &mut span))?;
+        .map_err(|error| fail_span(error, &mut *span))?;
     action.validate_args(&args)?;
     let mut record = ActionRecord::new(kind, args.into_inner(), ActionRequester::Api);
     for (name, value) in request.headers() {
@@ -109,6 +109,6 @@ pub fn schedule(
     context
         .store
         .with_transaction(|tx| tx.action().insert(record, span.context().clone()))
-        .map_err(|error| fail_span(error, &mut span))?;
+        .map_err(|error| fail_span(error, span))?;
     Ok(HttpResponse::Ok().json(json!({ "id": id })))
 }

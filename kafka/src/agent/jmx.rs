@@ -67,7 +67,7 @@ impl KafkaJmx {
             span.child_of(parent.context().clone());
             span.tag("service", "jmx");
             self.reconnect_if_needed(&mut span)
-                .map_err(|error| fail_span(error, &mut span))?;
+                .map_err(|error| fail_span(error, &mut *span))?;
             span.log(Log::new().log("span.kind", "client-send"));
             OPS_COUNT.with_label_values(&["jmx", "queryNames"]).inc();
             let timer = OPS_DURATION
@@ -80,7 +80,7 @@ impl KafkaJmx {
                     OP_ERRORS_COUNT
                         .with_label_values(&["jmx", "queryNames"])
                         .inc();
-                    fail_span(error, &mut span)
+                    fail_span(error, &mut *span)
                 })
                 .with_context(|_| ErrorKind::StoreOpFailed("<jmx>.broker_name"))
                 .map_err(Error::from);
@@ -119,7 +119,7 @@ impl KafkaJmx {
         span.child_of(parent.context().clone());
         span.tag("service", "jmx");
         self.reconnect_if_needed(&mut span)
-            .map_err(|error| fail_span(error, &mut span))?;
+            .map_err(|error| fail_span(error, &mut *span))?;
         span.log(Log::new().log("span.kind", "client-send"));
         OPS_COUNT.with_label_values(&["jmx", "getAttribute"]).inc();
         let timer = OPS_DURATION
@@ -132,7 +132,7 @@ impl KafkaJmx {
                 OP_ERRORS_COUNT
                     .with_label_values(&["jmx", "getAttribute"])
                     .inc();
-                fail_span(error, &mut span)
+                fail_span(error, &mut *span)
             })
             .with_context(|_| ErrorKind::StoreOpFailed("<jmx>.broker_version"))
             .map_err(Error::from);
@@ -158,7 +158,7 @@ impl KafkaJmx {
             KAFKA_LAG_PREFIX, leader, topic, partition
         );
         self.reconnect_if_needed(&mut span)
-            .map_err(|error| fail_span(error, &mut span))?;
+            .map_err(|error| fail_span(error, &mut *span))?;
         span.log(Log::new().log("span.kind", "client-send"));
         OPS_COUNT.with_label_values(&["jmx", "getAttribute"]).inc();
         let timer = OPS_DURATION
@@ -171,7 +171,7 @@ impl KafkaJmx {
                 OP_ERRORS_COUNT
                     .with_label_values(&["jmx", "getAttribute"])
                     .inc();
-                fail_span(error, &mut span)
+                fail_span(error, &mut *span)
             })
             .with_context(|_| ErrorKind::StoreOpFailed("<jmx>.partitionLag"))
             .map_err(Error::from);

@@ -222,7 +222,7 @@ mod tests {
     use super::VersionedAgent;
 
     struct MockFactory {
-        pub agent: Arc<Agent>,
+        pub agent: Arc<dyn Agent>,
         pub made: Mutex<i32>,
         pub remake: bool,
         pub remake_on_error: bool,

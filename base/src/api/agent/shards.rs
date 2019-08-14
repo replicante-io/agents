@@ -32,7 +32,7 @@ impl Responder for Shards {
         let shards = self
             .agent
             .shards(&mut span)
-            .map_err(|error| fail_span(error, &mut span))?;
+            .map_err(|error| fail_span(error, &mut *span))?;
         let response = HttpResponse::Ok().json(shards);
         span.log(Log::new().log("span.kind", "server-send"));
         Ok(response)

@@ -84,7 +84,7 @@ impl ZookeeperAgent {
             .exec::<Conf>()
             .map_err(|error| {
                 OP_ERRORS_COUNT.with_label_values(&["conf"]).inc();
-                fail_span(error, &mut span)
+                fail_span(error, &mut *span)
             })
             .with_context(|_| ErrorKind::StoreOpFailed("conf"))?;
         timer.observe_duration();
@@ -110,7 +110,7 @@ impl ZookeeperAgent {
             .exec::<Srvr>()
             .map_err(|error| {
                 OP_ERRORS_COUNT.with_label_values(&["srvr"]).inc();
-                fail_span(error, &mut span)
+                fail_span(error, &mut *span)
             })
             .with_context(|_| ErrorKind::StoreOpFailed("srvr"))?;
         timer.observe_duration();

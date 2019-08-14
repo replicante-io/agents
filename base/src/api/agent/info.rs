@@ -20,7 +20,7 @@ pub fn agent(request: HttpRequest) -> Result<impl Responder> {
         .app_data::<Arc<dyn Agent>>()
         .expect("dyn Agent must be available as App::data")
         .agent_info(&mut span)
-        .map_err(|error| fail_span(error, &mut span))?;
+        .map_err(|error| fail_span(error, &mut *span))?;
     let response = HttpResponse::Ok().json(info);
     span.log(Log::new().log("span.kind", "server-send"));
     Ok(response)
@@ -55,7 +55,7 @@ impl Responder for DatastoreInfo {
         let mut info = self
             .agent
             .datastore_info(&mut span)
-            .map_err(|error| fail_span(error, &mut span))?;
+            .map_err(|error| fail_span(error, &mut *span))?;
 
         // Inject the cluster_display_name override if configured.
         info.cluster_display_name = self

@@ -14,7 +14,7 @@ pub fn finished(request: HttpRequest) -> Result<impl Responder> {
         .app_data::<AgentContext>()
         .expect("AgentContext must be available as App::data");
     let mut exts = request.extensions_mut();
-    let mut span = request_span(&mut exts);
+    let span = request_span(&mut exts);
     let actions = context
         .store
         .with_transaction(|tx| {
@@ -25,7 +25,7 @@ pub fn finished(request: HttpRequest) -> Result<impl Responder> {
             }
             Ok(actions)
         })
-        .map_err(|error| fail_span(error, &mut span))?;
+        .map_err(|error| fail_span(error, span))?;
     Ok(HttpResponse::Ok().json(actions))
 }
 
@@ -35,16 +35,17 @@ pub fn queue(request: HttpRequest) -> Result<impl Responder> {
         .app_data::<AgentContext>()
         .expect("AgentContext must be available as App::data");
     let mut exts = request.extensions_mut();
-    let mut span = request_span(&mut exts);
+    let span = request_span(&mut exts);
     let actions = context
         .store
         .with_transaction(|tx| {
             let mut actions = Vec::new();
-            for action in tx.actions().queue(span.context().clone())? {
+            let iter = tx.actions().finished(span.context().clone())?;
+            for action in iter {
                 actions.push(action?);
             }
             Ok(actions)
         })
-        .map_err(|error| fail_span(error, &mut span))?;
+        .map_err(|error| fail_span(error, span))?;
     Ok(HttpResponse::Ok().json(actions))
 }

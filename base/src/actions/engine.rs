@@ -145,10 +145,7 @@ impl Engine {
         });
         match rv {
             Ok(()) => Ok(()),
-            Err(error) => match span.as_mut() {
-                None => Err(error),
-                Some(span) => Err(fail_span(error, span)),
-            },
+            Err(error) => Err(fail_span(error, span.as_mut().map(DerefMut::deref_mut))),
         }
     }
 }

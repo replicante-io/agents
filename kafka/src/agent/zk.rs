@@ -71,7 +71,7 @@ impl KafkaZoo {
         span.log(Log::new().log("span.kind", "client-send"));
         let keeper = self
             .keeper(&mut span)
-            .map_err(|error| fail_span(error, &mut span))?;
+            .map_err(|error| fail_span(error, &mut *span))?;
         OPS_COUNT.with_label_values(&["zookeeper", "getData"]).inc();
         let timer = OPS_DURATION
             .with_label_values(&["zookeeper", "getData"])
@@ -82,7 +82,7 @@ impl KafkaZoo {
                 OP_ERRORS_COUNT
                     .with_label_values(&["zookeeper", "getData"])
                     .inc();
-                fail_span(error, &mut span)
+                fail_span(error, &mut *span)
             })
             .with_context(|_| ErrorKind::StoreOpFailed("<zookeeper>.cluster_id"))?;
         timer.observe_duration();
@@ -106,7 +106,7 @@ impl KafkaZoo {
         let path = format!("{}/{}", TOPICS_PATH, topic);
         let keeper = self
             .keeper(&mut span)
-            .map_err(|error| fail_span(error, &mut span))?;
+            .map_err(|error| fail_span(error, &mut *span))?;
         OPS_COUNT.with_label_values(&["zookeeper", "getData"]).inc();
         let timer = OPS_DURATION
             .with_label_values(&["zookeeper", "getData"])
@@ -117,7 +117,7 @@ impl KafkaZoo {
                 OP_ERRORS_COUNT
                     .with_label_values(&["zookeeper", "getData"])
                     .inc();
-                fail_span(error, &mut span)
+                fail_span(error, &mut *span)
             })
             .with_context(|_| ErrorKind::StoreOpFailed("<zookeeper>.partitions"))?;
         timer.observe_duration();
@@ -152,7 +152,7 @@ impl KafkaZoo {
         span.log(Log::new().log("span.kind", "client-send"));
         let keeper = self
             .keeper(&mut span)
-            .map_err(|error| fail_span(error, &mut span))?;
+            .map_err(|error| fail_span(error, &mut *span))?;
         OPS_COUNT
             .with_label_values(&["zookeeper", "getChildren"])
             .inc();
@@ -165,7 +165,7 @@ impl KafkaZoo {
                 OP_ERRORS_COUNT
                     .with_label_values(&["zookeeper", "getData"])
                     .inc();
-                fail_span(error, &mut span)
+                fail_span(error, &mut *span)
             })
             .with_context(|_| ErrorKind::StoreOpFailed("<zookeeper>.topics"))?;
         timer.observe_duration();
