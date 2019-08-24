@@ -217,6 +217,48 @@ agent:
   sentry: ~
 
 
+  # The section below is for service supervisor configuration.
+  # It is used by the actions system to control the datastore process.
+  service:
+    # Service supervisor in charge of managing the datastore process.
+    #
+    # Allowed options are:
+    #
+    #   * `commands`: execute user-specified commands.
+    #   * `systemd`: control a service through `systemctl`.
+    supervisor: 'systemd'
+
+    # Supervisor-specific options.
+    # The options listed below are for the `systemd` supervisor.
+    options:
+      # (optional) name of the service to manage.
+      # Agents define a datastore-specific value that is used as a default.
+      service_name: ~
+
+    # Supervisor-specific options.
+    # The options listed below are for the `commands` supervisor.
+    #options:
+    #  # Command to return the main PID of the datastore service.
+    #  #
+    #  # This command MUST output the PID to stdout and nothing else (not even a new-line).
+    #  # If the datastore process is not running standard out should be empty.
+    #  pid: ['/sbin/serivice-pid.sh', 'some-store']
+    #
+    #  # Command to start the datastore service.
+    #  #
+    #  # This must a no-op if the service is already running.
+    #  # The script can exit at any time, the service is considered
+    #  # running once a PID is returned by the pid command.
+    #  start: ['/sbin/service-start.sh', 'some-store']
+    #
+    #  # Command to stop the datastore service.
+    #  #
+    #  # This must a no-op if the service is already stopped.
+    #  # The script can exit at any time, the service is considered
+    #  # stopped once a PID is no longer returned by the pid command.
+    #  stop: ['/sbin/server-stop.sh', 'some-store']
+
+
   # The section below is for distributed tracing configuration.
   tracing:
     # The distributed tracing backend to integrate with.

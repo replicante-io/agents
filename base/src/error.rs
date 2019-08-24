@@ -134,6 +134,9 @@ pub enum ErrorKind {
     )]
     ResponseDecode(&'static str, &'static str),
 
+    #[fail(display = "service operation '{}' failed", _0)]
+    ServiceOpFailed(&'static str),
+
     #[fail(display = "datastore operation '{}' failed", _0)]
     StoreOpFailed(&'static str),
 
@@ -171,6 +174,7 @@ impl ErrorKind {
             ErrorKind::PersistentRead(_) => "PersistentRead",
             ErrorKind::PersistentWrite(_) => "PersistentWrite",
             ErrorKind::ResponseDecode(_, _) => "ResponseDecode",
+            ErrorKind::ServiceOpFailed(_) => "ServiceOpFailed",
             ErrorKind::StoreOpFailed(_) => "StoreOpFailed",
             ErrorKind::ThreadSpawn(_) => "ThreadSpawn",
         };

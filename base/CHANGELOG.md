@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - DevTool: TLS certificates generation scripts.
 - Initial actions API.
 - Persistent DB with support for migrations.
+- Service related actions.
 
 ### Changed
 - Replace Iron web framework with Actix Web.

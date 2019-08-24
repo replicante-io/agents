@@ -16,6 +16,9 @@ pub trait Agent: Send + Sync {
     /// Fetches the datastore information.
     fn datastore_info(&self, span: &mut Span) -> Result<DatastoreInfo>;
 
+    /// Name of the datastore service for service-related actions.
+    fn service_name(&self) -> String;
+
     /// Fetches all shards and details on the managed datastore node.
     fn shards(&self, span: &mut Span) -> Result<Shards>;
 }

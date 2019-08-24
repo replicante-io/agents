@@ -63,6 +63,10 @@ impl Agent for Sharded {
         }
     }
 
+    fn service_name(&self) -> String {
+        "mongod".into()
+    }
+
     fn shards(&self, span: &mut Span) -> Result<Shards> {
         if self.is_mongos {
             Ok(Shards::new(Vec::new()))

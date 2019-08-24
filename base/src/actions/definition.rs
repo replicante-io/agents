@@ -12,6 +12,7 @@ use opentracingrust::InjectFormat;
 use opentracingrust::Span;
 use opentracingrust::SpanContext;
 use opentracingrust::Tracer;
+use serde::de::DeserializeOwned;
 use serde_derive::Deserialize;
 use serde_derive::Serialize;
 use serde_json::json;
@@ -117,6 +118,20 @@ impl ActionRecord {
             state: ActionState::New,
             state_payload: None,
         }
+    }
+
+    /// Extract a structured payload, if any was stored for the action.
+    pub fn structured_state_payload<T>(&self) -> Result<Option<T>>
+    where
+        T: DeserializeOwned,
+    {
+        let payload = self
+            .state_payload
+            .clone()
+            .map(serde_json::from_value)
+            .transpose()
+            .with_context(|_| ErrorKind::ActionDecode)?;
+        Ok(payload)
     }
 
     /// Extract the tracing context, if any is available.

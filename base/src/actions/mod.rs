@@ -8,6 +8,7 @@ use slog::warn;
 use replicante_util_upkeep::Upkeep;
 
 use crate::config::Agent as Config;
+use crate::Agent;
 use crate::AgentContext;
 use crate::ErrorKind;
 use crate::Result;
@@ -106,7 +107,11 @@ pub fn ensure_transition_allowed(from: &ActionState, to: &ActionState) {
 }
 
 /// Initialise the actions system based on configuration.
-pub fn initialise(context: &mut AgentContext, upkeep: &mut Upkeep) -> Result<()> {
+pub fn initialise(
+    agent: &dyn Agent,
+    context: &mut AgentContext,
+    upkeep: &mut Upkeep,
+) -> Result<()> {
     let enabled = actions_enabled(&context.config)?;
     if !enabled {
         warn!(context.logger, "Actions system not enabled");
@@ -114,7 +119,7 @@ pub fn initialise(context: &mut AgentContext, upkeep: &mut Upkeep) -> Result<()>
     }
 
     debug!(context.logger, "Initialising actions system ...");
-    self::impls::register_std_actions(context);
+    self::impls::register_std_actions(agent, context);
     ACTIONS::complete_registration();
     debug!(context.logger, "Actions registration phase completed");
 

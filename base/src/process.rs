@@ -90,7 +90,7 @@ where
     super::register_metrics(&context);
     context.store.migrate()?;
     let agent = initialise(&context, &mut upkeep)?;
-    actions::initialise(&mut context, &mut upkeep)?;
+    actions::initialise(&agent, &mut context, &mut upkeep)?;
     api::spawn_server(agent, context, &mut upkeep)?;
     let clean_exit = upkeep.keepalive();
     if clean_exit {

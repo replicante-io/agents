@@ -9,6 +9,7 @@ use failure::ResultExt;
 use humthreads::Builder;
 use opentracingrust::Span;
 use slog::debug;
+use slog::trace;
 use slog::warn;
 
 use replicante_util_failure::capture_fail;
@@ -85,7 +86,7 @@ impl Engine {
 
     /// Perform historic actions cleanup to prevent endless DB growth.
     pub fn clean(&self) -> Result<()> {
-        debug!(self.context.logger, "Pruning actions history");
+        trace!(self.context.logger, "Pruning actions history");
         let keep = self.context.config.actions.prune_keep;
         let limit = self.context.config.actions.prune_limit;
         let _timer = ACTION_PRUNE_DURATION.start_timer();

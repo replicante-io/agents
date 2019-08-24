@@ -8,12 +8,14 @@ use replicante_util_tracing::Config as TracerConfig;
 mod actions;
 mod api;
 mod sentry;
+mod service;
 
 pub use self::actions::ActionsConfig;
 pub use self::api::APIConfig;
 pub use self::api::TlsConfig;
 pub use self::sentry::SentryCaptureApi;
 pub use self::sentry::SentryConfig;
+pub use self::service::ServiceConfig;
 
 /// Stores the base agent configuration options.
 ///
@@ -40,19 +42,23 @@ pub struct Agent {
     /// Location for the agent to store persistent data.
     pub db: String,
 
-    /// Logging configuration
+    /// Logging configuration.
     #[serde(default)]
     pub logging: LoggingConfig,
 
-    /// Sentry integration configuration
+    /// Sentry integration configuration.
     #[serde(default)]
     pub sentry: Option<SentryConfig>,
+
+    /// Service supervisor configuration.
+    #[serde(default)]
+    pub service: ServiceConfig,
 
     /// Enable the update checker (optional).
     #[serde(default = "Agent::default_update_checker")]
     pub update_checker: bool,
 
-    /// OpenTracing configuration
+    /// OpenTracing configuration.
     #[serde(default)]
     pub tracing: TracerConfig,
 }
@@ -88,6 +94,7 @@ impl Agent {
             db: "mock.db".into(),
             logging: LoggingConfig::default(),
             sentry: None,
+            service: ServiceConfig::default(),
             update_checker: false,
             tracing: TracerConfig::default(),
         }

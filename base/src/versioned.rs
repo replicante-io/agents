@@ -194,6 +194,14 @@ where
         active.agent.datastore_info(span)
     }
 
+    fn service_name(&self) -> String {
+        self.active
+            .read()
+            .expect("ActiveAgent lock was poisoned")
+            .agent
+            .service_name()
+    }
+
     fn shards(&self, span: &mut Span) -> Result<Shards> {
         let active = self.active.read().expect("ActiveAgent lock was poisoned");
         active.agent.shards(span)
@@ -252,6 +260,10 @@ mod tests {
 
         fn datastore_info(&self, span: &mut Span) -> Result<DatastoreInfo> {
             self.0.datastore_info(span)
+        }
+
+        fn service_name(&self) -> String {
+            self.0.service_name()
         }
 
         fn shards(&self, span: &mut Span) -> Result<Shards> {

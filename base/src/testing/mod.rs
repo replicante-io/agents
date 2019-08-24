@@ -48,6 +48,10 @@ impl Agent for MockAgent {
             .map_err(|error| ErrorKind::FreeForm(error).into())
     }
 
+    fn service_name(&self) -> String {
+        "mockstore".into()
+    }
+
     fn shards(&self, _: &mut Span) -> Result<Shards> {
         self.shards
             .clone()

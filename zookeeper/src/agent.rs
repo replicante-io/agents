@@ -132,6 +132,10 @@ impl Agent for ZookeeperAgent {
         Ok(info)
     }
 
+    fn service_name(&self) -> String {
+        "zookeeper".into()
+    }
+
     fn shards(&self, span: &mut Span) -> Result<Shards> {
         let srvr = self.srvr(span)?;
         let role = match srvr.zk_mode.as_ref() {
