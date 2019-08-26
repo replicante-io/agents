@@ -201,7 +201,7 @@ pub trait ActionRecordView {
     fn state_payload(&self) -> &Option<Json>;
 }
 
-impl ActionRecordView {
+impl dyn ActionRecordView {
     /// Access the state as stored in the ActionRecord.
     pub fn raw_state(record: &ActionRecord) -> &ActionState {
         &record.state
