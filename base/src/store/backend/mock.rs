@@ -154,9 +154,9 @@ impl ActionInterface for Action {
         let id = action.id.to_string();
         let state_finished = transition_to.is_finished();
         let mut state = self.state.lock().unwrap();
-        let mut record = state.actions.get_mut(&id).unwrap();
-        record.state = transition_to;
-        record.state_payload = payload;
+        let record = state.actions.get_mut(&id).unwrap();
+        record.set_state(transition_to);
+        record.set_state_payload(payload);
         let finished = state
             .actions_queue
             .front()

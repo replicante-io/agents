@@ -200,6 +200,7 @@ mod tests {
     use super::super::impls::debug::Progress;
     use super::Engine;
     use crate::actions::ActionRecord;
+    use crate::actions::ActionRecordView;
     use crate::actions::ActionRequester;
     use crate::actions::ActionState;
     use crate::actions::ActionsRegister;
@@ -226,8 +227,11 @@ mod tests {
             .unwrap()
             .unwrap();
         assert_eq!(id, action.id);
-        assert_eq!(ActionState::Failed, action.state);
-        let payload = action.state_payload.expect("need a state payload");
+        assert_eq!(ActionState::Failed, *action.state());
+        let payload = action
+            .state_payload()
+            .clone()
+            .expect("need a state payload");
         let payload: SerializableFail = serde_json::from_value(payload).unwrap();
         assert_eq!(payload.error, "actions with kind test are not available");
     }
@@ -264,6 +268,6 @@ mod tests {
             .unwrap()
             .unwrap();
         assert_eq!(id, action.id);
-        assert_eq!(ActionState::Running, action.state);
+        assert_eq!(ActionState::Running, *action.state());
     }
 }

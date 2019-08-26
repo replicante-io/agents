@@ -15,6 +15,7 @@ use replicante_util_tracing::MaybeTracer;
 
 use crate::actions::ActionRecord;
 use crate::actions::ActionRecordHistory;
+use crate::actions::ActionRecordView;
 use crate::actions::ActionState;
 use crate::metrics::SQLITE_OPS_COUNT;
 use crate::metrics::SQLITE_OPS_DURATION;
@@ -155,7 +156,7 @@ fn parse_action(row: &Row, op: &'static str) -> Result<ActionRecord> {
         None => None,
         Some(payload) => decode_or_return!(serde_json::from_str(&payload), op),
     };
-    Ok(ActionRecord {
+    Ok(ActionRecord::inflate(
         action,
         agent_version,
         args,
@@ -165,7 +166,7 @@ fn parse_action(row: &Row, op: &'static str) -> Result<ActionRecord> {
         requester,
         state,
         state_payload,
-    })
+    ))
 }
 
 pub struct Action<'a, 'b: 'a> {
@@ -344,10 +345,11 @@ impl<'a, 'b: 'a> ActionInterface for Action<'a, 'b> {
             .with_context(|_| ErrorKind::PersistentWrite(ACTION_INSERT))?;
         let requester = serde_json::to_string(&action.requester)
             .with_context(|_| ErrorKind::PersistentWrite(ACTION_INSERT))?;
-        let state = serde_json::to_string(&action.state)
+        let state = serde_json::to_string(action.state())
             .with_context(|_| ErrorKind::PersistentWrite(ACTION_INSERT))?;
         let state_payload = action
-            .state_payload
+            .state_payload()
+            .clone()
             .map(|payload| {
                 serde_json::to_string(&payload)
                     .with_context(|_| ErrorKind::PersistentWrite(ACTION_INSERT))

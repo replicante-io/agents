@@ -4,7 +4,7 @@ use slog::debug;
 
 use crate::actions::Action;
 use crate::actions::ActionDescriptor;
-use crate::actions::ActionRecord;
+use crate::actions::ActionRecordView;
 use crate::actions::ActionState;
 use crate::actions::ActionValidity;
 use crate::actions::ACTIONS;
@@ -32,7 +32,12 @@ impl Action for Fail {
         }
     }
 
-    fn invoke(&self, _: &mut Transaction, _: &ActionRecord, _: Option<&mut Span>) -> Result<()> {
+    fn invoke(
+        &self,
+        _: &mut Transaction,
+        _: &dyn ActionRecordView,
+        _: Option<&mut Span>,
+    ) -> Result<()> {
         let error = "triggered debugging action that fails".into();
         Err(ErrorKind::FreeForm(error).into())
     }
@@ -56,16 +61,16 @@ impl Action for Progress {
     fn invoke(
         &self,
         tx: &mut Transaction,
-        record: &ActionRecord,
+        record: &dyn ActionRecordView,
         span: Option<&mut Span>,
     ) -> Result<()> {
-        let next_state = if record.state == ActionState::New {
+        let next_state = if *record.state() == ActionState::New {
             ActionState::Running
         } else {
             ActionState::Done
         };
         tx.action().transition(
-            record,
+            record.inner(),
             next_state,
             None,
             span.map(|span| span.context().clone()),
@@ -91,11 +96,11 @@ impl Action for Success {
     fn invoke(
         &self,
         tx: &mut Transaction,
-        record: &ActionRecord,
+        record: &dyn ActionRecordView,
         span: Option<&mut Span>,
     ) -> Result<()> {
         tx.action().transition(
-            record,
+            record.inner(),
             ActionState::Done,
             None,
             span.map(|span| span.context().clone()),

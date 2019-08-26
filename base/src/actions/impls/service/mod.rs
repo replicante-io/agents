@@ -9,6 +9,7 @@ use serde_json::Value as Json;
 use crate::actions::Action;
 use crate::actions::ActionDescriptor;
 use crate::actions::ActionRecord;
+use crate::actions::ActionRecordView;
 use crate::actions::ActionState;
 use crate::actions::ActionValidity;
 use crate::actions::ACTIONS;
@@ -29,12 +30,147 @@ const MAX_ATTEMPT_STOP: u8 = 30;
 /// Register all service related actions.
 pub fn register(agent: &dyn Agent, context: &AgentContext) {
     let supervisor = self::supervisor::factory(agent, context);
+    ACTIONS::register_reserved(ServiceRestart {
+        start: ServiceStart {
+            supervisor: supervisor.clone(),
+        },
+        stop: ServiceStop {
+            supervisor: supervisor.clone(),
+        },
+    });
     ACTIONS::register_reserved(ServiceStart {
         supervisor: supervisor.clone(),
     });
     ACTIONS::register_reserved(ServiceStop {
         supervisor: supervisor.clone(),
     });
+}
+
+/// Stop the datastore service, then start it if possible.
+struct ServiceRestart {
+    start: ServiceStart,
+    stop: ServiceStop,
+}
+
+impl Action for ServiceRestart {
+    fn describe(&self) -> ActionDescriptor {
+        ActionDescriptor {
+            kind: "replicante.service.restart".into(),
+            description: "Stop/Start the datstore service".into(),
+        }
+    }
+
+    fn invoke(
+        &self,
+        tx: &mut Transaction,
+        record: &dyn ActionRecordView,
+        span: Option<&mut Span>,
+    ) -> Result<()> {
+        let state: ServiceRestartState =
+            ActionRecordView::structured_state_payload(record)?.unwrap_or_default();
+        match state {
+            ServiceRestartState::Done => Ok(()),
+            ServiceRestartState::NotInitialised => {
+                let state = ServiceRestartState::Stopping(ActionState::New, None);
+                let view = ServiceRestartView { record, state };
+                self.stop.invoke(tx, &view, span)
+            }
+            ServiceRestartState::Stopping(state, payload) => {
+                let state = ServiceRestartState::Stopping(state, payload);
+                let view = ServiceRestartView { record, state };
+                self.stop.invoke(tx, &view, span)
+            }
+            ServiceRestartState::Starting(state, payload) => {
+                let state = ServiceRestartState::Starting(state, payload);
+                let view = ServiceRestartView { record, state };
+                self.start.invoke(tx, &view, span)
+            }
+        }
+    }
+
+    fn validate_args(&self, _: &Json) -> ActionValidity {
+        Ok(())
+    }
+}
+
+/// Persisted composite state of a service restart action.
+#[derive(Serialize, Deserialize)]
+enum ServiceRestartState {
+    NotInitialised,
+    Stopping(ActionState, Option<Json>),
+    Starting(ActionState, Option<Json>),
+    Done,
+}
+
+impl Default for ServiceRestartState {
+    fn default() -> ServiceRestartState {
+        ServiceRestartState::NotInitialised
+    }
+}
+
+/// ServiceRestartState view for start and stop actions.
+struct ServiceRestartView<'a> {
+    record: &'a dyn ActionRecordView,
+    state: ServiceRestartState,
+}
+
+impl<'a> ActionRecordView for ServiceRestartView<'a> {
+    fn inner(&self) -> &ActionRecord {
+        self.record.inner()
+    }
+
+    fn map_transition(
+        &self,
+        transition_to: ActionState,
+        payload: Option<Json>,
+    ) -> Result<(ActionState, Option<Json>)> {
+        let (transition_to, payload) = self.record.map_transition(transition_to, payload)?;
+        match &self.state {
+            ServiceRestartState::Stopping(_, _) if transition_to == ActionState::Done => {
+                let transition_to = ActionState::Running;
+                let payload = ServiceRestartState::Starting(ActionState::New, None);
+                let payload =
+                    serde_json::to_value(payload).with_context(|_| ErrorKind::ActionEncode)?;
+                Ok((transition_to, Some(payload)))
+            }
+            ServiceRestartState::Stopping(_, _) => {
+                let payload = ServiceRestartState::Stopping(transition_to.clone(), payload);
+                let payload =
+                    serde_json::to_value(payload).with_context(|_| ErrorKind::ActionEncode)?;
+                Ok((transition_to, Some(payload)))
+            }
+            ServiceRestartState::Starting(_, _) if transition_to == ActionState::Done => {
+                let transition_to = ActionState::Done;
+                let payload = ServiceRestartState::Done;
+                let payload =
+                    serde_json::to_value(payload).with_context(|_| ErrorKind::ActionEncode)?;
+                Ok((transition_to, Some(payload)))
+            }
+            ServiceRestartState::Starting(_, _) => {
+                let payload = ServiceRestartState::Starting(transition_to.clone(), payload);
+                let payload =
+                    serde_json::to_value(payload).with_context(|_| ErrorKind::ActionEncode)?;
+                Ok((transition_to, Some(payload)))
+            }
+            _ => panic!("ServiceRestartView state is not starting or stopping"),
+        }
+    }
+
+    fn state(&self) -> &ActionState {
+        match &self.state {
+            ServiceRestartState::Stopping(ref state, _) => state,
+            ServiceRestartState::Starting(ref state, _) => state,
+            _ => panic!("ServiceRestartView state is not starting or stopping"),
+        }
+    }
+
+    fn state_payload(&self) -> &Option<Json> {
+        match &self.state {
+            ServiceRestartState::Stopping(_, ref payload) => payload,
+            ServiceRestartState::Starting(_, ref payload) => payload,
+            _ => panic!("ServiceRestartView state is not starting or stopping"),
+        }
+    }
 }
 
 /// Stop the datastore service.
@@ -53,14 +189,14 @@ impl Action for ServiceStart {
     fn invoke(
         &self,
         tx: &mut Transaction,
-        record: &ActionRecord,
+        record: &dyn ActionRecordView,
         span: Option<&mut Span>,
     ) -> Result<()> {
-        let mut progress: ServiceActionProgress =
-            record.structured_state_payload()?.unwrap_or_default();
+        let mut progress: ServiceActionState =
+            ActionRecordView::structured_state_payload(record)?.unwrap_or_default();
 
         // If the action is new attempt to start the service.
-        if record.state == ActionState::New {
+        if *record.state() == ActionState::New {
             self.supervisor.start()?;
         }
 
@@ -124,14 +260,14 @@ impl Action for ServiceStop {
     fn invoke(
         &self,
         tx: &mut Transaction,
-        record: &ActionRecord,
+        record: &dyn ActionRecordView,
         span: Option<&mut Span>,
     ) -> Result<()> {
-        let mut progress: ServiceActionProgress =
-            record.structured_state_payload()?.unwrap_or_default();
+        let mut progress: ServiceActionState =
+            ActionRecordView::structured_state_payload(record)?.unwrap_or_default();
 
         // If the action is new attempt to stop the service.
-        if record.state == ActionState::New {
+        if *record.state() == ActionState::New {
             self.supervisor.stop()?;
         }
 
@@ -181,15 +317,15 @@ impl Action for ServiceStop {
 
 /// Persisted progress of service start/stop actions.
 #[derive(Serialize, Deserialize)]
-struct ServiceActionProgress {
+struct ServiceActionState {
     attempt: u8,
     message: Option<String>,
     pid: Option<String>,
 }
 
-impl Default for ServiceActionProgress {
+impl Default for ServiceActionState {
     fn default() -> Self {
-        ServiceActionProgress {
+        ServiceActionState {
             attempt: 0,
             message: None,
             pid: None,

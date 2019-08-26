@@ -16,6 +16,7 @@ use crate::actions::ensure_transition_allowed;
 use crate::actions::ActionListItem;
 use crate::actions::ActionRecord;
 use crate::actions::ActionRecordHistory;
+use crate::actions::ActionRecordView;
 use crate::actions::ActionState;
 use crate::Result;
 
@@ -75,7 +76,7 @@ impl<'a> Action<'a> {
     /// If the state transition is not allowd this method panics.
     pub fn transition<P, S>(
         &self,
-        action: &ActionRecord,
+        record: &dyn ActionRecordView,
         transition_to: ActionState,
         payload: P,
         span: S,
@@ -84,9 +85,12 @@ impl<'a> Action<'a> {
         P: Into<Option<Json>>,
         S: Into<Option<SpanContext>>,
     {
-        ensure_transition_allowed(&action.state, &transition_to);
+        let (transition_to, payload) = record.map_transition(transition_to, payload.into())?;
+        let record = record.inner();
+        let state = ActionRecordView::raw_state(record);
+        ensure_transition_allowed(state, &transition_to);
         self.inner
-            .transition(action, transition_to, payload.into(), span.into())
+            .transition(record, transition_to, payload, span.into())
     }
 }
 

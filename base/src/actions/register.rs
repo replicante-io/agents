@@ -284,7 +284,7 @@ mod tests {
 
     use super::super::Action;
     use super::super::ActionDescriptor;
-    use super::super::ActionRecord;
+    use super::super::ActionRecordView;
     use super::super::ActionValidity;
     use super::ActionsRegister;
     use super::ACTIONS;
@@ -303,7 +303,7 @@ mod tests {
         fn invoke(
             &self,
             _: &mut Transaction,
-            _: &ActionRecord,
+            _: &dyn ActionRecordView,
             _: Option<&mut Span>,
         ) -> Result<()> {
             panic!("TODO: MockAction::invoke")
@@ -326,7 +326,7 @@ mod tests {
         fn invoke(
             &self,
             _: &mut Transaction,
-            _: &ActionRecord,
+            _: &dyn ActionRecordView,
             _: Option<&mut Span>,
         ) -> Result<()> {
             panic!("TODO: ReservedAction::invoke")
@@ -349,7 +349,7 @@ mod tests {
         fn invoke(
             &self,
             _: &mut Transaction,
-            _: &ActionRecord,
+            _: &dyn ActionRecordView,
             _: Option<&mut Span>,
         ) -> Result<()> {
             panic!("TODO: UnscopedAction::invoke")

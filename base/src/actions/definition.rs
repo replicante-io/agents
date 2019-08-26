@@ -42,7 +42,7 @@ pub trait Action: Send + Sync + 'static {
     fn invoke(
         &self,
         tx: &mut Transaction,
-        record: &ActionRecord,
+        record: &dyn ActionRecordView,
         span: Option<&mut Span>,
     ) -> Result<()>;
 
@@ -94,13 +94,39 @@ pub struct ActionRecord {
     pub requester: ActionRequester,
 
     /// State the action is currently in.
-    pub state: ActionState,
+    state: ActionState,
 
     /// Optional payload attached to the current state.
-    pub state_payload: Option<Json>,
+    state_payload: Option<Json>,
 }
 
 impl ActionRecord {
+    /// Construct an `ActionRecord` from raw attributes.
+    #[allow(clippy::too_many_arguments)]
+    pub(crate) fn inflate(
+        action: String,
+        agent_version: String,
+        args: Json,
+        created_ts: DateTime<Utc>,
+        headers: HashMap<String, String>,
+        id: Uuid,
+        requester: ActionRequester,
+        state: ActionState,
+        state_payload: Option<Json>,
+    ) -> ActionRecord {
+        ActionRecord {
+            action,
+            agent_version,
+            args,
+            created_ts,
+            headers,
+            id,
+            requester,
+            state,
+            state_payload,
+        }
+    }
+
     /// Initialise a new action to be executed.
     pub fn new<S>(action: S, args: Json, requester: ActionRequester) -> ActionRecord
     where
@@ -118,20 +144,6 @@ impl ActionRecord {
             state: ActionState::New,
             state_payload: None,
         }
-    }
-
-    /// Extract a structured payload, if any was stored for the action.
-    pub fn structured_state_payload<T>(&self) -> Result<Option<T>>
-    where
-        T: DeserializeOwned,
-    {
-        let payload = self
-            .state_payload
-            .clone()
-            .map(serde_json::from_value)
-            .transpose()
-            .with_context(|_| ErrorKind::ActionDecode)?;
-        Ok(payload)
     }
 
     /// Extract the tracing context, if any is available.
@@ -152,6 +164,83 @@ impl ActionRecord {
             .map_err(failure::SyncFailure::new)
             .with_context(|_| ErrorKind::ActionEncode)?;
         Ok(())
+    }
+
+    /// Test helper to set an action state.
+    #[cfg(any(test, feature = "with_test_support"))]
+    pub fn set_state(&mut self, state: ActionState) {
+        self.state = state;
+    }
+
+    /// Test helper to set an action payload.
+    #[cfg(any(test, feature = "with_test_support"))]
+    pub fn set_state_payload(&mut self, payload: Option<Json>) {
+        self.state_payload = payload;
+    }
+}
+
+/// A dynamic view on `ActionRecord`s.
+///
+/// Allows actions to be composable by "presenting" the state a "nested action expects.
+/// Look at the `replicante.service.restart` action for an example.
+pub trait ActionRecordView {
+    /// Access the raw record, mainly to pass it to the store interface.
+    fn inner(&self) -> &ActionRecord;
+
+    /// Manipulte the next state and payload to transition to.
+    fn map_transition(
+        &self,
+        transition_to: ActionState,
+        payload: Option<Json>,
+    ) -> Result<(ActionState, Option<Json>)>;
+
+    /// Access the state the action is currently in.
+    fn state(&self) -> &ActionState;
+
+    /// Access the associated state payload, if any.
+    fn state_payload(&self) -> &Option<Json>;
+}
+
+impl ActionRecordView {
+    /// Access the state as stored in the ActionRecord.
+    pub fn raw_state(record: &ActionRecord) -> &ActionState {
+        &record.state
+    }
+
+    /// Extract a structured payload, if any was stored for the action.
+    pub fn structured_state_payload<T>(view: &dyn ActionRecordView) -> Result<Option<T>>
+    where
+        T: DeserializeOwned,
+    {
+        let payload = view
+            .state_payload()
+            .clone()
+            .map(serde_json::from_value)
+            .transpose()
+            .with_context(|_| ErrorKind::ActionDecode)?;
+        Ok(payload)
+    }
+}
+
+impl ActionRecordView for ActionRecord {
+    fn inner(&self) -> &ActionRecord {
+        self
+    }
+
+    fn map_transition(
+        &self,
+        transition_to: ActionState,
+        payload: Option<Json>,
+    ) -> Result<(ActionState, Option<Json>)> {
+        Ok((transition_to, payload))
+    }
+
+    fn state(&self) -> &ActionState {
+        &self.state
+    }
+
+    fn state_payload(&self) -> &Option<Json> {
+        &self.state_payload
     }
 }
 

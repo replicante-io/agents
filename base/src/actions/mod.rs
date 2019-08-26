@@ -26,6 +26,7 @@ pub use self::definition::ActionDescriptor;
 pub use self::definition::ActionListItem;
 pub use self::definition::ActionRecord;
 pub use self::definition::ActionRecordHistory;
+pub use self::definition::ActionRecordView;
 pub use self::definition::ActionRequester;
 pub use self::definition::ActionState;
 pub use self::definition::ActionValidity;
