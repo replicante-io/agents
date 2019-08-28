@@ -12,10 +12,11 @@ use replicante_models_agent::DatastoreInfo;
 use replicante_models_agent::Shards;
 use replicante_util_failure::failure_info;
 
-use super::Agent;
-use super::AgentContext;
-use super::Error;
-use super::Result;
+use crate::actions::Action;
+use crate::Agent;
+use crate::AgentContext;
+use crate::Error;
+use crate::Result;
 
 /// Information about an Agent that is active.
 #[derive(Clone)]
@@ -205,6 +206,11 @@ where
     fn shards(&self, span: &mut Span) -> Result<Shards> {
         let active = self.active.read().expect("ActiveAgent lock was poisoned");
         active.agent.shards(span)
+    }
+
+    fn graceful_stop_action(&self) -> Option<Arc<dyn Action>> {
+        let active = self.active.read().expect("ActiveAgent lock was poisoned");
+        active.agent.graceful_stop_action()
     }
 }
 

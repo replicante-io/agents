@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use bson::bson;
 use bson::doc;
 use bson::Bson;
@@ -11,10 +13,10 @@ use opentracingrust::Log;
 use opentracingrust::Span;
 use slog::error;
 
+use replicante_agent::actions::Action;
 use replicante_agent::Agent;
 use replicante_agent::AgentContext;
 use replicante_agent::Result;
-
 use replicante_models_agent::AgentInfo;
 use replicante_models_agent::CommitOffset;
 use replicante_models_agent::DatastoreInfo;
@@ -23,11 +25,12 @@ use replicante_models_agent::ShardRole;
 use replicante_models_agent::Shards;
 use replicante_util_failure::failure_info;
 
-use super::super::super::error::ErrorKind;
-use super::super::super::metrics::MONGODB_OPS_COUNT;
-use super::super::super::metrics::MONGODB_OPS_DURATION;
-use super::super::super::metrics::MONGODB_OP_ERRORS_COUNT;
-use super::super::common::AGENT_VERSION;
+use crate::actions::GracefulStop;
+use crate::error::ErrorKind;
+use crate::metrics::MONGODB_OPS_COUNT;
+use crate::metrics::MONGODB_OPS_DURATION;
+use crate::metrics::MONGODB_OP_ERRORS_COUNT;
+use crate::version::common::AGENT_VERSION;
 
 use super::BuildInfo;
 use super::ReplSetStatus;
@@ -151,5 +154,9 @@ impl Agent for ReplicaSet {
             lag,
         )];
         Ok(Shards::new(shards))
+    }
+
+    fn graceful_stop_action(&self) -> Option<Arc<dyn Action>> {
+        Some(Arc::new(GracefulStop::new(self.client.clone())))
     }
 }

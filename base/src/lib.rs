@@ -26,6 +26,7 @@ pub use self::error::Error;
 pub use self::error::ErrorKind;
 pub use self::error::Result;
 pub use self::metrics::register_metrics;
+pub use self::store::Transaction;
 pub use self::traits::Agent;
 pub use self::versioned::ActiveAgent;
 pub use self::versioned::AgentFactory;

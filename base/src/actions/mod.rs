@@ -35,6 +35,12 @@ pub use self::register::ActionsRegister;
 pub use self::register::ACTIONS;
 
 lazy_static::lazy_static! {
+    /// Constant descriptor for any `replicante.store.stop` action implementation.
+    pub static ref GRACEFUL_STOP_DESCRIPTOR: ActionDescriptor = ActionDescriptor {
+        kind: "replicante.store.stop".into(),
+        description: "Attempt graceful shutdown of the datastore node".into(),
+    };
+
     /// Codified version of the state transitions from docs/docs/assets/action-states.dot
     static ref ALLOWED_TRANSITIONS: HashMap<ActionState, HashSet<ActionState>> = {
         let mut transitions = HashMap::new();
@@ -120,6 +126,7 @@ pub fn initialise(
     }
 
     debug!(context.logger, "Initialising actions system ...");
+    self::register_agent_actions(agent, context);
     self::impls::register_std_actions(agent, context);
     ACTIONS::complete_registration();
     debug!(context.logger, "Actions registration phase completed");
@@ -127,4 +134,17 @@ pub fn initialise(
     self::engine::spawn(context.clone(), upkeep)?;
     info!(context.logger, "Actions system initialised");
     Ok(())
+}
+
+/// Register standard agent actions.
+fn register_agent_actions(agent: &dyn Agent, context: &AgentContext) {
+    debug!(context.logger, "Registering agent actions");
+    if let Some(action) = agent.graceful_stop_action() {
+        if action.describe() != *GRACEFUL_STOP_DESCRIPTOR {
+            panic!(
+                "Agent::graceful_stop_action() descriptor does not match GRACEFUL_STOP_DESCRIPTOR"
+            );
+        }
+        ACTIONS::register_reserved_arc(action);
+    }
 }

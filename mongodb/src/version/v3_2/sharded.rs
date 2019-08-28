@@ -1,16 +1,19 @@
+use std::sync::Arc;
+
 use mongodb::Client;
 use opentracingrust::Span;
 
+use replicante_agent::actions::Action;
 use replicante_agent::Agent;
 use replicante_agent::AgentContext;
 use replicante_agent::Result;
-
 use replicante_models_agent::AgentInfo;
 use replicante_models_agent::DatastoreInfo;
 use replicante_models_agent::Shards;
 
 use super::super::Sharding;
 use super::common::CommonLogic;
+use crate::actions::GracefulStop;
 
 /// MongoDB 3.2+ sharded agent.
 pub struct Sharded {
@@ -73,5 +76,9 @@ impl Agent for Sharded {
         } else {
             self.common.shards(span)
         }
+    }
+
+    fn graceful_stop_action(&self) -> Option<Arc<dyn Action>> {
+        Some(Arc::new(GracefulStop::new(self.common.client())))
     }
 }

@@ -76,6 +76,11 @@ impl CommonLogic {
         Ok(info)
     }
 
+    /// Access the mongodb client.
+    pub fn client(&self) -> Client {
+        self.client.clone()
+    }
+
     /// Executes the replSetGetStatus command against the DB.
     pub fn repl_set_get_status(&self, parent: &mut Span) -> Result<ReplSetStatus> {
         let mut span = self.context.tracer.span("replSetGetStatus").auto_finish();

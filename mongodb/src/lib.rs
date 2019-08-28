@@ -21,6 +21,7 @@ use replicante_agent::Result;
 use replicante_agent::SemVersion;
 use replicante_agent::VersionedAgent;
 
+mod actions;
 mod config;
 mod error;
 mod metrics;

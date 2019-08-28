@@ -169,6 +169,30 @@ impl ACTIONS {
         });
     }
 
+    /// Process-global equivalent of `ActionsRegister::register_reserved_arc`.
+    #[allow(dead_code)]
+    pub(crate) fn register_reserved_arc(action: Arc<dyn Action>) {
+        ACTIVE_REG.with(|register| {
+            // To support tests, use the thread local if available.
+            if register.borrow().is_some() {
+                register
+                    .borrow_mut()
+                    .as_mut()
+                    .unwrap()
+                    .register_reserved_arc(action);
+                return;
+            }
+
+            // Otherwise register the action with the global registry.
+            GLOBAL_REG
+                .lock()
+                .expect("global actions register poisoned")
+                .as_mut()
+                .expect("attempted action registration after registration phase is complete")
+                .register_reserved_arc(action);
+        });
+    }
+
     /// Set the given register as the global register for this call.
     ///
     /// This acts at the thread level so different tests won't interfere with each other.
@@ -241,6 +265,11 @@ impl ActionsRegister {
     where
         A: Action,
     {
+        self.register_reserved_arc(Arc::new(action));
+    }
+
+    /// Same as `ActionsRegister::register_reserved` for pre-wrapped actions.
+    pub(crate) fn register_reserved_arc(&mut self, action: Arc<dyn Action>) {
         let kind = action.describe().kind;
         if !kind.contains('.') {
             panic!("action kind {} is not scoped", kind);
@@ -249,7 +278,7 @@ impl ActionsRegister {
             panic!("action kind {} is NOT reserved", kind);
         }
         match self.actions.entry(kind) {
-            Entry::Vacant(entry) => entry.insert(Arc::new(action)),
+            Entry::Vacant(entry) => entry.insert(action),
             Entry::Occupied(entry) => {
                 panic!("action with kind {} is already registered", entry.key())
             }

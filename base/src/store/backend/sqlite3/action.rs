@@ -50,7 +50,7 @@ SELECT
     state_payload
 FROM actions_history
 WHERE action_id = ?
-ORDER BY time DESC;
+ORDER BY time DESC, ROWID DESC;
 "#;
 const ACTION_INSERT: &str = "action.insert";
 const ACTION_INSERT_SQL: &str = r#"

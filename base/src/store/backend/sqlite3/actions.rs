@@ -27,7 +27,7 @@ SELECT
     action, id, state
 FROM actions
 WHERE finished_ts IS NOT NULL
-ORDER BY created_ts DESC
+ORDER BY created_ts DESC, ROWID ASC
 -- Limit result as a form of blast radius containment from bugs or overload.
 -- There really should not be many finished actions still on the agent DB.
 LIMIT 100;
@@ -38,7 +38,7 @@ SELECT
     action, id, state
 FROM actions
 WHERE finished_ts IS NULL
-ORDER BY created_ts ASC
+ORDER BY created_ts ASC, ROWID ASC
 -- Limit result as a form of blast radius containment in case of bugs.
 -- There really should not be many running/pending actions on an agent.
 LIMIT 100;

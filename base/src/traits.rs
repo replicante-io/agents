@@ -1,10 +1,13 @@
+use std::sync::Arc;
+
 use opentracingrust::Span;
 
 use replicante_models_agent::AgentInfo;
 use replicante_models_agent::DatastoreInfo;
 use replicante_models_agent::Shards;
 
-use super::Result;
+use crate::actions::Action;
+use crate::Result;
 
 /// Trait to share common agent code and features.
 ///
@@ -21,4 +24,18 @@ pub trait Agent: Send + Sync {
 
     /// Fetches all shards and details on the managed datastore node.
     fn shards(&self, span: &mut Span) -> Result<Shards>;
+
+    /// Factory for an optional `replicante.store.stop` action.
+    ///
+    /// Such action, if returned MUST implement a datastore specific graceful shutdown.
+    /// This action is not expected to operate on the process itself, although it will
+    /// likely cause it to exit.
+    ///
+    /// If a datastore does not have any such action, let the default implementation
+    /// return `None` for you to indicate this.
+    ///
+    /// For example, MongoDB `db.shutdownServer` is a good candidate for this action.
+    fn graceful_stop_action(&self) -> Option<Arc<dyn Action>> {
+        None
+    }
 }
