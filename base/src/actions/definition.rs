@@ -78,9 +78,6 @@ pub struct ActionRecord {
     /// Version of the agent that last validated the action.
     pub agent_version: String,
 
-    /// Arguments passed to the action when invoked.
-    pub args: Json,
-
     /// Time the agent recorded the action in the DB.
     pub created_ts: DateTime<Utc>,
 
@@ -92,6 +89,9 @@ pub struct ActionRecord {
 
     /// Entity (system or user) requesting the execution of the action.
     pub requester: ActionRequester,
+
+    /// Arguments passed to the action when invoked.
+    args: Json,
 
     /// State the action is currently in.
     state: ActionState,
@@ -184,6 +184,9 @@ impl ActionRecord {
 /// Allows actions to be composable by "presenting" the state a "nested action expects.
 /// Look at the `replicante.service.restart` action for an example.
 pub trait ActionRecordView {
+    /// Access the action arguments.
+    fn args(&self) -> &Json;
+
     /// Access the raw record, mainly to pass it to the store interface.
     fn inner(&self) -> &ActionRecord;
 
@@ -223,6 +226,10 @@ impl dyn ActionRecordView {
 }
 
 impl ActionRecordView for ActionRecord {
+    fn args(&self) -> &Json {
+        &self.args
+    }
+
     fn inner(&self) -> &ActionRecord {
         self
     }

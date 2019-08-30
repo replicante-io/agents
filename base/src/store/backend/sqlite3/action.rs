@@ -339,7 +339,7 @@ impl<'a, 'b: 'a> ActionInterface for Action<'a, 'b> {
             span.auto_finish()
         });
         let action_id = action.id.to_string();
-        let args = serde_json::to_string(&action.args)
+        let args = serde_json::to_string(&action.args())
             .with_context(|_| ErrorKind::PersistentWrite(ACTION_INSERT))?;
         let headers = serde_json::to_string(&action.headers)
             .with_context(|_| ErrorKind::PersistentWrite(ACTION_INSERT))?;

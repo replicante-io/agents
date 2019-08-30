@@ -13,6 +13,7 @@ use crate::AgentContext;
 use crate::ErrorKind;
 use crate::Result;
 
+pub mod advanced;
 mod definition;
 mod engine;
 mod impls;

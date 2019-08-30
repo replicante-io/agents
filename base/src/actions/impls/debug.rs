@@ -70,7 +70,7 @@ impl Action for Progress {
             ActionState::Done
         };
         tx.action().transition(
-            record.inner(),
+            record,
             next_state,
             None,
             span.map(|span| span.context().clone()),
@@ -100,7 +100,7 @@ impl Action for Success {
         span: Option<&mut Span>,
     ) -> Result<()> {
         tx.action().transition(
-            record.inner(),
+            record,
             ActionState::Done,
             None,
             span.map(|span| span.context().clone()),
