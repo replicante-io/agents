@@ -10,6 +10,8 @@ mod start;
 mod stop;
 mod supervisor;
 
+use self::composed::GracefulRestart;
+use self::composed::GracefulStop;
 use self::composed::ServiceRestart;
 use self::start::ServiceStart;
 use self::stop::ServiceStop;
@@ -35,7 +37,9 @@ impl Default for ServiceActionState {
 /// Register all service related actions.
 pub fn register(agent: &dyn Agent, context: &AgentContext) {
     let supervisor = self::supervisor::factory(agent, context);
+    ACTIONS::register_reserved(GracefulRestart::make(agent, &supervisor));
+    ACTIONS::register_reserved(GracefulStop::make(agent, &supervisor));
+    ACTIONS::register_reserved(ServiceRestart::make(&supervisor));
     ACTIONS::register_reserved(ServiceStart::new(&supervisor));
     ACTIONS::register_reserved(ServiceStop::new(&supervisor));
-    ACTIONS::register_reserved(ServiceRestart::make(&supervisor));
 }

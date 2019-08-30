@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use failure::ResultExt;
 use opentracingrust::Span;
 use serde::Deserialize;
@@ -24,7 +26,7 @@ lazy_static::lazy_static! {
 
 /// An action to run with the "scope" its arguments are received under.
 struct ActionScope {
-    action: Box<dyn Action>,
+    action: ActionScopeWrapper,
     scope: &'static str,
 }
 
@@ -37,6 +39,35 @@ impl ActionScope {
         match args.get(self.scope) {
             None => &DEFAULT_ARG_OBJECT,
             Some(args) => args,
+        }
+    }
+}
+
+/// Wrap dynamic `Action`s into either an `Arc` or a `Box`.
+enum ActionScopeWrapper {
+    Arc(Arc<dyn Action>),
+    Box(Box<dyn Action>),
+}
+
+impl ActionScopeWrapper {
+    /// Invoke the wrapped action.
+    fn invoke(
+        &self,
+        tx: &mut Transaction,
+        record: &dyn ActionRecordView,
+        span: Option<&mut Span>,
+    ) -> Result<()> {
+        match self {
+            ActionScopeWrapper::Arc(ref action) => action.invoke(tx, record, span),
+            ActionScopeWrapper::Box(ref action) => action.invoke(tx, record, span),
+        }
+    }
+
+    /// Validate args agains the wrapped action.
+    fn validate_args(&self, args: &Json) -> ActionValidity {
+        match self {
+            ActionScopeWrapper::Arc(ref action) => action.validate_args(args),
+            ActionScopeWrapper::Box(ref action) => action.validate_args(args),
         }
     }
 }
@@ -165,7 +196,14 @@ impl AndThenBuilder {
     where
         A: Action,
     {
-        let action = Box::new(action);
+        let action = ActionScopeWrapper::Box(Box::new(action));
+        self.stages.push(ActionScope { action, scope });
+        self
+    }
+
+    /// Same as `AndThen::and_then` but for actions wrapped by and `Arc`.
+    pub(crate) fn and_then_arc(mut self, action: Arc<dyn Action>, scope: &'static str) -> Self {
+        let action = ActionScopeWrapper::Arc(action);
         self.stages.push(ActionScope { action, scope });
         self
     }
