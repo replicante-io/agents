@@ -29,12 +29,13 @@ use crate::Result;
 const ACTION_GET: &str = "action.get";
 const ACTION_GET_SQL: &str = r#"
 SELECT
-    action,
     agent_version,
     args,
     created_ts,
+    finished_ts,
     headers,
     id,
+    kind,
     requester,
     state,
     state_payload
@@ -55,12 +56,12 @@ ORDER BY time DESC, ROWID DESC;
 const ACTION_INSERT: &str = "action.insert";
 const ACTION_INSERT_SQL: &str = r#"
 INSERT INTO actions (
-    action,
     agent_version,
     args,
     created_ts,
     headers,
     id,
+    kind,
     requester,
     state,
     state_payload
@@ -80,12 +81,12 @@ VALUES (?1, ?2, ?3, ?4);
 const ACTION_NEXT: &str = "action.next";
 const ACTION_NEXT_SQL: &str = r#"
 SELECT
-    action,
     agent_version,
     args,
     created_ts,
     headers,
     id,
+    kind,
     requester,
     state,
     state_payload
@@ -139,14 +140,21 @@ macro_rules! decode_or_return {
 fn parse_action(row: &Row, op: &'static str) -> Result<ActionRecord> {
     let id: String = decode_or_return!(row.get("id"), op);
     let id = decode_or_return!(Uuid::from_str(&id), op);
-    let action: String = decode_or_return!(row.get("action"), op);
     let agent_version: String = decode_or_return!(row.get("agent_version"), op);
     let args: String = decode_or_return!(row.get("args"), op);
     let args = decode_or_return!(serde_json::from_str(&args), op);
     let created_ts: i64 = decode_or_return!(row.get("created_ts"), op);
     let created_ts = Utc.timestamp(created_ts, 0);
+    let finished_ts = match row.get("finished_ts") {
+        Err(rusqlite::Error::InvalidColumnName(_)) => None,
+        finished_ts => {
+            let finished_ts: i64 = decode_or_return!(finished_ts, op);
+            Some(Utc.timestamp(finished_ts, 0))
+        }
+    };
     let headers: String = decode_or_return!(row.get("headers"), op);
     let headers = decode_or_return!(serde_json::from_str(&headers), op);
+    let kind: String = decode_or_return!(row.get("kind"), op);
     let requester: String = decode_or_return!(row.get("requester"), op);
     let requester = decode_or_return!(serde_json::from_str(&requester), op);
     let state: String = decode_or_return!(row.get("state"), op);
@@ -157,12 +165,13 @@ fn parse_action(row: &Row, op: &'static str) -> Result<ActionRecord> {
         Some(payload) => decode_or_return!(serde_json::from_str(&payload), op),
     };
     Ok(ActionRecord::inflate(
-        action,
         agent_version,
         args,
         created_ts,
+        finished_ts,
         headers,
         id,
+        kind,
         requester,
         state,
         state_payload,
@@ -370,12 +379,12 @@ impl<'a, 'b: 'a> ActionInterface for Action<'a, 'b> {
             })?;
         statement
             .execute(params![
-                action.action,
                 action.agent_version,
                 args,
                 action.created_ts.timestamp(),
                 headers,
                 &action_id,
+                action.kind,
                 requester,
                 &state,
                 &state_payload,

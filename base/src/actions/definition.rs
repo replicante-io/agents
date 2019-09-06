@@ -55,7 +55,7 @@ pub trait Action: Send + Sync + 'static {
 /// This data is the base of the actions system.
 /// Instead of hardcoded knowledge about what actions do,
 /// both system and users rely on metadata to call actions.
-#[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
+#[derive(Clone, Eq, Ord, PartialEq, PartialOrd, Hash, Debug, Serialize, Deserialize)]
 pub struct ActionDescriptor {
     pub kind: String,
     pub description: String,
@@ -64,28 +64,33 @@ pub struct ActionDescriptor {
 /// Summary info about an action returned in lists.
 #[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
 pub struct ActionListItem {
-    pub action: String,
     pub id: Uuid,
+    pub kind: String,
     pub state: ActionState,
 }
 
 /// Action state and metadata information.
 #[derive(Clone, PartialEq, Debug, Serialize, Deserialize)]
 pub struct ActionRecord {
-    /// Type ID of the action to run.
-    pub action: String,
-
+    // TODO: remove this from the API model,
+    //       it may be removed and would make sense internally only anyway.
     /// Version of the agent that last validated the action.
     pub agent_version: String,
 
     /// Time the agent recorded the action in the DB.
     pub created_ts: DateTime<Utc>,
 
+    /// Time the action entered a finished state.
+    pub finished_ts: Option<DateTime<Utc>>,
+
     /// Additional metadata headers attached to the action.
     pub headers: HashMap<String, String>,
 
     /// Unique ID of the action.
     pub id: Uuid,
+
+    /// Type ID of the action to run.
+    pub kind: String,
 
     /// Entity (system or user) requesting the execution of the action.
     pub requester: ActionRequester,
@@ -104,23 +109,25 @@ impl ActionRecord {
     /// Construct an `ActionRecord` from raw attributes.
     #[allow(clippy::too_many_arguments)]
     pub(crate) fn inflate(
-        action: String,
         agent_version: String,
         args: Json,
         created_ts: DateTime<Utc>,
+        finished_ts: Option<DateTime<Utc>>,
         headers: HashMap<String, String>,
         id: Uuid,
+        kind: String,
         requester: ActionRequester,
         state: ActionState,
         state_payload: Option<Json>,
     ) -> ActionRecord {
         ActionRecord {
-            action,
             agent_version,
             args,
             created_ts,
+            finished_ts,
             headers,
             id,
+            kind,
             requester,
             state,
             state_payload,
@@ -128,18 +135,19 @@ impl ActionRecord {
     }
 
     /// Initialise a new action to be executed.
-    pub fn new<S>(action: S, args: Json, requester: ActionRequester) -> ActionRecord
+    pub fn new<S>(kind: S, args: Json, requester: ActionRequester) -> ActionRecord
     where
         S: Into<String>,
     {
-        let action = action.into();
+        let kind = kind.into();
         ActionRecord {
-            action,
             agent_version: env!("CARGO_PKG_VERSION").to_string(),
             args,
             created_ts: Utc::now(),
+            finished_ts: None,
             headers: HashMap::new(),
             id: Uuid::new_v4(),
+            kind,
             requester,
             state: ActionState::New,
             state_payload: None,

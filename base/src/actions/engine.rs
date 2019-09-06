@@ -108,7 +108,7 @@ impl Engine {
                 Some(record) => record,
             };
             if let Some(span) = span.as_mut() {
-                span.tag("action.kind", record.action.clone());
+                span.tag("action.kind", record.kind.clone());
                 span.tag("action.id", record.id.to_string());
                 match record.trace_get(&self.context.tracer) {
                     Ok(None) => (),
@@ -120,16 +120,16 @@ impl Engine {
                             "Failed to extract tracing context from action record";
                             failure_info(&error),
                             "id" => %&record.id,
-                            "kind" => &record.action,
+                            "kind" => &record.kind,
                         );
                     }
                 };
             }
-            ACTION_COUNT.with_label_values(&[&record.action]).inc();
-            let action = match ACTIONS::get(&record.action) {
+            ACTION_COUNT.with_label_values(&[&record.kind]).inc();
+            let action = match ACTIONS::get(&record.kind) {
                 Some(action) => action,
                 None => {
-                    let error = ErrorKind::ActionNotAvailable(record.action.clone());
+                    let error = ErrorKind::ActionNotAvailable(record.kind.clone());
                     return self.fail(tx, &record, error.into(), span.as_ref().map(Deref::deref));
                 }
             };
@@ -137,7 +137,7 @@ impl Engine {
                 self.context.logger,
                 "Invoking action handler";
                 "id" => %&record.id,
-                "kind" => &record.action,
+                "kind" => &record.kind,
             );
             match self.call(tx, &record, action, span.as_mut().map(DerefMut::deref_mut)) {
                 Err(error) => self.fail(tx, &record, error, span.as_ref().map(Deref::deref)),
@@ -160,7 +160,7 @@ impl Engine {
         span: Option<&mut Span>,
     ) -> Result<()> {
         let _timer = ACTION_DURATION
-            .with_label_values(&[&record.action])
+            .with_label_values(&[&record.kind])
             .start_timer();
         action.invoke(tx, record, span)
     }
@@ -176,10 +176,10 @@ impl Engine {
             self.context.logger,
             "Action invocation failed";
             "id" => %&record.id,
-            "kind" => &record.action,
+            "kind" => &record.kind,
             failure_info(&error),
         );
-        ACTION_ERRORS.with_label_values(&[&record.action]).inc();
+        ACTION_ERRORS.with_label_values(&[&record.kind]).inc();
         let error = SerializableFail::from(&error);
         let error = serde_json::to_value(&error).with_context(|_| ErrorKind::ActionEncode)?;
         tx.action().transition(

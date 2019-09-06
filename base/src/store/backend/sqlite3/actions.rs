@@ -24,7 +24,7 @@ use crate::Result;
 const ACTIONS_FINISHED: &str = "action.finished";
 const ACTIONS_FINISHED_SQL: &str = r#"
 SELECT
-    action, id, state
+    kind, id, state
 FROM actions
 WHERE finished_ts IS NOT NULL
 ORDER BY created_ts DESC, ROWID ASC
@@ -35,7 +35,7 @@ LIMIT 100;
 const ACTIONS_QUEUE: &str = "action.queue";
 const ACTIONS_QUEUE_SQL: &str = r#"
 SELECT
-    action, id, state
+    kind, id, state
 FROM actions
 WHERE finished_ts IS NULL
 ORDER BY created_ts ASC, ROWID ASC
@@ -87,10 +87,10 @@ fn parse_actions_list(statement: &mut Statement, op: &'static str) -> Result<Ite
     while let Some(row) = maybe_row {
         let id: String = decode_or_continue!(row.get("id"), results, op);
         let id = decode_or_continue!(Uuid::from_str(&id), results, op);
-        let action: String = decode_or_continue!(row.get("action"), results, op);
+        let kind: String = decode_or_continue!(row.get("kind"), results, op);
         let state: String = decode_or_continue!(row.get("state"), results, op);
         let state: ActionState = decode_or_continue!(serde_json::from_str(&state), results, op);
-        results.push(Ok(ActionListItem { action, id, state }));
+        results.push(Ok(ActionListItem { kind, id, state }));
         maybe_row = rows
             .next()
             .with_context(|_| ErrorKind::PersistentRead(op))?;

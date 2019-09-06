@@ -20,7 +20,9 @@ mod list;
 
 /// Return a list of available agent actions.
 fn available() -> impl Responder {
-    let actions: Vec<ActionDescriptor> = ACTIONS::iter().map(|action| action.describe()).collect();
+    let mut actions: Vec<ActionDescriptor> =
+        ACTIONS::iter().map(|action| action.describe()).collect();
+    actions.sort();
     HttpResponse::Ok().json(actions)
 }
 
