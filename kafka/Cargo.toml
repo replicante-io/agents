@@ -28,7 +28,7 @@ path = "src/main.rs"
 [dependencies]
 failure = "^0.1.5"
 jmx = { version ="^0.2.0", features = ["thread-support"] }
-kafka = "^0.7.0"
+kafka = "^0.8.0"
 lazy_static = "^1.0.1"
 prometheus = "^0.7.0"
 serde = "^1.0.25"
@@ -52,8 +52,3 @@ git2 = "^0.9.0"
 
 [features]
 journald = ["replicante_agent/journald"]
-
-
-# This patch is needed to make openssl (needed by kafka) work with openssl 1.0+
-[patch.crates-io]
-kafka = { git = 'https://github.com/l4l/kafka-rust', branch = 'update/openssl' }
