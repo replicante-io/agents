@@ -17,7 +17,15 @@ This is not a secure setup (unless you trust the network, but you don't right?).
 At the very least this exposes the system to [replay attacks](https://en.wikipedia.org/wiki/Replay_attack):
 a malicious user can record a legitimate request and re-send it to the agent at will.
 
-The recommended approach is to run an HTTPS proxy server in front of the agent.
+Offical agents support HTTPS-only servers,
+with mutual certificte verifiction required for actions to be enabled.
+
+<blockquote class="info">
+
+The actions system can only be enabled if mutual HTTPS verification is enforced.
+This is by design as actions can easily compromise datastores if used casually or maliciously.
+
+</blockquote>
 
 
 ## Runtime user

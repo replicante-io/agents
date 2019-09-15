@@ -4,7 +4,7 @@ title: Introduction
 sidebar_label: Introduction
 ---
 
-Agents are the part of the replicante ecosystem that ensure datastores compliance with the model.
+Agents are the part of the replicante ecosystem that ensure datastores conform with the model.
 
 Beside the task of exporting datastores information in the correct format,
 agents also implement administrate tasks that datastores do not implement directly.
@@ -36,7 +36,6 @@ Using a shared base crate also mean that:
   * Operational logic (logging, metrics, tracing, ...) is provided.
   * Many more features and tools ...
 
-If you are looking to build a new agent in [rust](https://www.rust-lang.org/) there is also
-another advantage: you can use the `replicante_agent` base crate to speed up the development.
-
-Find more details in the [crate documentation](https://docs.rs/replicante_agent).
+If you are looking to build a new agent in [rust](https://www.rust-lang.org/) take advantage of the
+[`replicante_agent`](https://docs.rs/replicante_agent)
+base crate to speed up the development and help us improve it.

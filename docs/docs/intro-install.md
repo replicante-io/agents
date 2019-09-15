@@ -15,7 +15,7 @@ to work and container isolation will interfere with them.
 
 ### From pre-built binaries
 Pre-built binaries are helpful for users to get up and running quickly.
-Unfortunately they require a good deal of effort from the community to be available for all
+Unfortunately they require a great deal of effort from the community to be available for all
 popular distributions that people my want to use.
 The Replicante Community cannot afford to provide pre-built binaries for all popular
 Linux distributions at this stage but we do want to provide something to make things

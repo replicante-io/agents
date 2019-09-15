@@ -12,9 +12,52 @@ configuration options as well as agent specific options.
 Below are the common agent options while agent specific options
 are documented with the agents details.
 
+
+## Required configuration options
+```yaml
+agent:
+  api:
+    # Required for the actions system to be available.
+    # Can be skipped otherwise to run the agent over HTTP.
+    tls:
+      clients_ca_bundle: '/path/to/certs/ca-bundle.pem'
+      server_cert: '/path/to/certs/server-cert.pem'
+      server_key: '/path/to/certs/server-key.pem'
+
+  # (required) Location for the agent to store persistent data.
+  db: 'path/to/agent.db'
+```
+
+
+## All confogiration options
 ```yaml
 # Datastore independent agent configuration.
 agent:
+  # The section below is for agent actions configuration.
+  actions:
+    # Enable/disable agent actions.
+    #
+    # Actions can only be enable if the API server is secured with HTTPS certificates.
+    # See the `agent.api.tls` for HTTPS configuration options.
+    # If the actions system is enabled but HTTPS is not configured for mutual authentication
+    # the agent process will refuse to start.
+    #
+    # By default the actions system is disabled unless HTTPS with mutual authentication is enabled.
+    # When HTTPS with manual authentication is enabled the actions system is automatically enabled.
+    enabled: ~
+
+    # Delay, in seconds, between action executions.
+    execute_interval: 1
+
+    # Delay, in seconds, between historical action prune cycles.
+    prune_interval: 3600
+
+    # Number of finished actions to keep as history.
+    prune_keep: 100
+
+    # Number of finished actions to prune from the history in one cycle.
+    prune_limit: 500
+
   # The section below is for the API interface configuration.
   api:
     # The network interface and port to bind the API server onto.
@@ -25,7 +68,7 @@ agent:
 
     # The number of request handling threads.
     #
-    # By default this is 8 * number of CPUs.
+    # By default this is the number of CPUs.
     threads_count: ~
 
     # API server timeouts.
@@ -44,6 +87,32 @@ agent:
       #
       # NOTE: Setting this to null (~) will turn off write timeouts.
       write: 1
+
+    # TLS (for HTTPS) certificates configuration.
+    #
+    # By default, the agent starts without TLS enabled and serves requests over HTTP.
+    # Because this is an insecure channel and anyone could be making requests
+    # **actions are disabled** unless **mutual client** certificate validation is performed.
+    #
+    # HTTPS without mutual authentication can also be enabled by providing the server
+    # with a TLS certificate and a TLS private key but **actions will still be disabled**.
+    tls: ~
+      # Optional path to a PEM bundle of trusted CAs for client authentication.
+      #
+      # This is **required** for actions to be enabled.
+      # If actions are explicitly enabled but no clients bundles are provided the agent
+      # will error on startup to notify about the incorrect configuration.
+      #clients_ca_bundle: ~
+    
+      # Path to a PEM file with the server's public certificate.
+      #
+      # Required if the `tls` option is set (not ~).
+      #server_cert: '/path/to/certs/server-cert.pem'
+    
+      # Path to a PEM file with the server's PRIVATE certificate.
+      #
+      # Required if the `tls` option is set (not ~).
+      #server_key: '/path/to/certs/server-key.pem'
 
     # Enable/disable entire API trees.
     #
@@ -81,6 +150,9 @@ agent:
   # NOTE: just like the cluster ID, the display name must be unique across all
   # clusters in a single Replicante Core instance.
   cluster_display_name_override: ~
+
+  # (required) Location for the agent to store persistent data.
+  db: 'path/to/agent.db'
 
   # The section below is for logging configuration.
   logging:
@@ -176,6 +248,48 @@ agent:
   #  # (required) The DSN to use to configure sentry.
   #  dsn: 'https://key@server.domain:port/project'
   sentry: ~
+
+
+  # The section below is for service supervisor configuration.
+  # It is used by the actions system to control the datastore process.
+  service:
+    # Service supervisor in charge of managing the datastore process.
+    #
+    # Allowed options are:
+    #
+    #   * `commands`: execute user-specified commands.
+    #   * `systemd`: control a service through `systemctl`.
+    supervisor: 'systemd'
+
+    # Supervisor-specific options.
+    # The options listed below are for the `systemd` supervisor.
+    options:
+      # (optional) name of the service to manage.
+      # Agents define a datastore-specific value that is used as a default.
+      service_name: ~
+
+    # Supervisor-specific options.
+    # The options listed below are for the `commands` supervisor.
+    #options:
+    #  # Command to return the main PID of the datastore service.
+    #  #
+    #  # This command MUST output the PID to stdout and nothing else (not even a new-line).
+    #  # If the datastore process is not running standard out should be empty.
+    #  pid: ['/sbin/serivice-pid.sh', 'some-store']
+    #
+    #  # Command to start the datastore service.
+    #  #
+    #  # This must a no-op if the service is already running.
+    #  # The script can exit at any time, the service is considered
+    #  # running once a PID is returned by the pid command.
+    #  start: ['/sbin/service-start.sh', 'some-store']
+    #
+    #  # Command to stop the datastore service.
+    #  #
+    #  # This must a no-op if the service is already stopped.
+    #  # The script can exit at any time, the service is considered
+    #  # stopped once a PID is no longer returned by the pid command.
+    #  stop: ['/sbin/server-stop.sh', 'some-store']
 
 
   # The section below is for distributed tracing configuration.

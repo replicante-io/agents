@@ -35,7 +35,7 @@ agent:
 
     # The number of request handling threads.
     #
-    # By default this is 8 * number of CPUs.
+    # By default this is the number of CPUs.
     threads_count: ~
 
     # API server timeouts.
@@ -74,12 +74,12 @@ agent:
       # Path to a PEM file with the server's public certificate.
       #
       # Required if the `tls` option is set (not ~).
-      #server_cert: TODO
+      #server_cert: '/path/to/certs/server-cert.pem'
     
       # Path to a PEM file with the server's PRIVATE certificate.
       #
       # Required if the `tls` option is set (not ~).
-      #server_key: TODO
+      #server_key: '/path/to/certs/server-key.pem'
 
     # Enable/disable entire API trees.
     #
