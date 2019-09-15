@@ -7,9 +7,9 @@ use replicante_agent::actions::Action;
 use replicante_agent::Agent;
 use replicante_agent::AgentContext;
 use replicante_agent::Result;
-use replicante_models_agent::AgentInfo;
-use replicante_models_agent::DatastoreInfo;
-use replicante_models_agent::Shards;
+use replicante_models_agent::info::AgentInfo;
+use replicante_models_agent::info::DatastoreInfo;
+use replicante_models_agent::info::Shards;
 
 use super::common::CommonLogic;
 use crate::actions::GracefulStop;

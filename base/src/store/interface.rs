@@ -6,9 +6,9 @@ use opentracingrust::SpanContext;
 use serde_json::Value as Json;
 
 use super::Iter;
+use crate::actions::ActionHistoryItem;
 use crate::actions::ActionListItem;
 use crate::actions::ActionRecord;
-use crate::actions::ActionRecordHistory;
 use crate::actions::ActionState;
 use crate::Result;
 
@@ -162,7 +162,7 @@ box_interface! {
             &self,
             id: &str,
             span: Option<SpanContext>,
-        ) -> Result<Iter<ActionRecordHistory>>;
+        ) -> Result<Iter<ActionHistoryItem>>;
 
         /// Persist a NEW action to the store.
         fn insert(&self, action: ActionRecord, span: Option<SpanContext>) -> Result<()>;

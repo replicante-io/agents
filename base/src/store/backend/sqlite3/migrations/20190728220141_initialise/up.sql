@@ -16,7 +16,7 @@ CREATE INDEX actions_created_ts ON actions(created_ts);
 CREATE INDEX actions_finished_ts ON actions(finished_ts);
 CREATE INDEX actions_state ON actions(state);
 
--- Based on ActionRecordHistory from base/src/actions/definition.rs
+-- Based on ActionHistoryItem from base/src/actions/definition.rs
 CREATE TABLE IF NOT EXISTS actions_history(
   -- INTEGER PRIMARY KEY is an alias for ROWID (which is more efficient then AUTOINCREMENT).
   -- https://www.sqlite.org/autoinc.html

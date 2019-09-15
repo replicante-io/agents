@@ -2,7 +2,7 @@ use bson::TimeStamp;
 use serde_derive::Deserialize;
 
 use replicante_agent::Result;
-use replicante_models_agent::ShardRole;
+use replicante_models_agent::info::ShardRole;
 
 use super::super::super::error::ErrorKind;
 
@@ -100,7 +100,7 @@ mod tests {
     use lazy_static::lazy_static;
 
     use replicante_agent::ErrorKind;
-    use replicante_models_agent::ShardRole;
+    use replicante_models_agent::info::ShardRole;
 
     use super::ReplSetStatus;
 

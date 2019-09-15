@@ -1,9 +1,9 @@
 use opentracingrust::Span;
 
-use replicante_models_agent::AgentInfo;
-use replicante_models_agent::AgentVersion;
-use replicante_models_agent::DatastoreInfo;
-use replicante_models_agent::Shards;
+use replicante_models_agent::info::AgentInfo;
+use replicante_models_agent::info::AgentVersion;
+use replicante_models_agent::info::DatastoreInfo;
+use replicante_models_agent::info::Shards;
 
 use super::Agent;
 use super::ErrorKind;

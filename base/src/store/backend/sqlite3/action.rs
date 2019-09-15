@@ -13,8 +13,8 @@ use uuid::Uuid;
 
 use replicante_util_tracing::MaybeTracer;
 
+use crate::actions::ActionHistoryItem;
 use crate::actions::ActionRecord;
-use crate::actions::ActionRecordHistory;
 use crate::actions::ActionRecordView;
 use crate::actions::ActionState;
 use crate::metrics::SQLITE_OPS_COUNT;
@@ -277,7 +277,7 @@ impl<'a, 'b: 'a> ActionInterface for Action<'a, 'b> {
         parse_action(row, ACTION_GET).map(Some)
     }
 
-    fn history(&self, id: &str, span: Option<SpanContext>) -> Result<Iter<ActionRecordHistory>> {
+    fn history(&self, id: &str, span: Option<SpanContext>) -> Result<Iter<ActionHistoryItem>> {
         let _span = self.tracer.with(|tracer| {
             let mut opts = StartOptions::default();
             if let Some(context) = span {
@@ -324,7 +324,7 @@ impl<'a, 'b: 'a> ActionInterface for Action<'a, 'b> {
                     decode_or_continue!(serde_json::from_str(&payload), results, ACTION_GET_HISTORY)
                 }
             };
-            results.push(Ok(ActionRecordHistory {
+            results.push(Ok(ActionHistoryItem {
                 action_id,
                 timestamp,
                 state,

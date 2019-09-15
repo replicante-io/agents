@@ -19,6 +19,14 @@ use serde_json::json;
 use serde_json::Value as Json;
 use uuid::Uuid;
 
+use replicante_models_agent::actions::ActionModel;
+
+// Use the view versions of these models from here so they can easily change if needed.
+pub use replicante_models_agent::actions::ActionHistoryItem;
+pub use replicante_models_agent::actions::ActionListItem;
+pub use replicante_models_agent::actions::ActionRequester;
+pub use replicante_models_agent::actions::ActionState;
+
 use crate::store::Transaction;
 use crate::ErrorKind;
 use crate::Result;
@@ -61,19 +69,9 @@ pub struct ActionDescriptor {
     pub description: String,
 }
 
-/// Summary info about an action returned in lists.
-#[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
-pub struct ActionListItem {
-    pub id: Uuid,
-    pub kind: String,
-    pub state: ActionState,
-}
-
 /// Action state and metadata information.
 #[derive(Clone, PartialEq, Debug, Serialize, Deserialize)]
 pub struct ActionRecord {
-    // TODO: remove this from the API model,
-    //       it may be removed and would make sense internally only anyway.
     /// Version of the agent that last validated the action.
     pub agent_version: String,
 
@@ -187,6 +185,22 @@ impl ActionRecord {
     }
 }
 
+impl From<ActionRecord> for ActionModel {
+    fn from(record: ActionRecord) -> ActionModel {
+        ActionModel {
+            args: record.args,
+            created_ts: record.created_ts,
+            finished_ts: record.finished_ts,
+            headers: record.headers,
+            id: record.id,
+            kind: record.kind,
+            requester: record.requester,
+            state: record.state,
+            state_payload: record.state_payload,
+        }
+    }
+}
+
 /// A dynamic view on `ActionRecord`s.
 ///
 /// Allows actions to be composable by "presenting" the state a "nested action expects.
@@ -256,64 +270,6 @@ impl ActionRecordView for ActionRecord {
 
     fn state_payload(&self) -> &Option<Json> {
         &self.state_payload
-    }
-}
-
-/// Transition history records for actions.
-#[derive(Clone, PartialEq, Debug, Serialize, Deserialize)]
-pub struct ActionRecordHistory {
-    /// ID of the action that transitioned.
-    pub action_id: Uuid,
-
-    /// Time the agent transitioned into this state.
-    pub timestamp: DateTime<Utc>,
-
-    /// State the action is currently in.
-    pub state: ActionState,
-
-    /// Optional payload attached to the current state.
-    pub state_payload: Option<Json>,
-}
-
-/// Entity (system, user, ...) that requested the action to be performed.
-#[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
-#[serde(rename_all = "UPPERCASE")]
-pub enum ActionRequester {
-    Api,
-}
-
-/// Current state of an action execution.
-#[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
-#[serde(rename_all = "UPPERCASE")]
-pub enum ActionState {
-    /// The action is to be cancelled, but that has not happened yet.
-    Cancel,
-
-    /// The action was successfully cancelled.
-    Cancelled,
-
-    /// The action was successfully completed.
-    Done,
-
-    /// The action ended with an error.
-    Failed,
-
-    /// The action has just been sheduled and is not being executed yet.
-    New,
-
-    /// The action was started by the agent and is in progress.
-    Running,
-}
-
-impl ActionState {
-    /// True if the action is finished (failed or succeeded).
-    pub fn is_finished(&self) -> bool {
-        match self {
-            ActionState::Cancelled => true,
-            ActionState::Done => true,
-            ActionState::Failed => true,
-            _ => false,
-        }
     }
 }
 

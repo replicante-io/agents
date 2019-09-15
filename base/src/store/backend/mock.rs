@@ -6,8 +6,8 @@ use std::sync::Mutex;
 use opentracingrust::SpanContext;
 use serde_json::Value as Json;
 
+use crate::actions::ActionHistoryItem;
 use crate::actions::ActionRecord;
-use crate::actions::ActionRecordHistory;
 use crate::actions::ActionState;
 use crate::store::interface::ActionImpl;
 use crate::store::interface::ActionInterface;
@@ -122,7 +122,7 @@ impl ActionInterface for Action {
         Ok(action)
     }
 
-    fn history(&self, _id: &str, _: Option<SpanContext>) -> Result<Iter<ActionRecordHistory>> {
+    fn history(&self, _id: &str, _: Option<SpanContext>) -> Result<Iter<ActionHistoryItem>> {
         panic!("TODO: MockStore::action::history")
     }
 

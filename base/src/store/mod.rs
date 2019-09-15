@@ -13,9 +13,9 @@ pub use self::backend::backend_factory;
 use self::interface::StoreImpl;
 use self::interface::TransactionImpl;
 use crate::actions::ensure_transition_allowed;
+use crate::actions::ActionHistoryItem;
 use crate::actions::ActionListItem;
 use crate::actions::ActionRecord;
-use crate::actions::ActionRecordHistory;
 use crate::actions::ActionRecordView;
 use crate::actions::ActionState;
 use crate::Result;
@@ -35,7 +35,7 @@ impl<'a> Action<'a> {
     }
 
     /// Fetch an action record's transition history.
-    pub fn history<S>(&self, id: &str, span: S) -> Result<Iter<ActionRecordHistory>>
+    pub fn history<S>(&self, id: &str, span: S) -> Result<Iter<ActionHistoryItem>>
     where
         S: Into<Option<SpanContext>>,
     {

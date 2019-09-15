@@ -6,16 +6,14 @@ use actix_web::HttpResponse;
 use actix_web::Responder;
 use actix_web::Result;
 use failure::ResultExt;
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
 use serde_json::json;
 use serde_json::Value;
 
+use replicante_models_agent::actions::api::ActionInfoResponse;
 use replicante_util_actixweb::request_span;
 use replicante_util_tracing::fail_span;
 
 use crate::actions::ActionRecord;
-use crate::actions::ActionRecordHistory;
 use crate::actions::ActionRequester;
 use crate::actions::ACTIONS;
 use crate::AgentContext;
@@ -35,13 +33,6 @@ lazy_static::lazy_static! {
     };
 }
 
-/// Action information returned by the API.
-#[derive(Clone, PartialEq, Debug, Serialize, Deserialize)]
-pub struct ActionInfo {
-    action: ActionRecord,
-    history: Vec<ActionRecordHistory>,
-}
-
 /// Fetch an action details.
 pub fn info(id: web::Path<String>, request: HttpRequest) -> Result<impl Responder> {
     let context = request
@@ -56,14 +47,14 @@ pub fn info(id: web::Path<String>, request: HttpRequest) -> Result<impl Responde
             let action = tx.action().get(&id, span.context().clone())?;
             let action = match action {
                 None => return Ok(None),
-                Some(action) => action,
+                Some(action) => action.into(),
             };
             let iter = tx.action().history(&id, span.context().clone())?;
             let mut history = Vec::new();
             for item in iter {
                 history.push(item?);
             }
-            let info = ActionInfo { action, history };
+            let info = ActionInfoResponse { action, history };
             Ok(Some(info))
         })
         .map_err(|error| fail_span(error, span))?;

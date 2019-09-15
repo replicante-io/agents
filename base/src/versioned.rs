@@ -7,9 +7,9 @@ use slog::debug;
 use slog::info;
 use slog::warn;
 
-use replicante_models_agent::AgentInfo;
-use replicante_models_agent::DatastoreInfo;
-use replicante_models_agent::Shards;
+use replicante_models_agent::info::AgentInfo;
+use replicante_models_agent::info::DatastoreInfo;
+use replicante_models_agent::info::Shards;
 use replicante_util_failure::failure_info;
 
 use crate::actions::Action;
@@ -221,9 +221,9 @@ mod tests {
 
     use opentracingrust::Span;
 
-    use replicante_models_agent::AgentInfo;
-    use replicante_models_agent::DatastoreInfo;
-    use replicante_models_agent::Shards;
+    use replicante_models_agent::info::AgentInfo;
+    use replicante_models_agent::info::DatastoreInfo;
+    use replicante_models_agent::info::Shards;
 
     use super::super::testing::MockAgent;
     use super::super::AgentContext;
