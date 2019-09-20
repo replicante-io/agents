@@ -32,3 +32,6 @@ easypki create --private-key-size 4096 --ca-name ca --dns localhost server
 
 echo '==> Generating Client Cert ...'
 easypki create --private-key-size 4096 --ca-name ca --client client
+
+# Combinde client certs into a single PEM file for clients that require a combined file.
+cat "${PKI_ROOT}/ca/certs/client.crt" "${PKI_ROOT}/ca/keys/client.key" > "${PKI_ROOT}/ca/keys/client.pem"
