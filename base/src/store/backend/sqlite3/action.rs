@@ -84,6 +84,7 @@ SELECT
     agent_version,
     args,
     created_ts,
+    finished_ts,
     headers,
     id,
     kind,
@@ -145,13 +146,8 @@ fn parse_action(row: &Row, op: &'static str) -> Result<ActionRecord> {
     let args = decode_or_return!(serde_json::from_str(&args), op);
     let created_ts: i64 = decode_or_return!(row.get("created_ts"), op);
     let created_ts = Utc.timestamp(created_ts, 0);
-    let finished_ts = match row.get("finished_ts") {
-        Err(rusqlite::Error::InvalidColumnName(_)) => None,
-        finished_ts => {
-            let finished_ts: i64 = decode_or_return!(finished_ts, op);
-            Some(Utc.timestamp(finished_ts, 0))
-        }
-    };
+    let finished_ts: Option<i64> = decode_or_return!(row.get("finished_ts"), op);
+    let finished_ts = finished_ts.map(|ts| Utc.timestamp(ts, 0));
     let headers: String = decode_or_return!(row.get("headers"), op);
     let headers = decode_or_return!(serde_json::from_str(&headers), op);
     let kind: String = decode_or_return!(row.get("kind"), op);

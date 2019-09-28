@@ -191,10 +191,10 @@ box_interface! {
     trait ActionsInterface,
 
     interface {
-        /// Iterate over the most recent 100 finished actions.
+        /// Iterate over the most recent 100 finished actions, newest action first.
         fn finished(&self, span: Option<SpanContext>) -> Result<Iter<ActionListItem>>;
 
-        /// Iterate over running and pending actions.
+        /// Iterate over running and pending actions, oldest action first.
         fn queue(&self, span: Option<SpanContext>) -> Result<Iter<ActionListItem>>;
 
         /// Prune finished historic actions to prevent endless DB growth.
