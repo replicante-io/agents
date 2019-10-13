@@ -60,7 +60,6 @@ impl Responder for DatastoreInfo {
         // Inject the cluster_display_name override if configured.
         info.cluster_display_name = self
             .cluster_display_name_override
-            .clone()
             .or(info.cluster_display_name);
 
         let response = HttpResponse::Ok().json(info);
