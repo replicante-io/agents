@@ -209,7 +209,7 @@ mod tests {
 
     #[test]
     fn fail_action_with_unkown_kind() {
-        let action = ActionRecord::new("test".to_string(), json!({}), ActionRequester::Api);
+        let action = ActionRecord::new("test", None, None, json!({}), ActionRequester::Api);
         let id = action.id;
         let context = AgentContext::mock();
         context
@@ -247,6 +247,8 @@ mod tests {
     fn transition_new_to_running() {
         let action = ActionRecord::new(
             "replicante.debug.progress".to_string(),
+            None,
+            None,
             json!({}),
             ActionRequester::Api,
         );

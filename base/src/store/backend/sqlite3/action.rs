@@ -37,6 +37,7 @@ SELECT
     id,
     kind,
     requester,
+    scheduled_ts,
     state,
     state_payload
 FROM actions
@@ -63,10 +64,11 @@ INSERT INTO actions (
     id,
     kind,
     requester,
+    scheduled_ts,
     state,
     state_payload
 )
-VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9);
+VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10);
 "#;
 const ACTION_INSERT_HISTORY: &str = "action.insert.history";
 const ACTION_INSERT_HISTORY_SQL: &str = r#"
@@ -89,11 +91,12 @@ SELECT
     id,
     kind,
     requester,
+    scheduled_ts,
     state,
     state_payload
 FROM actions
 WHERE finished_ts IS NULL
-ORDER BY created_ts
+ORDER BY scheduled_ts ASC, ROWID ASC
 LIMIT 1;
 "#;
 const ACTION_TRANSITION: &str = "action.transition";
@@ -153,6 +156,8 @@ fn parse_action(row: &Row, op: &'static str) -> Result<ActionRecord> {
     let kind: String = decode_or_return!(row.get("kind"), op);
     let requester: String = decode_or_return!(row.get("requester"), op);
     let requester = decode_or_return!(serde_json::from_str(&requester), op);
+    let scheduled_ts: i64 = decode_or_return!(row.get("scheduled_ts"), op);
+    let scheduled_ts = Utc.timestamp(scheduled_ts, 0);
     let state: String = decode_or_return!(row.get("state"), op);
     let state = decode_or_return!(serde_json::from_str(&state), op);
     let state_payload: Option<String> = decode_or_return!(row.get("state_payload"), op);
@@ -169,6 +174,7 @@ fn parse_action(row: &Row, op: &'static str) -> Result<ActionRecord> {
         id,
         kind,
         requester,
+        scheduled_ts,
         state,
         state_payload,
     ))
@@ -382,6 +388,7 @@ impl<'a, 'b: 'a> ActionInterface for Action<'a, 'b> {
                 &action_id,
                 action.kind,
                 requester,
+                action.scheduled_ts.timestamp(),
                 &state,
                 &state_payload,
             ])

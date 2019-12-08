@@ -7,6 +7,7 @@ CREATE TABLE IF NOT EXISTS actions(
   created_ts INTEGER NOT NULL,
   headers TEXT NOT NULL,
   requester TEXT NOT NULL,
+  scheduled_ts INTEGER NOT NULL,
   state TEXT NOT NULL,
   state_payload TEXT,
   -- Additional attributes NOT exposed in the model.

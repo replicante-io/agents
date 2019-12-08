@@ -75,7 +75,7 @@ pub struct ActionRecord {
     /// Version of the agent that last validated the action.
     pub agent_version: String,
 
-    /// Time the agent recorded the action in the DB.
+    /// Time the action was first created (by the agent, by core, ...).
     pub created_ts: DateTime<Utc>,
 
     /// Time the action entered a finished state.
@@ -92,6 +92,9 @@ pub struct ActionRecord {
 
     /// Entity (system or user) requesting the execution of the action.
     pub requester: ActionRequester,
+
+    /// Time the agent recorded the action in the DB.
+    pub scheduled_ts: DateTime<Utc>,
 
     /// Arguments passed to the action when invoked.
     args: Json,
@@ -115,6 +118,7 @@ impl ActionRecord {
         id: Uuid,
         kind: String,
         requester: ActionRequester,
+        scheduled_ts: DateTime<Utc>,
         state: ActionState,
         state_payload: Option<Json>,
     ) -> ActionRecord {
@@ -127,26 +131,36 @@ impl ActionRecord {
             id,
             kind,
             requester,
+            scheduled_ts,
             state,
             state_payload,
         }
     }
 
     /// Initialise a new action to be executed.
-    pub fn new<S>(kind: S, args: Json, requester: ActionRequester) -> ActionRecord
+    pub fn new<S>(
+        kind: S,
+        id: Option<Uuid>,
+        created_ts: Option<DateTime<Utc>>,
+        args: Json,
+        requester: ActionRequester,
+    ) -> ActionRecord
     where
         S: Into<String>,
     {
         let kind = kind.into();
+        let id = id.unwrap_or_else(Uuid::new_v4);
+        let created_ts = created_ts.unwrap_or_else(Utc::now);
         ActionRecord {
             agent_version: env!("CARGO_PKG_VERSION").to_string(),
             args,
-            created_ts: Utc::now(),
+            created_ts,
             finished_ts: None,
             headers: HashMap::new(),
-            id: Uuid::new_v4(),
+            id,
             kind,
             requester,
+            scheduled_ts: Utc::now(),
             state: ActionState::New,
             state_payload: None,
         }
@@ -195,6 +209,7 @@ impl From<ActionRecord> for ActionModel {
             id: record.id,
             kind: record.kind,
             requester: record.requester,
+            scheduled_ts: record.scheduled_ts,
             state: record.state,
             state_payload: record.state_payload,
         }

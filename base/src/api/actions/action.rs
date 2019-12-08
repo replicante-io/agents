@@ -7,9 +7,9 @@ use actix_web::Responder;
 use actix_web::Result;
 use failure::ResultExt;
 use serde_json::json;
-use serde_json::Value;
 
 use replicante_models_agent::actions::api::ActionInfoResponse;
+use replicante_models_agent::actions::api::ActionScheduleRequest;
 use replicante_util_actixweb::request_span;
 use replicante_util_tracing::fail_span;
 
@@ -67,7 +67,7 @@ pub fn info(id: web::Path<String>, request: HttpRequest) -> Result<impl Responde
 /// Attempt to schedule an action.
 pub fn schedule(
     kind: web::Path<String>,
-    args: web::Json<Value>,
+    params: web::Json<ActionScheduleRequest>,
     request: HttpRequest,
 ) -> Result<impl Responder> {
     let context = request
@@ -80,8 +80,16 @@ pub fn schedule(
         .ok_or_else(|| ErrorKind::ActionNotAvailable(kind.clone()))
         .map_err(Error::from)
         .map_err(|error| fail_span(error, &mut *span))?;
-    action.validate_args(&args)?;
-    let mut record = ActionRecord::new(kind, args.into_inner(), ActionRequester::Api);
+
+    let params = params.into_inner();
+    let args = params.args;
+    let created_ts = params.created_ts;
+    let action_id = params.action_id;
+    action
+        .validate_args(&args)
+        .map_err(|error| fail_span(error, &mut *span))?;
+
+    let mut record = ActionRecord::new(kind, action_id, created_ts, args, ActionRequester::Api);
     for (name, value) in request.headers() {
         let name = name.as_str();
         if HTTP_HEADER_IGNORE.contains(name) {
@@ -91,11 +99,15 @@ pub fn schedule(
         let value = value
             .to_str()
             .with_context(|_| ErrorKind::ActionEncode)
-            .map_err(Error::from)?
+            .map_err(Error::from)
+            .map_err(|error| fail_span(error, &mut *span))?
             .to_string();
         record.headers.insert(name, value);
     }
-    record.trace_set(span.context(), &context.tracer)?;
+    record
+        .trace_set(span.context(), &context.tracer)
+        .map_err(Error::from)
+        .map_err(|error| fail_span(error, &mut *span))?;
     let id = record.id;
     context
         .store

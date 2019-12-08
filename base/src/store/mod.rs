@@ -236,7 +236,7 @@ mod tests {
     #[test]
     #[should_panic(expected = "actions are not allowed to transition from New to Cancelled")]
     fn transition_forbidden() {
-        let record = ActionRecord::new("test", json!(null), ActionRequester::Api);
+        let record = ActionRecord::new("test", None, None, json!(null), ActionRequester::Api);
         let store = Store::mock();
         store
             .with_transaction(|tx| {
@@ -249,7 +249,7 @@ mod tests {
 
     #[test]
     fn transition_success() {
-        let record = ActionRecord::new("test", json!(null), ActionRequester::Api);
+        let record = ActionRecord::new("test", None, None, json!(null), ActionRequester::Api);
         let store = Store::mock();
         store
             .with_transaction(|tx| {
