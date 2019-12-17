@@ -47,16 +47,9 @@ lazy_static::lazy_static! {
         let mut transitions = HashMap::new();
         transitions.insert(ActionState::New, {
             let mut allowed = HashSet::new();
-            allowed.insert(ActionState::Cancel);
             allowed.insert(ActionState::Done);
             allowed.insert(ActionState::Failed);
             allowed.insert(ActionState::Running);
-            allowed
-        });
-        transitions.insert(ActionState::Cancel, {
-            let mut allowed = HashSet::new();
-            allowed.insert(ActionState::Cancelled);
-            allowed.insert(ActionState::Failed);
             allowed
         });
         transitions.insert(ActionState::Running, {

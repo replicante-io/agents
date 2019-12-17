@@ -234,15 +234,16 @@ mod tests {
     use crate::actions::ActionState;
 
     #[test]
-    #[should_panic(expected = "actions are not allowed to transition from New to Cancelled")]
+    #[should_panic(expected = "actions are not allowed to transition from Running to New")]
     fn transition_forbidden() {
-        let record = ActionRecord::new("test", None, None, json!(null), ActionRequester::Api);
+        let mut record = ActionRecord::new("test", None, None, json!(null), ActionRequester::Api);
+        record.set_state(ActionState::Running);
         let store = Store::mock();
         store
             .with_transaction(|tx| {
                 tx.action().insert(record.clone(), None)?;
                 tx.action()
-                    .transition(&record, ActionState::Cancelled, None, None)
+                    .transition(&record, ActionState::New, None, None)
             })
             .unwrap();
     }
