@@ -89,7 +89,8 @@ pub fn schedule(
         .validate_args(&args)
         .map_err(|error| fail_span(error, &mut *span))?;
 
-    let mut record = ActionRecord::new(kind, action_id, created_ts, args, ActionRequester::Api);
+    let mut record =
+        ActionRecord::new(kind, action_id, created_ts, args, ActionRequester::AgentApi);
     for (name, value) in request.headers() {
         let name = name.as_str();
         if HTTP_HEADER_IGNORE.contains(name) {

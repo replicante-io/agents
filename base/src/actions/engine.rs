@@ -209,7 +209,7 @@ mod tests {
 
     #[test]
     fn fail_action_with_unkown_kind() {
-        let action = ActionRecord::new("test", None, None, json!({}), ActionRequester::Api);
+        let action = ActionRecord::new("test", None, None, json!({}), ActionRequester::AgentApi);
         let id = action.id;
         let context = AgentContext::mock();
         context
@@ -250,7 +250,7 @@ mod tests {
             None,
             None,
             json!({}),
-            ActionRequester::Api,
+            ActionRequester::AgentApi,
         );
         let id = action.id;
         let context = AgentContext::mock();

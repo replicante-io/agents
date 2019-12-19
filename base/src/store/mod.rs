@@ -236,7 +236,8 @@ mod tests {
     #[test]
     #[should_panic(expected = "actions are not allowed to transition from Running to New")]
     fn transition_forbidden() {
-        let mut record = ActionRecord::new("test", None, None, json!(null), ActionRequester::Api);
+        let mut record =
+            ActionRecord::new("test", None, None, json!(null), ActionRequester::AgentApi);
         record.set_state(ActionState::Running);
         let store = Store::mock();
         store
@@ -250,7 +251,7 @@ mod tests {
 
     #[test]
     fn transition_success() {
-        let record = ActionRecord::new("test", None, None, json!(null), ActionRequester::Api);
+        let record = ActionRecord::new("test", None, None, json!(null), ActionRequester::AgentApi);
         let store = Store::mock();
         store
             .with_transaction(|tx| {

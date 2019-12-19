@@ -67,7 +67,7 @@ mod tests {
     /// Helper function to create a new clean record.
     fn mkrecord(action: &dyn Action) -> ActionRecord {
         let kind = action.describe().kind;
-        ActionRecord::new(kind, None, None, json!(null), ActionRequester::Api)
+        ActionRecord::new(kind, None, None, json!(null), ActionRequester::AgentApi)
     }
 
     #[test]
