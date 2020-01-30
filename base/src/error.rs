@@ -73,6 +73,9 @@ where
 /// Exhaustive list of possible errors emitted by this crate.
 #[derive(Debug, Fail)]
 pub enum ErrorKind {
+    #[fail(display = "an action with id '{}' already exists", _0)]
+    ActionAlreadyExists(String),
+
     #[fail(display = "unable to decode action information")]
     ActionDecode,
 
@@ -147,6 +150,7 @@ pub enum ErrorKind {
 impl ErrorKind {
     fn http_status(&self) -> StatusCode {
         match self {
+            ErrorKind::ActionAlreadyExists(_) => StatusCode::CONFLICT,
             ErrorKind::ActionEncode => StatusCode::BAD_REQUEST,
             ErrorKind::ActionNotAvailable(_) => StatusCode::BAD_REQUEST,
             _ => StatusCode::INTERNAL_SERVER_ERROR,
@@ -155,6 +159,7 @@ impl ErrorKind {
 
     fn kind_name(&self) -> Option<&str> {
         let name = match self {
+            ErrorKind::ActionAlreadyExists(_) => "ActionAlreadyExists",
             ErrorKind::ActionDecode => "ActionDecode",
             ErrorKind::ActionEncode => "ActionEncode",
             ErrorKind::ActionNotAvailable(_) => "ActionNotAvailable",

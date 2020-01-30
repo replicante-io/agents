@@ -128,7 +128,7 @@ where
     match result {
         Err(error) => {
             let message = format_fail(&error);
-            println!("{}", message);
+            eprintln!("{}", message);
             exit(1);
         }
         Ok(clean) if !clean => exit(1),

@@ -2,6 +2,7 @@ use std::str::FromStr;
 
 use chrono::TimeZone;
 use chrono::Utc;
+use failure::Fail;
 use failure::ResultExt;
 use opentracingrust::SpanContext;
 use opentracingrust::StartOptions;
@@ -108,6 +109,8 @@ SET
     finished_ts = ?3
 WHERE id = ?4;
 "#;
+
+const ACTION_DUPLICATE_ERROR_MSG: &str = "UNIQUE constraint failed: actions.id";
 
 /// Helper macro to avoid writing the same match every time.
 macro_rules! decode_or_continue {
@@ -379,24 +382,33 @@ impl<'a, 'b: 'a> ActionInterface for Action<'a, 'b> {
                 SQLITE_OP_ERRORS_COUNT.with_label_values(&["INSERT"]).inc();
                 error
             })?;
-        statement
-            .execute(params![
-                action.agent_version,
-                args,
-                action.created_ts.timestamp(),
-                headers,
-                &action_id,
-                action.kind,
-                requester,
-                action.scheduled_ts.timestamp(),
-                &state,
-                &state_payload,
-            ])
-            .with_context(|_| ErrorKind::PersistentWrite(ACTION_INSERT))
-            .map_err(|error| {
+        let result = statement.execute(params![
+            action.agent_version,
+            args,
+            action.created_ts.timestamp(),
+            headers,
+            &action_id,
+            action.kind,
+            requester,
+            action.scheduled_ts.timestamp(),
+            &state,
+            &state_payload,
+        ]);
+        match result {
+            Ok(_) => (),
+            Err(rusqlite::Error::SqliteFailure(inner, Some(message)))
+                if inner.code == rusqlite::ffi::ErrorCode::ConstraintViolation
+                    && message == ACTION_DUPLICATE_ERROR_MSG =>
+            {
+                let error = ErrorKind::ActionAlreadyExists(action_id);
+                return Err(error.into());
+            }
+            Err(error) => {
                 SQLITE_OP_ERRORS_COUNT.with_label_values(&["INSERT"]).inc();
-                error
-            })?;
+                let error = error.context(ErrorKind::PersistentWrite(ACTION_INSERT));
+                return Err(error.into());
+            }
+        };
         self.record_transition(
             action_id,
             state,

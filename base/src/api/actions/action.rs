@@ -25,6 +25,7 @@ lazy_static::lazy_static! {
     static ref HTTP_HEADER_IGNORE: HashSet<String> = {
         let mut headers = HashSet::new();
         headers.insert("accept".into());
+        headers.insert("accept-encoding".into());
         headers.insert("content-length".into());
         headers.insert("content-type".into());
         headers.insert("host".into());

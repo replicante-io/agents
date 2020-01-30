@@ -1,18 +1,6 @@
 [workspace]
 members = [
-    # Agent crates
     "base",
     "mongodb",
     "zookeeper",
-
-    # Official crates with complex dependencies are not in the workspace by default.
-    #"kafka",
-
-    # Common crates
-    "common/logging",
-    "common/models/agent",
-    "common/util/actixweb",
-    "common/util/failure",
-    "common/util/tracing",
-    "common/util/upkeep",
 ]
