@@ -1,7 +1,7 @@
 ####################
 # Build the agents #
 ####################
-ARG RUST_VERSION=1.35.0
+ARG RUST_VERSION=1.39.0
 FROM rust:$RUST_VERSION as builder
 
 # Add the code.
@@ -15,7 +15,7 @@ RUN cd /code/mongodb && cargo build --release --locked \
 #######################################
 # Package agents into a smaller image #
 #######################################
-FROM debian:stretch-slim
+FROM debian:buster-slim
 
 # Create a replicante user to avoid using root.
 ARG REPLI_GID=1616
