@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [0.4.1] - 2020-03-07
+### Added
+- Actions system.
+
 ## [0.4.0] - 2019-06-16
 ### Changed
 - **BREAKING**: Upgrade base agent library to latest.
@@ -25,7 +29,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Initial kafka agent
 
 
-[Unreleased]: https://github.com/replicante-io/agents/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/replicante-io/agents/compare/v0.4.1...HEAD
+[0.4.1]: https://github.com/replicante-io/agents/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/replicante-io/agents/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/replicante-io/agents/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/replicante-io/agents/compare/v0.1.0...v0.2.0

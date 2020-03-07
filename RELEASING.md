@@ -12,14 +12,14 @@ Agents release steps:
   - [ ] For the Kafka workspace
 - [ ] Ensure tests and CI checks pass
 - [ ] Bump the version number of all crates that need it
-- [ ] Update cargo lock file
 - [ ] Update changelog with version and date
-- [ ] Version documents
+- [ ] Update cargo lock file
 - [ ] Ensure docker image builds correctly:
   - [ ] For the main workspace
   - [ ] For the Kafka workspace
-- [ ] Git commit and tag release
+- [ ] Git commit release
 - [ ] Validate replicante_agent create (cargo package)
+- [ ] Git tag release
 - [ ] Build and push docker images:
   - [ ] For the main workspace
   - [ ] For the Kafka workspace
