@@ -1,14 +1,15 @@
 #!/usr/bin/env bash
 set -ex
 
-cargo build
-cargo test 
-cargo clippy -- -D warnings
-cargo fmt --verbose -- --check
+function ci_crate {
+  cargo build --manifest-path "$1"
+  cargo test --manifest-path "$1"
+  cargo clippy --manifest-path "$1" -- -D warnings
+  cargo fmt --manifest-path "$1" --verbose -- --check
+}
 
-# Kafka is special ...
-cd kafka/
-cargo build
-cargo test
-cargo clippy -- -D warnings
-cargo fmt --verbose -- --check
+
+ci_crate 'libs/rust/sdk/Cargo.toml'
+ci_crate 'agents/kafka/Cargo.toml'
+ci_crate 'agents/mongodb/Cargo.toml'
+ci_crate 'agents/zookeeper/Cargo.toml'
