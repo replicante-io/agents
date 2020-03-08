@@ -25,7 +25,6 @@ Agents release steps:
   - [ ] For the Kafka workspace
 - [ ] Publish base cargo crate
 - [ ] Release pre-built binaries
-- [ ] Release documentation
 
 
 Publishing the base agent crate

@@ -12,42 +12,42 @@ This repository stores the core rust agent framework as well official agents.
 
 
 ## Building agents
-This repo contains the base agent library (a cargo crate used to build agents)
-as well as the official replicante agents.
+This repo contains:
+
+  * Base agent libraries: SDKs style libraries to build agents.
+    * [Rust]: `replicante_agent` SDK crate (`libs/rust/sdk`).
+
+  * Official Replicante agents:
+    * [Kafka]: `agents/kafka`.
+    * [MongoDB]: `agents/mongodb`.
+    * [Zookeeper]: `agents/zookeeper`.
 
 Official agents are written in rust and built with cargo:
 ```bash
-git clone https://github.com/replicante-io/agents.git .
-cargo build --release
+git clone --recursive https://github.com/replicante-io/agents.git .
+cargo build --manifest-path=agents/kafka/Cargo.toml --release
+cargo build --manifest-path=agents/mongodb/Cargo.toml --release
+cargo build --manifest-path=agents/zookeeper/Cargo.toml --release
 ```
 
-### Excluded agents
-Agents that have build dependencies outside of the usual rust ecosystem are NOT part of the root
-workspace but instead have their own workspace.
-This is done to avoid extra burdens to the most common cases leaving extra dependencies only to
-those that need them.
 
-The following is a list of agents that have extra dependencies:
-
-  * `kafka`: required Java (to act as a JMX client).
-
-
-## Docker image
+## Container image
 A docker image including most agents in this repo can be built with the following command:
 ```bash
+# When using podman, if you want to push to hub.docker.io, use --format docker.
 docker build --force-rm --tag replicanteio/agents:v$VERSION .
 ```
 
 Agents that require external dependencies or large runtimes, for example Java, are provided
 as separate images:
 
-  * For kafka use `replicanteio/agent-kafka:vVERSION`
+  * For kafka use `replicanteio/agent-kafka:v$VERSION`
 
 The image can be used to run any of the agents as long as a configration file is provided:
 ```bash
-docker run --rm -it \
+docker run --rm -it --it \
   -v "$PWD/agent-mongodb.example.yaml:/home/replicante/agent-mongodb.yaml" \
-  -w /home/replicante replicanteio/agents:v0.4.1 \
+  replicanteio/agents:v0.4.1 \
   replicante-agent-mongodb
 ```
 
@@ -66,3 +66,9 @@ In addition to the Code Of Conduct below the following documents are relevant:
 
   * The [Reporting Guideline](https://www.replicante.io/conduct/reporting), especially if you wish to report an incident.
   * The [Enforcement Guideline](https://www.replicante.io/conduct/enforcing)
+
+
+[Rust]: https://www.rust-lang.org/
+[Kafka]: https://kafka.apache.org/
+[MongoDB]: https://www.mongodb.com/
+[Zookeeper]: https://zookeeper.apache.org/

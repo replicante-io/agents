@@ -3,21 +3,15 @@ name = "replicante_agent_kafka"
 version = "0.4.1"
 authors = ["Stefano Pogliani <stefano@spogliani.net>"]
 edition = "2018"
-build = "../base/build.rs"
+build = "../../libs/rust/build.rs"
 
 description = "Replicante agent for Kafka"
 documentation = "https://www.replicante.io/docs/"
 homepage = "https://www.replicante.io/"
 repository = "https://github.com/replicante-io/agents"
-readme = "../README.md"
+readme = "../../README.md"
 keywords = ["automation", "datastore", "operations", "kafka"]
 license = "MIT"
-
-
-# Make this crate its own workspace so we can work on it without
-# polluting the root workspace with Java requirements
-[workspace]
-members = ["."]
 
 
 [[bin]]
@@ -40,10 +34,10 @@ zookeeper = "^0.5.4"
 
 opentracingrust = "^0.3.3"
 
-replicante_agent = { path = "../base" }
-replicante_models_agent = { path = "../common/models/agent" }
-replicante_util_failure = { path = "../common/util/failure" }
-replicante_util_tracing = { path = "../common/util/tracing" }
+replicante_agent = { path = "../../libs/rust/sdk" }
+replicante_models_agent = { path = "../../libs/rust/common/models/agent" }
+replicante_util_failure = { path = "../../libs/rust/common/util/failure" }
+replicante_util_tracing = { path = "../../libs/rust/common/util/tracing" }
 
 
 [build-dependencies]

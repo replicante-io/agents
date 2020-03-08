@@ -1,6 +1,0 @@
-[workspace]
-members = [
-    "base",
-    "mongodb",
-    "zookeeper",
-]

@@ -3,8 +3,8 @@ database_type = "sqlite"
 
 # Required: Absolute or relative path to your database file.
 #           If a relative path is provided, it will be assumed
-#           to be relative to this config file dir: `base/src/store/backend/sqlite3/migrations/`
+#           to be relative to this config file dir: `libs/rust/sdk`
 # ex.) database_name = "db/db.db"
-database_path = "devtools/base-agent.db"
+database_path = "../../../devtools/base-agent.db"
 
-migration_location = "base/src/store/backend/sqlite3/migrations"
+migration_location = "src/store/backend/sqlite3/migrations"

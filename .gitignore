@@ -1,13 +1,10 @@
 *.swp
 **/*.rs.bk
+**/target
 
-agent-mongodb.yaml
-agent-zookeeper.yaml
 devtools/*.db
-
 devtools/pki/
-node_modules/
-target/
 
-docs/website/package-lock.json
-kafka/agent-kafka.yaml
+agents/kafka/agent.yaml
+agents/mongodb/agent.yaml
+agents/zookeeper/agent.yaml

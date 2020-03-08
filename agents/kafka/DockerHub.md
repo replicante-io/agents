@@ -3,30 +3,21 @@
 
 Agents are the interface between the centralised platform and each datastore.
 
-The following agents are packaged inside the images in this repo:
-
-  * MongoDB
-  * Zookeeper
+This image is for the [Kafka](https://kafka.apache.org/) agent.
 
 
 ## Usage
-Agents can be started with the following command:
+The agent can be started with the following command:
 ```bash
 docker run --rm -it --init \
-  -v "/path/to/config.yaml:/home/replicante/agent-SOFTWARE.yaml" \
-  replicanteio/agents:v0 \
-  replicante-agent-$SOFTWARE
+  -v "/path/to/config.yaml:/home/replicante/agent-kafka.yaml" \
+  replicanteio/agent-kafka:v0.4
 ```
 
 See the tags for possible versions.
 In addition to the exact `vX.Y.Z` version, tags in the format `vX.Y` and `vX` refer to the
 latest release for a specific minor version or a specific major version.
 The tag `latest` is also available.
-
-The possible values of `SOFTWARE` are the supported datastores:
-
-  * `mongodb`
-  * `zookeeper`
 
 
 ## Init on Podman
@@ -41,7 +32,7 @@ Until catatonit is packaged with podman you can use this work around:
      * Set the `init_path` configuration option to your location.
 
 
-## Links
+## More
 For more information, the following links may be useful:
 
   * [Official website](https://www.replicante.io/)

@@ -3,12 +3,13 @@ name = "replicante_agent"
 version = "0.4.1" # remember to update html_root_url
 authors = ["Stefano Pogliani <stefano@spogliani.net>"]
 edition = "2018"
-build = "build.rs"
+build = "../build.rs"
 
 description = "Replicante agent framework"
 documentation = "https://docs.rs/replicante_agent"
 homepage = "https://www.replicante.io/"
 repository = "https://github.com/replicante-io/agents"
+readme = "../../../README.md"
 keywords = ["automation", "datastore", "operations"]
 license = "MIT"
 
