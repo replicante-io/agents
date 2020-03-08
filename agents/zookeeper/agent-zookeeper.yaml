@@ -1,0 +1,41 @@
+agent:
+  actions:
+    enabled: ~
+    #execute_interval: 120
+    prune_interval: 60
+    prune_keep: 5
+
+  api:
+    tls:
+      clients_ca_bundle: '../../devtools/pki/ca/certs/ca.crt'
+      server_cert: '../../devtools/pki/ca/certs/server.crt'
+      server_key: '../../devtools/pki/ca/keys/server.key'
+
+  db: '../../devtools/zookeeper.db'
+
+  sentry:
+    dsn: 'http://d625fa7b598046dca7eb7a1e23d9a5c9@localhost:9000/4'
+
+  service:
+    supervisor: systemd
+    options:
+      service_name: atd
+    #supervisor: 'commands'
+    #options:
+    #  pid:   ['supervisorctl', 'pid',   'zookeeper']
+    #  start: ['supervisorctl', 'start', 'zookeeper']
+    #  stop:  ['supervisorctl', 'stop',  'zookeeper']
+
+  #tracing:
+  #  backend: zipkin
+  #  options:
+  #    transport: http
+  #    options:
+  #      url: 'http://localhost:9411'
+
+
+# Zookeeper specific configuration.
+zookeeper:
+  cluster: dev-agent-zookeeper
+  target: 'localhost:2181'
+  #target: '172.64.0.68:2181'

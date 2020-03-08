@@ -1,0 +1,21 @@
+agent:
+  api:
+    bind: '0.0.0.0:10092'
+
+  tracing:
+    backend: noop
+    #backend: zipkin
+    #options:
+    #  service_name: 'replicante-agent-kafka'
+    #  kafka:
+    #    - '172.32.0.61:19092'
+
+kafka:
+  target:
+    broker:
+      uri: '172.64.0.101:9092'
+      timeout: 10
+    jmx: '172.64.0.101:9999'
+    zookeeper:
+      uri: '172.64.0.98:2181'
+      timeout: 10

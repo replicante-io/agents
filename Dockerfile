@@ -1,7 +1,7 @@
 ####################
 # Build the agents #
 ####################
-ARG RUST_VERSION=1.39.0
+ARG RUST_VERSION=1.40.0
 FROM rust:$RUST_VERSION as builder
 
 # Add the code.

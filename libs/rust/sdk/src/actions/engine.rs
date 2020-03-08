@@ -1,5 +1,3 @@
-use std::ops::Deref;
-use std::ops::DerefMut;
 use std::sync::Arc;
 use std::thread;
 use std::time::Duration;
@@ -130,7 +128,7 @@ impl Engine {
                 Some(action) => action,
                 None => {
                     let error = ErrorKind::ActionNotAvailable(record.kind.clone());
-                    return self.fail(tx, &record, error.into(), span.as_ref().map(Deref::deref));
+                    return self.fail(tx, &record, error.into(), span.as_deref());
                 }
             };
             debug!(
@@ -139,14 +137,14 @@ impl Engine {
                 "id" => %&record.id,
                 "kind" => &record.kind,
             );
-            match self.call(tx, &record, action, span.as_mut().map(DerefMut::deref_mut)) {
-                Err(error) => self.fail(tx, &record, error, span.as_ref().map(Deref::deref)),
+            match self.call(tx, &record, action, span.as_deref_mut()) {
+                Err(error) => self.fail(tx, &record, error, span.as_deref()),
                 Ok(()) => Ok(()),
             }
         });
         match rv {
             Ok(()) => Ok(()),
-            Err(error) => Err(fail_span(error, span.as_mut().map(DerefMut::deref_mut))),
+            Err(error) => Err(fail_span(error, span.as_deref_mut())),
         }
     }
 }
