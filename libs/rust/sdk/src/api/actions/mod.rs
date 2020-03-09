@@ -93,7 +93,7 @@ fn configure_enabled(flags: &APIFlags, app: &mut web::ServiceConfig, context: &A
                 .route(web::get().to(list::queue)),
         );
         app.service(
-            root.resource("/actions/schedule/{kind}")
+            root.resource("/actions/schedule/{kind:.*}")
                 .wrap(TracingMiddleware::with_name(
                     context.logger.clone(),
                     Arc::clone(&tracer),

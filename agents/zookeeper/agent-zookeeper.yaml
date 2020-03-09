@@ -38,4 +38,3 @@ agent:
 zookeeper:
   cluster: dev-agent-zookeeper
   target: 'localhost:2181'
-  #target: '172.64.0.68:2181'
