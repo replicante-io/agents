@@ -29,11 +29,6 @@ thread_local! {
     static ACTIVE_REG: RefCell<Option<ActionsRegister>> = RefCell::new(None);
 }
 
-/// True if an action Kind falls in a reserved scope.
-fn is_reserved_kind(kind: &str) -> bool {
-    kind.starts_with("replicante.") || kind.starts_with("io.replicante.")
-}
-
 /// Ensure a copy of the action register is available as a thread local.
 ///
 /// # Panics
@@ -217,6 +212,40 @@ impl ACTIONS {
     }
 }
 
+/// Actions are identified by unique names with a fixed format: `SCOPE/ACTION`.
+///
+///   * `SCOPE` is a DNS like component to ensure uniqueness of IDs.
+///   * Any `SCOPE` ending in `replicante.io` is reserved.
+///   * `ACTION` should be a descriptive name of what the action does.
+///
+/// Examples:
+///
+///   * replicante.io/test/ping
+///   * beta.mongodb.org/compact
+struct ActionKind<'a> {
+    kind: &'a str,
+    scope_end: usize,
+}
+
+impl<'a> ActionKind<'a> {
+    /// Initialise a new ActionKind.
+    ///
+    /// # Panics
+    /// If the given `kind` is not scoped.
+    pub fn new(kind: &'a str) -> ActionKind<'a> {
+        let scope_end = kind
+            .find('/')
+            .unwrap_or_else(|| panic!("action kind {} is not scoped", kind));
+        ActionKind { kind, scope_end }
+    }
+
+    /// TODO
+    pub fn is_reserved(&self) -> bool {
+        let (scope, _) = self.kind.split_at(self.scope_end);
+        scope.ends_with("replicante.io")
+    }
+}
+
 /// Actions register to store all known actions.
 #[derive(Clone)]
 pub struct ActionsRegister {
@@ -246,10 +275,8 @@ impl ActionsRegister {
         A: Action,
     {
         let kind = action.describe().kind;
-        if !kind.contains('.') {
-            panic!("action kind {} is not scoped", kind);
-        }
-        if is_reserved_kind(&kind) {
+        let kind_info = ActionKind::new(&kind);
+        if kind_info.is_reserved() {
             panic!("action kind {} is reserved", kind);
         }
         match self.actions.entry(kind) {
@@ -271,10 +298,8 @@ impl ActionsRegister {
     /// Same as `ActionsRegister::register_reserved` for pre-wrapped actions.
     pub(crate) fn register_reserved_arc(&mut self, action: Arc<dyn Action>) {
         let kind = action.describe().kind;
-        if !kind.contains('.') {
-            panic!("action kind {} is not scoped", kind);
-        }
-        if !is_reserved_kind(&kind) {
+        let kind_info = ActionKind::new(&kind);
+        if !kind_info.is_reserved() {
             panic!("action kind {} is NOT reserved", kind);
         }
         match self.actions.entry(kind) {
@@ -324,7 +349,7 @@ mod tests {
     impl Action for MockAction {
         fn describe(&self) -> ActionDescriptor {
             ActionDescriptor {
-                kind: "test.mock.action".into(),
+                kind: "test.example.io/mock.action".into(),
                 description: "replicante_agent::actions::register::tests::MockAction".into(),
             }
         }
@@ -347,7 +372,7 @@ mod tests {
     impl Action for ReservedAction {
         fn describe(&self) -> ActionDescriptor {
             ActionDescriptor {
-                kind: "replicante.mock.action".into(),
+                kind: "test.replicante.io/mock.action".into(),
                 description: "replicante_agent::actions::register::tests::ReservedAction".into(),
             }
         }
@@ -394,7 +419,7 @@ mod tests {
         let mut actions = ActionsRegister::default();
         actions.register(MockAction {});
         assert!(
-            actions.get("test.mock.action").is_some(),
+            actions.get("test.example.io/mock.action").is_some(),
             "action not found"
         );
     }
@@ -410,11 +435,18 @@ mod tests {
         let mut actions = ActionsRegister::default();
         assert!(actions.iter().next().is_none(), "register not empty");
         actions.register(MockAction {});
+        actions.register_reserved(ReservedAction {});
         let iter: Vec<String> = actions
             .iter()
             .map(|action| action.describe().kind)
             .collect();
-        assert_eq!(iter, vec!["test.mock.action".to_string()]);
+        assert_eq!(
+            iter,
+            vec![
+                "test.example.io/mock.action".to_string(),
+                "test.replicante.io/mock.action".to_string()
+            ]
+        );
     }
 
     #[test]
@@ -432,14 +464,14 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected = "action kind replicante.mock.action is reserved")]
+    #[should_panic(expected = "action kind test.replicante.io/mock.action is reserved")]
     fn register_action_fail_reserved() {
         let mut actions = ActionsRegister::default();
         actions.register(ReservedAction {});
     }
 
     #[test]
-    #[should_panic(expected = "action with kind test.mock.action is already registered")]
+    #[should_panic(expected = "action with kind test.example.io/mock.action is already registered")]
     fn register_action_twice() {
         let mut actions = ActionsRegister::default();
         actions.register(MockAction {});
@@ -463,7 +495,7 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected = "action kind test.mock.action is NOT reserved")]
+    #[should_panic(expected = "action kind test.example.io/mock.action is NOT reserved")]
     fn register_action_fail_not_reserved() {
         let mut actions = ActionsRegister::default();
         actions.register_reserved(MockAction {});
@@ -477,7 +509,9 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected = "action with kind replicante.mock.action is already registered")]
+    #[should_panic(
+        expected = "action with kind test.replicante.io/mock.action is already registered"
+    )]
     fn register_reserved_action_twice() {
         let mut actions = ActionsRegister::default();
         actions.register_reserved(ReservedAction {});

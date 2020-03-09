@@ -27,7 +27,7 @@ impl GracefulRestart {
         };
         AndThen::build()
             .describe(ActionDescriptor {
-                kind: "replicante.service.gracefulrestart".into(),
+                kind: "replicante.io/service.gracefulrestart".into(),
                 description: GRACEFULRESTART_DESCRIPTION.into(),
             })
             .and_then_arc(graceful, "graceful")
@@ -48,7 +48,7 @@ impl GracefulStop {
         };
         AndThen::build()
             .describe(ActionDescriptor {
-                kind: "replicante.service.gracefulstop".into(),
+                kind: "replicante.io/service.gracefulstop".into(),
                 description: GRACEFULSTOP_DESCRIPTION.into(),
             })
             .and_then_arc(graceful, "graceful")
@@ -64,7 +64,7 @@ impl ServiceRestart {
     pub fn make(supervisor: &Arc<dyn Supervisor>) -> AndThen {
         AndThen::build()
             .describe(ActionDescriptor {
-                kind: "replicante.service.restart".into(),
+                kind: "replicante.io/service.restart".into(),
                 description: "Stop/Start the datstore service".into(),
             })
             .and_then(ServiceStop::new(supervisor), "stop")

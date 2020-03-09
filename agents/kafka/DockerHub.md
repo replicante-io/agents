@@ -37,4 +37,4 @@ For more information, the following links may be useful:
 
   * [Official website](https://www.replicante.io/)
   * [GitHub repo](https://github.com/replicante-io/agents)
-  * [Full documentation](https://www.replicante.io/docs/agents/docs/intro/)
+  * [Full documentation](https://www.replicante.io/docs/)

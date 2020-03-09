@@ -244,7 +244,7 @@ mod tests {
     #[test]
     fn transition_new_to_running() {
         let action = ActionRecord::new(
-            "replicante.debug.progress".to_string(),
+            "agent.replicante.io/debug.progress".to_string(),
             None,
             None,
             json!({}),

@@ -34,7 +34,7 @@ impl ServiceStop {
 impl Action for ServiceStop {
     fn describe(&self) -> ActionDescriptor {
         ActionDescriptor {
-            kind: "replicante.service.stop".into(),
+            kind: "replicante.io/service.stop".into(),
             description: "Stop the datstore service".into(),
         }
     }

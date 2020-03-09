@@ -28,7 +28,7 @@ impl NoOp {
 impl Action for NoOp {
     fn describe(&self) -> ActionDescriptor {
         ActionDescriptor {
-            kind: "replicante.noop".into(),
+            kind: "agent.replicante.io/noop".into(),
             description: "Do nothing but transition to done".into(),
         }
     }

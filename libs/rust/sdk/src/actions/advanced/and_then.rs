@@ -317,7 +317,7 @@ mod tests {
     impl Action for Fail {
         fn describe(&self) -> ActionDescriptor {
             ActionDescriptor {
-                kind: "replicante.test.action2".into(),
+                kind: "test.replicante.io/action2".into(),
                 description: "Replicante test action 2".into(),
             }
         }
@@ -346,7 +346,7 @@ mod tests {
     #[test]
     fn build_action() {
         let descriptor = ActionDescriptor {
-            kind: "some.composed.action".into(),
+            kind: "test.replicante.io/some.composed.action".into(),
             description: "Perform sequential actions".into(),
         };
         let action = AndThen::build()
@@ -361,7 +361,7 @@ mod tests {
     #[should_panic(expected = "call AndThenBuilder::and_then to register at least one action")]
     fn build_action_empty_panics() {
         let descriptor = ActionDescriptor {
-            kind: "some.composed.action".into(),
+            kind: "test.replicante.io/some.composed.action".into(),
             description: "Perform sequential actions".into(),
         };
         let _ = AndThen::build().describe(descriptor).finish();
@@ -376,7 +376,7 @@ mod tests {
     #[test]
     fn invoke_action_new() {
         let descriptor = ActionDescriptor {
-            kind: "some.composed.action".into(),
+            kind: "test.replicante.io/some.composed.action".into(),
             description: "Perform sequential actions".into(),
         };
         let action = AndThen::build()
@@ -410,7 +410,7 @@ mod tests {
     #[test]
     fn invoke_action_running() {
         let descriptor = ActionDescriptor {
-            kind: "some.composed.action".into(),
+            kind: "test.replicante.io/some.composed.action".into(),
             description: "Perform sequential actions".into(),
         };
         let action = AndThen::build()
@@ -451,7 +451,7 @@ mod tests {
     #[test]
     fn invoke_action_done() {
         let descriptor = ActionDescriptor {
-            kind: "some.composed.action".into(),
+            kind: "test.replicante.io/some.composed.action".into(),
             description: "Perform sequential actions".into(),
         };
         let action = AndThen::build()
@@ -491,7 +491,7 @@ mod tests {
     #[test]
     fn start_next_action() {
         let descriptor = ActionDescriptor {
-            kind: "some.composed.action".into(),
+            kind: "test.replicante.io/some.composed.action".into(),
             description: "Perform sequential actions".into(),
         };
         let action = AndThen::build()
@@ -532,7 +532,7 @@ mod tests {
     #[test]
     fn skip_next_action_after_fail() {
         let descriptor = ActionDescriptor {
-            kind: "some.composed.action".into(),
+            kind: "test.replicante.io/some.composed.action".into(),
             description: "Perform sequential actions".into(),
         };
         let action = AndThen::build()
@@ -567,7 +567,7 @@ mod tests {
     #[test]
     fn validite_scoped_args_fail() {
         let descriptor = ActionDescriptor {
-            kind: "some.composed.action".into(),
+            kind: "test.replicante.io/some.composed.action".into(),
             description: "Perform sequential actions".into(),
         };
         let action = AndThen::build()
@@ -585,7 +585,7 @@ mod tests {
     #[test]
     fn validite_scoped_args_fail_type() {
         let descriptor = ActionDescriptor {
-            kind: "some.composed.action".into(),
+            kind: "test.replicante.io/some.composed.action".into(),
             description: "Perform sequential actions".into(),
         };
         let action = AndThen::build()
@@ -605,7 +605,7 @@ mod tests {
     #[test]
     fn validite_scoped_args_pass() {
         let descriptor = ActionDescriptor {
-            kind: "some.composed.action".into(),
+            kind: "test.replicante.io/some.composed.action".into(),
             description: "Perform sequential actions".into(),
         };
         let action = AndThen::build()

@@ -34,7 +34,7 @@ impl ServiceStart {
 impl Action for ServiceStart {
     fn describe(&self) -> ActionDescriptor {
         ActionDescriptor {
-            kind: "replicante.service.start".into(),
+            kind: "replicante.io/service.start".into(),
             description: "Start the datstore service".into(),
         }
     }

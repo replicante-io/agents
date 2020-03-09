@@ -26,7 +26,7 @@ struct TestAction {}
 impl Action for TestAction {
     fn describe(&self) -> ActionDescriptor {
         ActionDescriptor {
-            kind: "replicante.test.action1".into(),
+            kind: "test.replicante.io/action1".into(),
             description: "Replicante test action 1".into(),
         }
     }

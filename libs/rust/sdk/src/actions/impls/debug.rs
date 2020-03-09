@@ -27,7 +27,7 @@ pub(crate) struct Fail {}
 impl Action for Fail {
     fn describe(&self) -> ActionDescriptor {
         ActionDescriptor {
-            kind: "replicante.debug.fail".into(),
+            kind: "agent.replicante.io/debug.fail".into(),
             description: "Debugging action that always fails".into(),
         }
     }
@@ -53,7 +53,7 @@ pub(crate) struct Progress {}
 impl Action for Progress {
     fn describe(&self) -> ActionDescriptor {
         ActionDescriptor {
-            kind: "replicante.debug.progress".into(),
+            kind: "agent.replicante.io/debug.progress".into(),
             description: "Debugging action that progresses over time".into(),
         }
     }
@@ -88,7 +88,7 @@ pub(crate) struct Success {}
 impl Action for Success {
     fn describe(&self) -> ActionDescriptor {
         ActionDescriptor {
-            kind: "replicante.debug.success".into(),
+            kind: "agent.replicante.io/debug.success".into(),
             description: "Debugging action that always succeed".into(),
         }
     }

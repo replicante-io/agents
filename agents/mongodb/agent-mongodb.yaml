@@ -1,12 +1,11 @@
 agent:
   api:
     tls:
-      clients_ca_bundle: 'devtools/pki/ca/certs/ca.crt'
-      server_cert: 'devtools/pki/ca/certs/server.crt'
-      server_key: 'devtools/pki/ca/keys/server.key'
+      clients_ca_bundle: '../../devtools/pki/ca/certs/ca.crt'
+      server_cert: '../../devtools/pki/ca/certs/server.crt'
+      server_key: '../../devtools/pki/ca/keys/server.key'
 
-  #cluster_display_name_override: 'test mongodb'
-  db: 'devtools/mongodb.db'
+  db: '../../devtools/mongodb.db'
 
   sentry:
     dsn: 'http://f158965f58da453dabe72df152012acb@localhost:9000/3'
@@ -15,14 +14,6 @@ agent:
     supervisor: systemd
     options:
       service_name: atd
-
-  #tracing:
-  #  backend: zipkin
-  #  options:
-  #    transport: http
-  #    options:
-  #      url: 'http://localhost:9411'
-  #update_checker: true
 
 
 mongo:

@@ -2106,7 +2106,7 @@ dependencies = [
 
 [[package]]
 name = "replicante_agent"
-version = "0.4.1"
+version = "0.5.0"
 dependencies = [
  "actix-rt",
  "actix-web",
@@ -2149,7 +2149,7 @@ dependencies = [
 
 [[package]]
 name = "replicante_agent_zookeeper"
-version = "0.4.1"
+version = "0.5.0"
 dependencies = [
  "failure",
  "git2",

@@ -1,14 +1,13 @@
 agent:
   api:
     bind: '0.0.0.0:10092'
+    tls:
+      clients_ca_bundle: '../../devtools/pki/ca/certs/ca.crt'
+      server_cert: '../../devtools/pki/ca/certs/server.crt'
+      server_key: '../../devtools/pki/ca/keys/server.key'
+  
+  db: '../../devtools/kafka.db'
 
-  tracing:
-    backend: noop
-    #backend: zipkin
-    #options:
-    #  service_name: 'replicante-agent-kafka'
-    #  kafka:
-    #    - '172.32.0.61:19092'
 
 kafka:
   target:
