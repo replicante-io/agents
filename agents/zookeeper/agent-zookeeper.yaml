@@ -16,16 +16,6 @@ agent:
   sentry:
     dsn: 'http://d625fa7b598046dca7eb7a1e23d9a5c9@localhost:9000/4'
 
-  service:
-    supervisor: systemd
-    options:
-      service_name: atd
-    #supervisor: 'commands'
-    #options:
-    #  pid:   ['supervisorctl', 'pid',   'zookeeper']
-    #  start: ['supervisorctl', 'start', 'zookeeper']
-    #  stop:  ['supervisorctl', 'stop',  'zookeeper']
-
   #tracing:
   #  backend: zipkin
   #  options:
