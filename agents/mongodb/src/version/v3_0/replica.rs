@@ -135,10 +135,6 @@ impl Agent for ReplicaSet {
         ))
     }
 
-    fn service_name(&self) -> String {
-        "mongod".into()
-    }
-
     fn shards(&self, span: &mut Span) -> Result<Shards> {
         let status = self.repl_set_get_status(span)?;
         let last_op = status.last_op()?;

@@ -52,7 +52,7 @@ pub struct Agent {
 
     /// Service supervisor configuration.
     #[serde(default)]
-    pub service: ServiceConfig,
+    pub service: Option<ServiceConfig>,
 
     /// Enable the update checker (optional).
     #[serde(default = "Agent::default_update_checker")]
@@ -94,7 +94,7 @@ impl Agent {
             db: "mock.db".into(),
             logging: LoggingConfig::default(),
             sentry: None,
-            service: ServiceConfig::default(),
+            service: None,
             update_checker: false,
             tracing: TracerConfig::default(),
         }

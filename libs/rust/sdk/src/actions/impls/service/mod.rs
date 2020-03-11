@@ -5,7 +5,6 @@ use serde::Serialize;
 
 use crate::actions::Action;
 use crate::actions::ACTIONS;
-use crate::Agent;
 use crate::AgentContext;
 
 mod composed;
@@ -38,8 +37,12 @@ impl Default for ServiceActionState {
 }
 
 /// Register all service related actions.
-pub fn register(agent: &dyn Agent, context: &AgentContext, graceful: Option<Arc<dyn Action>>) {
-    let supervisor = self::supervisor::factory(agent, context);
+pub fn register(context: &AgentContext, graceful: Option<Arc<dyn Action>>) {
+    let service = match &context.config.service {
+        None => return,
+        Some(service) => service.clone(),
+    };
+    let supervisor = self::supervisor::factory(&context.logger, service);
     ACTIONS::register_reserved(GracefulRestart::make(graceful.clone(), &supervisor));
     ACTIONS::register_reserved(GracefulStop::make(graceful, &supervisor));
     ACTIONS::register_reserved(ServiceRestart::make(&supervisor));

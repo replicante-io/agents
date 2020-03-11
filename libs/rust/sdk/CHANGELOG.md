@@ -9,8 +9,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Optional `ActionHook`s to provide store-specific implementation of SDK actions.
 
 ### Changed
-- **BREAKING**: Removed Agent trait method to expose the graceful stop action.
+- **BREAKING**: Removed Agent method to expose the graceful stop action.
+- **BREAKING**: Removed Agent method to expose a default service name.
 - **BREAKING**: Rework action kinds format.
+- Service actions are disabled unless a service configuration is provided.
+- Service configuration is optional and skipped by default.
 
 ## [0.4.1] - 2020-03-07
 ### Added

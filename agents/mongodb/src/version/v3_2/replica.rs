@@ -53,10 +53,6 @@ impl Agent for ReplicaSet {
         ))
     }
 
-    fn service_name(&self) -> String {
-        "mongod".into()
-    }
-
     fn shards(&self, span: &mut Span) -> Result<Shards> {
         self.common.shards(span)
     }

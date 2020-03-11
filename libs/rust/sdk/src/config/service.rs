@@ -14,12 +14,6 @@ pub enum ServiceConfig {
     Systemd(SystemdSupervisor),
 }
 
-impl Default for ServiceConfig {
-    fn default() -> ServiceConfig {
-        ServiceConfig::Systemd(SystemdSupervisor { service_name: None })
-    }
-}
-
 /// Custom commands supervisor configuration options.
 #[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
 pub struct CommandsSupervisor {
@@ -37,5 +31,5 @@ pub struct CommandsSupervisor {
 #[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
 pub struct SystemdSupervisor {
     /// Option name of the service to manage.
-    pub service_name: Option<String>,
+    pub service_name: String,
 }

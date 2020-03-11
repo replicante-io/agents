@@ -156,10 +156,6 @@ impl Agent for KafkaAgent {
         Ok(DatastoreInfo::new(cluster, "Kafka", name, version, None))
     }
 
-    fn service_name(&self) -> String {
-        "kafka".into()
-    }
-
     fn shards(&self, span: &mut Span) -> Result<Shards> {
         let name = self.jmx.broker_name(span)?;
         let broker_id: i32 = name

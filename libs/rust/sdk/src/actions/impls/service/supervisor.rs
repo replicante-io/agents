@@ -6,15 +6,13 @@ use slog::error;
 use slog::Logger;
 
 use crate::config::ServiceConfig;
-use crate::Agent;
-use crate::AgentContext;
 use crate::ErrorKind;
 use crate::Result;
 
 /// Instantiate a service supervisor based on the provided configuration.
-pub fn factory(agent: &dyn Agent, context: &AgentContext) -> Arc<dyn Supervisor> {
-    let logger = context.logger.clone();
-    match &context.config.service {
+pub fn factory(logger: &Logger, service: ServiceConfig) -> Arc<dyn Supervisor> {
+    let logger = logger.clone();
+    match &service {
         ServiceConfig::Commands(options) => Arc::new(CommandSupervisor::commands(
             options.pid.clone(),
             options.start.clone(),
@@ -22,10 +20,7 @@ pub fn factory(agent: &dyn Agent, context: &AgentContext) -> Arc<dyn Supervisor>
             logger,
         )),
         ServiceConfig::Systemd(options) => {
-            let service_name = options
-                .service_name
-                .clone()
-                .unwrap_or_else(|| agent.service_name());
+            let service_name = options.service_name.clone();
             Arc::new(CommandSupervisor::systemd(service_name, logger))
         }
     }
