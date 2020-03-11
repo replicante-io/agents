@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use std::collections::HashSet;
+use std::sync::Arc;
 
 use slog::debug;
 use slog::info;
@@ -25,6 +26,7 @@ pub mod utils;
 pub use self::definition::Action;
 pub use self::definition::ActionDescriptor;
 pub use self::definition::ActionHistoryItem;
+pub use self::definition::ActionHook;
 pub use self::definition::ActionListItem;
 pub use self::definition::ActionRecord;
 pub use self::definition::ActionRecordView;
@@ -36,12 +38,6 @@ pub use self::register::ActionsRegister;
 pub use self::register::ACTIONS;
 
 lazy_static::lazy_static! {
-    /// Constant descriptor for any `replicante.store.stop` action implementation.
-    pub static ref GRACEFUL_STOP_DESCRIPTOR: ActionDescriptor = ActionDescriptor {
-        kind: "replicante.store.stop".into(),
-        description: "Attempt graceful shutdown of the datastore node".into(),
-    };
-
     /// Codified version of the state transitions from docs/docs/assets/action-states.dot
     static ref ALLOWED_TRANSITIONS: HashMap<ActionState, HashSet<ActionState>> = {
         let mut transitions = HashMap::new();
@@ -120,8 +116,8 @@ pub fn initialise(
     }
 
     debug!(context.logger, "Initialising actions system ...");
-    self::register_agent_actions(agent, context);
-    self::impls::register_std_actions(agent, context);
+    let hooks = self::register_agent_actions(agent, context);
+    self::impls::register_std_actions(agent, context, hooks);
     ACTIONS::complete_registration();
     debug!(context.logger, "Actions registration phase completed");
 
@@ -131,14 +127,21 @@ pub fn initialise(
 }
 
 /// Register standard agent actions.
-fn register_agent_actions(agent: &dyn Agent, context: &AgentContext) {
+fn register_agent_actions(
+    agent: &dyn Agent,
+    context: &AgentContext,
+) -> HashMap<ActionHook, Arc<dyn Action>> {
     debug!(context.logger, "Registering agent actions");
-    if let Some(action) = agent.graceful_stop_action() {
-        if action.describe() != *GRACEFUL_STOP_DESCRIPTOR {
+    let mut hooks = HashMap::new();
+    for (hook, action) in agent.action_hooks() {
+        if hook.describe() != action.describe() {
             panic!(
-                "Agent::graceful_stop_action() descriptor does not match GRACEFUL_STOP_DESCRIPTOR"
+                "Implementation for ActionHook {:?} has the wrong descriptor.\nExpected {:?}\nReceived: {:?}",
+                hook, hook.describe(), action.describe()
             );
         }
+        hooks.insert(hook, action.clone());
         ACTIONS::register_reserved_arc(action);
     }
+    hooks
 }

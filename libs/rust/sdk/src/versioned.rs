@@ -13,6 +13,7 @@ use replicante_models_agent::info::Shards;
 use replicante_util_failure::failure_info;
 
 use crate::actions::Action;
+use crate::actions::ActionHook;
 use crate::Agent;
 use crate::AgentContext;
 use crate::Error;
@@ -208,9 +209,9 @@ where
         active.agent.shards(span)
     }
 
-    fn graceful_stop_action(&self) -> Option<Arc<dyn Action>> {
+    fn action_hooks(&self) -> Vec<(ActionHook, Arc<dyn Action>)> {
         let active = self.active.read().expect("ActiveAgent lock was poisoned");
-        active.agent.graceful_stop_action()
+        active.agent.action_hooks()
     }
 }
 

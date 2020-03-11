@@ -10,10 +10,10 @@ use serde_json::Value as Json;
 
 use replicante_agent::actions::Action;
 use replicante_agent::actions::ActionDescriptor;
+use replicante_agent::actions::ActionHook;
 use replicante_agent::actions::ActionRecordView;
 use replicante_agent::actions::ActionState;
 use replicante_agent::actions::ActionValidity;
-use replicante_agent::actions::GRACEFUL_STOP_DESCRIPTOR;
 use replicante_agent::Result;
 use replicante_agent::Transaction;
 
@@ -30,7 +30,7 @@ impl GracefulStop {
 
 impl Action for GracefulStop {
     fn describe(&self) -> ActionDescriptor {
-        GRACEFUL_STOP_DESCRIPTOR.clone()
+        ActionHook::StoreGracefulStop.describe()
     }
 
     fn invoke(

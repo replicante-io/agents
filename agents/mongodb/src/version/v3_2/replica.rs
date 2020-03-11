@@ -4,6 +4,7 @@ use mongodb::Client;
 use opentracingrust::Span;
 
 use replicante_agent::actions::Action;
+use replicante_agent::actions::ActionHook;
 use replicante_agent::Agent;
 use replicante_agent::AgentContext;
 use replicante_agent::Result;
@@ -27,6 +28,13 @@ impl ReplicaSet {
 }
 
 impl Agent for ReplicaSet {
+    fn action_hooks(&self) -> Vec<(ActionHook, Arc<dyn Action>)> {
+        vec![(
+            ActionHook::StoreGracefulStop,
+            Arc::new(GracefulStop::new(self.common.client())),
+        )]
+    }
+
     fn agent_info(&self, span: &mut Span) -> Result<AgentInfo> {
         self.common.agent_info(span)
     }
@@ -51,9 +59,5 @@ impl Agent for ReplicaSet {
 
     fn shards(&self, span: &mut Span) -> Result<Shards> {
         self.common.shards(span)
-    }
-
-    fn graceful_stop_action(&self) -> Option<Arc<dyn Action>> {
-        Some(Arc::new(GracefulStop::new(self.common.client())))
     }
 }

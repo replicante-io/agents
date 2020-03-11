@@ -22,7 +22,7 @@ mod list;
 fn available() -> impl Responder {
     let mut actions: Vec<ActionDescriptor> =
         ACTIONS::iter().map(|action| action.describe()).collect();
-    actions.sort();
+    actions.sort_by_key(|action| action.kind.clone());
     HttpResponse::Ok().json(actions)
 }
 

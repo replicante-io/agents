@@ -14,6 +14,7 @@ use opentracingrust::Span;
 use slog::error;
 
 use replicante_agent::actions::Action;
+use replicante_agent::actions::ActionHook;
 use replicante_agent::Agent;
 use replicante_agent::AgentContext;
 use replicante_agent::Result;
@@ -106,6 +107,13 @@ impl ReplicaSet {
 }
 
 impl Agent for ReplicaSet {
+    fn action_hooks(&self) -> Vec<(ActionHook, Arc<dyn Action>)> {
+        vec![(
+            ActionHook::StoreGracefulStop,
+            Arc::new(GracefulStop::new(self.client.clone())),
+        )]
+    }
+
     fn agent_info(&self, span: &mut Span) -> Result<AgentInfo> {
         span.log(Log::new().log("span.kind", "server-receive"));
         let info = AgentInfo::new(AGENT_VERSION.clone());
@@ -154,9 +162,5 @@ impl Agent for ReplicaSet {
             lag,
         )];
         Ok(Shards::new(shards))
-    }
-
-    fn graceful_stop_action(&self) -> Option<Arc<dyn Action>> {
-        Some(Arc::new(GracefulStop::new(self.client.clone())))
     }
 }

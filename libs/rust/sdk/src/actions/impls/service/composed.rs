@@ -7,8 +7,8 @@ use super::ServiceStart;
 use super::ServiceStop;
 use crate::actions::advanced::AndThen;
 use crate::actions::advanced::NoOp;
+use crate::actions::Action;
 use crate::actions::ActionDescriptor;
-use crate::Agent;
 
 const GRACEFUL_NOT_SUPPORTED: &str = "graceful stop not supported by the datastore";
 const GRACEFULRESTART_DESCRIPTION: &str =
@@ -20,14 +20,14 @@ const GRACEFULSTOP_DESCRIPTION: &str =
 pub struct GracefulRestart {}
 
 impl GracefulRestart {
-    pub fn make(agent: &dyn Agent, supervisor: &Arc<dyn Supervisor>) -> AndThen {
-        let graceful = match agent.graceful_stop_action() {
+    pub fn make(graceful: Option<Arc<dyn Action>>, supervisor: &Arc<dyn Supervisor>) -> AndThen {
+        let graceful = match graceful {
             None => Arc::new(NoOp::new(json!(GRACEFUL_NOT_SUPPORTED))),
             Some(action) => action,
         };
         AndThen::build()
             .describe(ActionDescriptor {
-                kind: "replicante.io/service.gracefulrestart".into(),
+                kind: "replicante.io/service.graceful.restart".into(),
                 description: GRACEFULRESTART_DESCRIPTION.into(),
             })
             .and_then_arc(graceful, "graceful")
@@ -41,14 +41,14 @@ impl GracefulRestart {
 pub struct GracefulStop {}
 
 impl GracefulStop {
-    pub fn make(agent: &dyn Agent, supervisor: &Arc<dyn Supervisor>) -> AndThen {
-        let graceful = match agent.graceful_stop_action() {
+    pub fn make(graceful: Option<Arc<dyn Action>>, supervisor: &Arc<dyn Supervisor>) -> AndThen {
+        let graceful = match graceful {
             None => Arc::new(NoOp::new(json!(GRACEFUL_NOT_SUPPORTED))),
             Some(action) => action,
         };
         AndThen::build()
             .describe(ActionDescriptor {
-                kind: "replicante.io/service.gracefulstop".into(),
+                kind: "replicante.io/service.graceful.stop".into(),
                 description: GRACEFULSTOP_DESCRIPTION.into(),
             })
             .and_then_arc(graceful, "graceful")

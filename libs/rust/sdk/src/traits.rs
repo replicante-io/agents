@@ -7,6 +7,7 @@ use replicante_models_agent::info::DatastoreInfo;
 use replicante_models_agent::info::Shards;
 
 use crate::actions::Action;
+use crate::actions::ActionHook;
 use crate::Result;
 
 /// Trait to share common agent code and features.
@@ -25,17 +26,14 @@ pub trait Agent: Send + Sync {
     /// Fetches all shards and details on the managed datastore node.
     fn shards(&self, span: &mut Span) -> Result<Shards>;
 
-    /// Factory for an optional `replicante.store.stop` action.
+    /// Factory for store-specific well-known actions.
     ///
-    /// Such action, if returned MUST implement a datastore specific graceful shutdown.
-    /// This action is not expected to operate on the process itself, although it will
-    /// likely cause it to exit.
+    /// These actions are part of the SDK reserved scope so they have well defined expectations
+    /// but thier implementation is delegated to specific agents.
     ///
-    /// If a datastore does not have any such action, let the default implementation
-    /// return `None` for you to indicate this.
-    ///
-    /// For example, MongoDB `db.shutdownServer` is a good candidate for this action.
-    fn graceful_stop_action(&self) -> Option<Arc<dyn Action>> {
-        None
+    /// This allows standard actions with store-specific implementation that can be used to
+    /// build reusable, standard, cross-store logic.
+    fn action_hooks(&self) -> Vec<(ActionHook, Arc<dyn Action>)> {
+        Vec::new()
     }
 }

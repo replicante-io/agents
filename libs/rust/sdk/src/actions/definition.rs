@@ -63,10 +63,40 @@ pub trait Action: Send + Sync + 'static {
 /// This data is the base of the actions system.
 /// Instead of hardcoded knowledge about what actions do,
 /// both system and users rely on metadata to call actions.
-#[derive(Clone, Eq, Ord, PartialEq, PartialOrd, Hash, Debug, Serialize, Deserialize)]
+#[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
 pub struct ActionDescriptor {
     pub kind: String,
     pub description: String,
+}
+
+/// Possible actions agent implementations can provide to the SDK.
+#[derive(Clone, Eq, PartialEq, Hash, Debug)]
+pub enum ActionHook {
+    /// For the action implementing the graceful stop protocol for the store.
+    ///
+    /// Such action, if supported, MUST implement a datastore specific graceful shutdown.
+    /// This action is not expected to operate on the process itself, although it will
+    /// likely cause it to exit.
+    ///
+    /// For example, MongoDB `db.shutdownServer` is a good candidate for this action.
+    StoreGracefulStop,
+}
+
+impl ActionHook {
+    /// ActionDescriptor for a specific ActionHook.
+    ///
+    /// Any Action implementation attached to an ActionHook MUST return the
+    /// ActionDescriptor returned by this method.
+    /// If any agent returns an ActionHook with an ActionDescriptor that does not match
+    /// the hook's descriptor the SDK will fail initiation with a panic.
+    pub fn describe(&self) -> ActionDescriptor {
+        match self {
+            Self::StoreGracefulStop => ActionDescriptor {
+                kind: "replicante.io/store.stop".into(),
+                description: "Attempt graceful shutdown of the datastore node".into(),
+            },
+        }
+    }
 }
 
 /// Action state and metadata information.
