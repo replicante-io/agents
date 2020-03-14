@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 - Optional `ActionHook`s to provide store-specific implementation of SDK actions.
 - Ping action (`agent.replicante.io/test.ping`).
+- Custom shell actions (`shell.replicante.io/*`).
 
 ### Changed
 - **BREAKING**: Removed Agent method to expose the graceful stop action.

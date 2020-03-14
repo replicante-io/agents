@@ -2,7 +2,7 @@
 **/*.rs.bk
 **/target
 
-devtools/*.db
+devtools/data/
 devtools/pki/
 
 agents/kafka/agent.yaml

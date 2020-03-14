@@ -259,6 +259,23 @@ agent:
   #    stop: ['/sbin/server-stop.sh', 'some-store']
 
 
+  # User defined shell actions.
+  #
+  # This is a map of kind names to user-defined actions implemented by executing commands.
+  # The full action kind for these actions is `shell.replicante.io/<KIND>`.
+  #
+  # A user-defined action has the following properties:
+  #
+  #   * action: list of strings, the command to start the action and its arguments.
+  #   * check: list of strings, the command to check the action's state and its arguments.
+  #   * description: string, operator friendly description of the action.
+  #
+  # Details about how to implement action and check commands, how the agent interacts
+  # with these commands and what the commands MUST return to the agent are provided
+  # in the agent code as rustdocs in libs/rust/sdk/src/config/actions.rs
+  shell_actions: {}
+
+
   # The section below is for distributed tracing configuration.
   tracing:
     # The distributed tracing backend to integrate with.

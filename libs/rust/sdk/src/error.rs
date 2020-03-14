@@ -6,6 +6,7 @@ use actix_web::ResponseError;
 use failure::Backtrace;
 use failure::Context;
 use failure::Fail;
+use uuid::Uuid;
 
 use replicante_util_failure::SerializableFail;
 
@@ -140,6 +141,27 @@ pub enum ErrorKind {
     #[fail(display = "service operation '{}' failed", _0)]
     ServiceOpFailed(&'static str),
 
+    #[fail(display = "unable to check shell action {} with ID {}", _0, _1)]
+    ShellActionCheck(String, Uuid),
+
+    #[fail(display = "unable to decode check result for shell action {}", _0)]
+    ShellActionCheckDecode(Uuid),
+
+    #[fail(
+        display = "shell action {} check command failed\n--> Standard out:\n{}\n--> Standard error:\n{}",
+        _0, _1, _2
+    )]
+    ShellActionCheckResult(Uuid, String, String),
+
+    #[fail(
+        display = "shell action {} start command failed\n--> Standard out:\n{}\n--> Standard error:\n{}",
+        _0, _1, _2
+    )]
+    ShellActionExec(Uuid, String, String),
+
+    #[fail(display = "shell action {} with ID {} failed to start", _0, _1)]
+    ShellActionStart(String, Uuid),
+
     #[fail(display = "datastore operation '{}' failed", _0)]
     StoreOpFailed(&'static str),
 
@@ -180,6 +202,11 @@ impl ErrorKind {
             ErrorKind::PersistentWrite(_) => "PersistentWrite",
             ErrorKind::ResponseDecode(_, _) => "ResponseDecode",
             ErrorKind::ServiceOpFailed(_) => "ServiceOpFailed",
+            ErrorKind::ShellActionCheck(_, _) => "ShellActionCheck",
+            ErrorKind::ShellActionCheckDecode(_) => "ShellActionCheckDecode",
+            ErrorKind::ShellActionCheckResult(_, _, _) => "ShellActionCheckResult",
+            ErrorKind::ShellActionExec(_, _, _) => "ShellActionExec",
+            ErrorKind::ShellActionStart(_, _) => "ShellActionStart",
             ErrorKind::StoreOpFailed(_) => "StoreOpFailed",
             ErrorKind::ThreadSpawn(_) => "ThreadSpawn",
         };

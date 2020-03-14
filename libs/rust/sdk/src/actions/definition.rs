@@ -272,6 +272,16 @@ pub trait ActionRecordView {
 }
 
 impl dyn ActionRecordView {
+    /// Return the action headers.
+    pub fn headers(view: &dyn ActionRecordView) -> &HashMap<String, String> {
+        &view.inner().headers
+    }
+
+    /// Return the action ID.
+    pub fn id(view: &dyn ActionRecordView) -> Uuid {
+        view.inner().id
+    }
+
     /// Access the state as stored in the ActionRecord.
     pub fn raw_state(record: &ActionRecord) -> &ActionState {
         &record.state

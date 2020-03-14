@@ -1,3 +1,5 @@
+use std::collections::BTreeMap;
+
 use serde_derive::Deserialize;
 use serde_derive::Serialize;
 
@@ -11,6 +13,7 @@ mod sentry;
 mod service;
 
 pub use self::actions::ActionsConfig;
+pub use self::actions::ShellActionConfig;
 pub use self::api::APIConfig;
 pub use self::api::TlsConfig;
 pub use self::sentry::SentryCaptureApi;
@@ -54,13 +57,17 @@ pub struct Agent {
     #[serde(default)]
     pub service: Option<ServiceConfig>,
 
-    /// Enable the update checker (optional).
-    #[serde(default = "Agent::default_update_checker")]
-    pub update_checker: bool,
+    /// User defined shell actions.
+    #[serde(default)]
+    pub shell_actions: BTreeMap<String, ShellActionConfig>,
 
     /// OpenTracing configuration.
     #[serde(default)]
     pub tracing: TracerConfig,
+
+    /// Enable the update checker (optional).
+    #[serde(default = "Agent::default_update_checker")]
+    pub update_checker: bool,
 }
 
 impl Agent {
@@ -95,8 +102,9 @@ impl Agent {
             logging: LoggingConfig::default(),
             sentry: None,
             service: None,
-            update_checker: false,
+            shell_actions: BTreeMap::default(),
             tracing: TracerConfig::default(),
+            update_checker: false,
         }
     }
 }

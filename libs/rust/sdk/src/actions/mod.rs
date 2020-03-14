@@ -117,7 +117,7 @@ pub fn initialise(
 
     debug!(context.logger, "Initialising actions system ...");
     let hooks = self::register_agent_actions(agent, context);
-    self::impls::register_std_actions(context, hooks);
+    self::impls::register_std_actions(context, hooks)?;
     ACTIONS::complete_registration();
     debug!(context.logger, "Actions registration phase completed");
 

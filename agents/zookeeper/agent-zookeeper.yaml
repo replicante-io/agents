@@ -11,7 +11,7 @@ agent:
       server_cert: '../../devtools/pki/ca/certs/server.crt'
       server_key: '../../devtools/pki/ca/keys/server.key'
 
-  db: '../../devtools/zookeeper.db'
+  db: '../../devtools/data/agents/zookeeper.db'
 
   sentry:
     dsn: 'http://d625fa7b598046dca7eb7a1e23d9a5c9@localhost:9000/4'
@@ -23,6 +23,32 @@ agent:
   #    options:
   #      url: 'http://localhost:9411'
 
+  shell_actions:
+    fail-late:
+      description: 'Test action that fails after 5 seconds'
+      action:
+        - python
+        - ../../devtools/shell-action.py
+        - run
+        - bash
+        - -c
+        - 'sleep 5 && echo "some error" >&2; false'
+      check:
+        - python
+        - ../../devtools/shell-action.py
+        - check
+    sleep:
+      description: 'Test action that sleeps'
+      action:
+        - python
+        - ../../devtools/shell-action.py
+        - run
+        - sleep
+        - 120
+      check:
+        - python
+        - ../../devtools/shell-action.py
+        - check
 
 # Zookeeper specific configuration.
 zookeeper:
