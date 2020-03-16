@@ -96,7 +96,7 @@ ACTIONS = {
 
 
 def get_args():
-    parser = ArgumentParser(description='Mock shell action')
+    parser = ArgumentParser(description='Mock external action')
     parser.add_argument(
         '--uid',
         default='1000',

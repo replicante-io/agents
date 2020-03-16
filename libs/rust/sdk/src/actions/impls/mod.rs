@@ -10,8 +10,8 @@ use crate::Result;
 
 #[cfg(any(debug_assertions, test))]
 pub(crate) mod debug;
+mod external;
 mod service;
-mod shell;
 mod test;
 
 /// Register standard agent actions.
@@ -21,8 +21,8 @@ pub fn register_std_actions(
 ) -> Result<()> {
     debug!(context.logger, "Registering standard actions");
     let graceful = hooks.get(&ActionHook::StoreGracefulStop).cloned();
+    self::external::register(context)?;
     self::service::register(context, graceful);
-    self::shell::register(context)?;
     self::test::register(context);
 
     #[cfg(any(debug_assertions, test))]

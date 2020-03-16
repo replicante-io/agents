@@ -19,31 +19,31 @@ use crate::actions::ActionRecordView;
 use crate::actions::ActionState;
 use crate::actions::ActionValidity;
 use crate::actions::ACTIONS;
-use crate::config::ShellActionConfig;
+use crate::config::ExternalActionConfig;
 use crate::store::Transaction;
 use crate::AgentContext;
 use crate::ErrorKind;
 use crate::Result;
 
 pub fn register(context: &AgentContext) -> Result<()> {
-    debug!(context.logger, "Registering configured shell actions");
-    for (kind, config) in &context.config.shell_actions {
+    debug!(context.logger, "Registering configured external actions");
+    for (kind, config) in &context.config.external_actions {
         if config.action.is_empty() {
             return Err(ErrorKind::Initialisation(format!(
-                "empty action command for shell_actions.{}",
+                "empty action command for external_actions.{}",
                 kind,
             ))
             .into());
         }
         if config.check.is_empty() {
             return Err(ErrorKind::Initialisation(format!(
-                "empty check command for shell_actions.{}",
+                "empty check command for external_actions.{}",
                 kind
             ))
             .into());
         }
-        let kind = format!("shell.replicante.io/{}", kind);
-        let action = ShellAction::new(kind, config.clone(), context.logger.clone());
+        let kind = format!("external.replicante.io/{}", kind);
+        let action = ExternalAction::new(kind, config.clone(), context.logger.clone());
         ACTIONS::register_reserved(action);
     }
     Ok(())
@@ -51,15 +51,15 @@ pub fn register(context: &AgentContext) -> Result<()> {
 
 /// Execute user-defined actions by executing commands.
 #[derive(Debug)]
-pub struct ShellAction {
-    config: ShellActionConfig,
+pub struct ExternalAction {
+    config: ExternalActionConfig,
     kind: String,
     logger: Logger,
 }
 
-impl ShellAction {
-    pub fn new(kind: String, config: ShellActionConfig, logger: Logger) -> ShellAction {
-        ShellAction {
+impl ExternalAction {
+    pub fn new(kind: String, config: ExternalActionConfig, logger: Logger) -> ExternalAction {
+        ExternalAction {
             config,
             kind,
             logger,
@@ -72,32 +72,32 @@ impl ShellAction {
         record: &dyn ActionRecordView,
         span: Option<&mut Span>,
     ) -> Result<()> {
-        let output = self.exec(record, &self.config.check, ErrorKind::ShellActionCheck)?;
+        let output = self.exec(record, &self.config.check, ErrorKind::ExternalActionCheck)?;
         let action_id = ActionRecordView::id(record);
         let stdout =
             String::from_utf8(output.stdout).unwrap_or_else(|_| "{binary blob}".to_string());
         if !output.status.success() {
             let stderr =
                 String::from_utf8(output.stderr).unwrap_or_else(|_| "{binary blob}".to_string());
-            let error = ErrorKind::ShellActionCheckResult(action_id, stdout, stderr);
+            let error = ErrorKind::ExternalActionCheckResult(action_id, stdout, stderr);
             return Err(error.into());
         }
-        let report: ShellActionReport = serde_json::from_str(&stdout)
-            .with_context(|_| ErrorKind::ShellActionCheckDecode(action_id))?;
+        let report: ExternalActionReport = serde_json::from_str(&stdout)
+            .with_context(|_| ErrorKind::ExternalActionCheckDecode(action_id))?;
         match report {
-            ShellActionReport::Failed(report) => tx.action().transition(
+            ExternalActionReport::Failed(report) => tx.action().transition(
                 record,
                 ActionState::Failed,
                 serde_json::to_value(&report).expect("report serialisation must succeed"),
                 span.map(|span| span.context().clone()),
             ),
-            ShellActionReport::Finished => tx.action().transition(
+            ExternalActionReport::Finished => tx.action().transition(
                 record,
                 ActionState::Done,
                 None,
                 span.map(|span| span.context().clone()),
             ),
-            ShellActionReport::Running => Ok(()),
+            ExternalActionReport::Running => Ok(()),
         }
     }
 
@@ -111,7 +111,7 @@ impl ShellAction {
         F: Fn(String, Uuid) -> ErrorKind,
     {
         let action_id = ActionRecordView::id(record);
-        let info = ShellActionInfo {
+        let info = ExternalActionInfo {
             args: record.args().clone(),
             headers: ActionRecordView::headers(record).clone(),
             id: action_id,
@@ -146,13 +146,13 @@ impl ShellAction {
         record: &dyn ActionRecordView,
         span: Option<&mut Span>,
     ) -> Result<()> {
-        let output = self.exec(record, &self.config.action, ErrorKind::ShellActionStart)?;
+        let output = self.exec(record, &self.config.action, ErrorKind::ExternalActionStart)?;
         let stdout =
             String::from_utf8(output.stdout).unwrap_or_else(|_| "{binary blob}".to_string());
         let action_id = ActionRecordView::id(record);
         debug!(
             self.logger,
-            "Shell action exec'ed";
+            "External action started";
             "action_id" => %action_id,
             "kind" => &self.kind,
             "stdout" => &stdout,
@@ -160,7 +160,7 @@ impl ShellAction {
         if !output.status.success() {
             let stderr =
                 String::from_utf8(output.stderr).unwrap_or_else(|_| "{binary blob}".to_string());
-            let error = ErrorKind::ShellActionExec(action_id, stdout, stderr);
+            let error = ErrorKind::ExternalActionExec(action_id, stdout, stderr);
             return Err(error.into());
         }
         tx.action().transition(
@@ -172,7 +172,7 @@ impl ShellAction {
     }
 }
 
-impl Action for ShellAction {
+impl Action for ExternalAction {
     fn describe(&self) -> ActionDescriptor {
         ActionDescriptor {
             description: self.config.description.clone(),
@@ -200,7 +200,7 @@ impl Action for ShellAction {
 }
 
 #[derive(Serialize, Deserialize)]
-struct ShellActionInfo {
+struct ExternalActionInfo {
     args: Json,
     headers: HashMap<String, String>,
     id: Uuid,
@@ -210,9 +210,9 @@ struct ShellActionInfo {
 /// Expected outcomes from a check command.
 #[derive(Serialize, Deserialize)]
 #[serde(tag = "status")]
-enum ShellActionReport {
+enum ExternalActionReport {
     #[serde(rename = "failed")]
-    Failed(ShellActionFailed),
+    Failed(ExternalActionFailed),
 
     #[serde(rename = "finished")]
     Finished,
@@ -223,6 +223,6 @@ enum ShellActionReport {
 
 /// If the action failed, information about the error is expected.
 #[derive(Serialize, Deserialize)]
-struct ShellActionFailed {
+struct ExternalActionFailed {
     error: Option<String>,
 }

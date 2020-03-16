@@ -55,11 +55,11 @@ impl ActionsConfig {
     }
 }
 
-/// Parameters of a user-defined custom shell action.
+/// Parameters of a user-defined external action.
 ///
-/// Shell actions call out to other programs or script to perform their tasks.
+/// External actions call out to other programs or script to perform their tasks.
 #[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
-pub struct ShellActionConfig {
+pub struct ExternalActionConfig {
     /// Command to execute to start the action.
     ///
     /// The first element in the list is the command to run.

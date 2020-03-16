@@ -13,7 +13,7 @@ mod sentry;
 mod service;
 
 pub use self::actions::ActionsConfig;
-pub use self::actions::ShellActionConfig;
+pub use self::actions::ExternalActionConfig;
 pub use self::api::APIConfig;
 pub use self::api::TlsConfig;
 pub use self::sentry::SentryCaptureApi;
@@ -45,6 +45,10 @@ pub struct Agent {
     /// Location for the agent to store persistent data.
     pub db: String,
 
+    /// User defined external actions.
+    #[serde(default)]
+    pub external_actions: BTreeMap<String, ExternalActionConfig>,
+
     /// Logging configuration.
     #[serde(default)]
     pub logging: LoggingConfig,
@@ -56,10 +60,6 @@ pub struct Agent {
     /// Service supervisor configuration.
     #[serde(default)]
     pub service: Option<ServiceConfig>,
-
-    /// User defined shell actions.
-    #[serde(default)]
-    pub shell_actions: BTreeMap<String, ShellActionConfig>,
 
     /// OpenTracing configuration.
     #[serde(default)]
@@ -99,10 +99,10 @@ impl Agent {
             api: APIConfig::default(),
             cluster_display_name_override: None,
             db: "mock.db".into(),
+            external_actions: BTreeMap::default(),
             logging: LoggingConfig::default(),
             sentry: None,
             service: None,
-            shell_actions: BTreeMap::default(),
             tracing: TracerConfig::default(),
             update_checker: false,
         }

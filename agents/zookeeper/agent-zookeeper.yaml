@@ -23,32 +23,47 @@ agent:
   #    options:
   #      url: 'http://localhost:9411'
 
-  shell_actions:
+  external_actions:
     fail-late:
       description: 'Test action that fails after 5 seconds'
       action:
         - python
-        - ../../devtools/shell-action.py
+        - ../../devtools/external-action.py
         - run
         - bash
         - -c
         - 'sleep 5 && echo "some error" >&2; false'
       check:
         - python
-        - ../../devtools/shell-action.py
+        - ../../devtools/external-action.py
         - check
     sleep:
       description: 'Test action that sleeps'
       action:
         - python
-        - ../../devtools/shell-action.py
+        - ../../devtools/external-action.py
         - run
         - sleep
         - 120
       check:
         - python
-        - ../../devtools/shell-action.py
+        - ../../devtools/external-action.py
         - check
+    systemd:
+      description: 'Sleep using systemd to manage the action'
+      action:
+        - ../../tools/systemd/systemd-start
+        - --user
+        - repliagent-sleep
+        # Reads stdin to execute:
+        #- systemctl
+        #- --user
+        #- start
+        #- --no-block
+        #- repliagent-sleep@{action_id}
+      check:
+        - ../../tools/systemd/systemd-check
+        - repliagent-sleep
 
 # Zookeeper specific configuration.
 zookeeper:

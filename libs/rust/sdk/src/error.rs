@@ -98,6 +98,27 @@ pub enum ErrorKind {
     #[fail(display = "connection error to {} with address '{}'", _0, _1)]
     Connection(&'static str, String),
 
+    #[fail(display = "unable to check external action {} with ID {}", _0, _1)]
+    ExternalActionCheck(String, Uuid),
+
+    #[fail(display = "unable to decode check result for external action {}", _0)]
+    ExternalActionCheckDecode(Uuid),
+
+    #[fail(
+        display = "external action {} check command failed\n--> Standard out:\n{}\n--> Standard error:\n{}",
+        _0, _1, _2
+    )]
+    ExternalActionCheckResult(Uuid, String, String),
+
+    #[fail(
+        display = "external action {} start command failed\n--> Standard out:\n{}\n--> Standard error:\n{}",
+        _0, _1, _2
+    )]
+    ExternalActionExec(Uuid, String, String),
+
+    #[fail(display = "external action {} with ID {} failed to start", _0, _1)]
+    ExternalActionStart(String, Uuid),
+
     /// Generic context agents can use if provided contexts are not enough.
     #[fail(display = "{}", _0)]
     FreeForm(String),
@@ -141,27 +162,6 @@ pub enum ErrorKind {
     #[fail(display = "service operation '{}' failed", _0)]
     ServiceOpFailed(&'static str),
 
-    #[fail(display = "unable to check shell action {} with ID {}", _0, _1)]
-    ShellActionCheck(String, Uuid),
-
-    #[fail(display = "unable to decode check result for shell action {}", _0)]
-    ShellActionCheckDecode(Uuid),
-
-    #[fail(
-        display = "shell action {} check command failed\n--> Standard out:\n{}\n--> Standard error:\n{}",
-        _0, _1, _2
-    )]
-    ShellActionCheckResult(Uuid, String, String),
-
-    #[fail(
-        display = "shell action {} start command failed\n--> Standard out:\n{}\n--> Standard error:\n{}",
-        _0, _1, _2
-    )]
-    ShellActionExec(Uuid, String, String),
-
-    #[fail(display = "shell action {} with ID {} failed to start", _0, _1)]
-    ShellActionStart(String, Uuid),
-
     #[fail(display = "datastore operation '{}' failed", _0)]
     StoreOpFailed(&'static str),
 
@@ -189,6 +189,11 @@ impl ErrorKind {
             ErrorKind::ConfigLoad => "ConfigLoad",
             ErrorKind::ConfigOption(_) => "ConfigOption",
             ErrorKind::Connection(_, _) => "Connection",
+            ErrorKind::ExternalActionCheck(_, _) => "ExternalActionCheck",
+            ErrorKind::ExternalActionCheckDecode(_) => "ExternalActionCheckDecode",
+            ErrorKind::ExternalActionCheckResult(_, _, _) => "ExternalActionCheckResult",
+            ErrorKind::ExternalActionExec(_, _, _) => "ExternalActionExec",
+            ErrorKind::ExternalActionStart(_, _) => "ExternalActionStart",
             ErrorKind::FreeForm(_) => "FreeForm",
             ErrorKind::Initialisation(_) => "Initialisation",
             ErrorKind::InvalidStoreState(_) => "InvalidStoreState",
@@ -202,11 +207,6 @@ impl ErrorKind {
             ErrorKind::PersistentWrite(_) => "PersistentWrite",
             ErrorKind::ResponseDecode(_, _) => "ResponseDecode",
             ErrorKind::ServiceOpFailed(_) => "ServiceOpFailed",
-            ErrorKind::ShellActionCheck(_, _) => "ShellActionCheck",
-            ErrorKind::ShellActionCheckDecode(_) => "ShellActionCheckDecode",
-            ErrorKind::ShellActionCheckResult(_, _, _) => "ShellActionCheckResult",
-            ErrorKind::ShellActionExec(_, _, _) => "ShellActionExec",
-            ErrorKind::ShellActionStart(_, _) => "ShellActionStart",
             ErrorKind::StoreOpFailed(_) => "StoreOpFailed",
             ErrorKind::ThreadSpawn(_) => "ThreadSpawn",
         };
