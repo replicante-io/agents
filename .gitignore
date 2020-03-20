@@ -5,6 +5,6 @@
 devtools/data/
 devtools/pki/
 
-agents/kafka/agent.yaml
-agents/mongodb/agent.yaml
-agents/zookeeper/agent.yaml
+agents/kafka/agent-kafka.yaml
+agents/mongodb/agent-mongodb.yaml
+agents/zookeeper/agent-zookeeper.yaml

@@ -42,7 +42,7 @@ pub fn register(context: &AgentContext) -> Result<()> {
             ))
             .into());
         }
-        let kind = format!("external.replicante.io/{}", kind);
+        let kind = format!("external.agent.replicante.io/{}", kind);
         let action = ExternalAction::new(kind, config.clone(), context.logger.clone());
         ACTIONS::register_reserved(action);
     }

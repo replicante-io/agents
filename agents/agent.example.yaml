@@ -121,6 +121,22 @@ agent:
   # (required) Location for the agent to store persistent data.
   db: 'path/to/agent.db'
 
+  # User defined external actions.
+  #
+  # This is a map of kind names to user-defined actions implemented by executing commands.
+  # The full action kind for these actions is `external.agent.replicante.io/<KIND>`.
+  #
+  # A user-defined action has the following properties:
+  #
+  #   * action: list of strings, the command to start the action and its arguments.
+  #   * check: list of strings, the command to check the action's state and its arguments.
+  #   * description: string, operator friendly description of the action.
+  #
+  # Details about how to implement action and check commands, how the agent interacts
+  # with these commands and what the commands MUST return to the agent are provided
+  # in the rust SDK code as rustdocs in libs/rust/sdk/src/config/actions.rs
+  external_actions: {}
+
   # The section below is for logging configuration.
   logging:
     # Flush logs asynchronously.
@@ -257,23 +273,6 @@ agent:
   #    # The script can exit at any time, the service is considered
   #    # stopped once a PID is no longer returned by the pid command.
   #    stop: ['/sbin/server-stop.sh', 'some-store']
-
-
-  # User defined external actions.
-  #
-  # This is a map of kind names to user-defined actions implemented by executing commands.
-  # The full action kind for these actions is `external.replicante.io/<KIND>`.
-  #
-  # A user-defined action has the following properties:
-  #
-  #   * action: list of strings, the command to start the action and its arguments.
-  #   * check: list of strings, the command to check the action's state and its arguments.
-  #   * description: string, operator friendly description of the action.
-  #
-  # Details about how to implement action and check commands, how the agent interacts
-  # with these commands and what the commands MUST return to the agent are provided
-  # in the rust SDK code as rustdocs in libs/rust/sdk/src/config/actions.rs
-  external_actions: {}
 
 
   # The section below is for distributed tracing configuration.

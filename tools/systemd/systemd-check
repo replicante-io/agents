@@ -1,0 +1,80 @@
+#!/usr/bin/env python3
+from argparse import ArgumentParser
+import json
+import os
+import subprocess
+import sys
+
+
+def get_args():
+    parser = ArgumentParser(
+        description='Check state of a replicante external action managed by systemd',
+    )
+    parser.add_argument(
+        '--user',
+        default=False,
+        action='store_true',
+        help='Pass the --user flag to systemd commands',
+    )
+    parser.add_argument(
+        '--data',
+        default='/run',
+        help='Path to place temporary action records',
+    )
+    parser.add_argument('unit', help='Name of the systemd template unit to check')
+    return parser.parse_args()
+
+
+def main():
+    action = json.load(sys.stdin)
+    action_id = action['id']
+    args = get_args()
+
+    # Check if the action is still running.
+    cmd = [
+        'systemctl',
+        'is-active',
+    ]
+    if args.user:
+        cmd.append('--user')
+    cmd.append(f'{args.unit}@{action_id}.service')
+    output = subprocess.run(cmd, text=True, capture_output=True)
+    if output.returncode == 0:
+        status = {'status': 'running'}
+        json.dump(status, sys.stdout)
+        return 0
+
+    # Since the action is not running clean up the store file (if needed).
+    store = f'{args.data}/{action_id}.action.json'
+    try:
+        os.remove(store)
+    except OSError:
+        pass
+
+    # Check if the action has failed.
+    cmd = [
+        'systemctl',
+        'is-failed',
+    ]
+    if args.user:
+        cmd.append('--user')
+    cmd.append(f'{args.unit}@{action_id}.service')
+    output = subprocess.run(cmd, text=True, capture_output=True)
+    if output.returncode == 0:
+        user = ''
+        if args.user:
+            user = ' --user'
+        status = {
+            'status': 'failed',
+            'error': f'check service logs with journalctl{user} -u {args.unit}@{action_id}.service',
+        }
+        json.dump(status, sys.stdout)
+        return 0
+
+    # Action is done and has not failed.
+    status = {'status': 'finished'}
+    json.dump(status, sys.stdout)
+
+
+if __name__ == '__main__':
+    main()

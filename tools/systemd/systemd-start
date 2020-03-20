@@ -1,0 +1,49 @@
+#!/usr/bin/env python3
+from argparse import ArgumentParser
+import json
+import subprocess
+import sys
+
+
+def get_args():
+    parser = ArgumentParser(description='Start a replicante external action managed by systemd')
+    parser.add_argument(
+        '--user',
+        default=False,
+        action='store_true',
+        help='Pass the --user flag to systemd commands',
+    )
+    parser.add_argument(
+        '--data',
+        default='/run',
+        help='Path to place temporary action records',
+    )
+    parser.add_argument('unit', help='Name of the systemd template unit to start')
+    return parser.parse_args()
+
+
+def main():
+    action = json.load(sys.stdin)
+    action_id = action['id']
+    args = get_args()
+
+    # Persist the action so the service can find it.
+    store = f'{args.data}/{action_id}.action.json'
+    with open(store, 'w') as fd:
+        json.dump(action, fd)
+
+    # Build the systemd command to start the action.
+    cmd = [
+        'systemctl',
+        'start',
+        '--no-block',
+    ]
+    if args.user:
+        cmd.append('--user')
+    cmd.append(f'{args.unit}@{action_id}.service')
+    output = subprocess.run(cmd)
+    sys.exit(output.returncode)
+
+
+if __name__ == '__main__':
+    main()

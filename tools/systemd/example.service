@@ -1,0 +1,9 @@
+[Unit]
+Description=Example SystemD managed Replicante External Action
+
+[Service]
+Type=exec
+ExecStart=/tmp/example-action %i
+
+[Install]
+WantedBy=multi-user.target

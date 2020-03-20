@@ -68,7 +68,7 @@ pub struct ExternalActionConfig {
     /// The start command MUST return quickly and execute the action asynchronously.
     /// This allows the agent to move on to other tasks.
     ///
-    /// A record for the action invokation to check is passed as JSON to standard input.
+    /// A record for the action invocation to check is passed as JSON to standard input.
     /// This information can be used to access things like the action ID, usable as a unique
     /// reference, or arguments passed to the agent when the action was scheduled.
     pub action: Vec<String>,
@@ -89,7 +89,7 @@ pub struct ExternalActionConfig {
     ///     The expected JSON object is described below.
     ///   * If the check command exists unsuccessfully (exit code not 0) it is assume the action
     ///     state can no longer be determined and it has failed.
-    ///   * A record for the action invokation to check is passed as JSON to standard input.
+    ///   * A record for the action invocation to check is passed as JSON to standard input.
     ///
     /// The JSON report printed by the check to standard output must match the following:
     /// ```json

@@ -1,0 +1,14 @@
+#!/bin/bash
+set -e
+
+# Extract the `count` argument to the action.
+count=$(cat "/tmp/$1.action.json" | jq '.args.count')
+
+# Make sure it is valid (or exit if not).
+seq $count > /dev/null
+
+# Wait a configurable number of times.
+for x in `seq $count`; do
+  echo "$(date): Example Action $1"
+  sleep 5
+done
