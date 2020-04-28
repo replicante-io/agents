@@ -34,9 +34,9 @@ This repo contains:
     * [Rust]: `replicante_agent` SDK crate (`libs/rust/sdk`).
 
   * Official Replicante agents:
-    * [Kafka]: `agents/kafka`.
-    * [MongoDB]: `agents/mongodb`.
-    * [Zookeeper]: `agents/zookeeper`.
+    * [Kafka]: found in `agents/kafka`.
+    * [MongoDB]: found in `agents/mongodb`.
+    * [Zookeeper]: found in `agents/zookeeper`.
 
 Official agents are written in rust and built with cargo:
 ```bash
