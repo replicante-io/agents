@@ -1,12 +1,10 @@
 use std::sync::Arc;
+use std::time::Duration;
 
+use bson::doc;
 use failure::ResultExt;
-use mongodb::db::ThreadedDatabase;
-use mongodb::topology::TopologyDescription;
-use mongodb::topology::TopologyType;
+use mongodb::options::ClientOptions;
 use mongodb::Client;
-use mongodb::ClientOptions;
-use mongodb::ThreadedClient;
 use semver::Version;
 use slog::debug;
 use slog::info;
@@ -21,12 +19,12 @@ use replicante_agent::Result;
 use replicante_models_agent::info::DatastoreInfo;
 use replicante_util_failure::failure_info;
 
-use super::config::Config;
-use super::config::Sharding;
-use super::error::ErrorKind;
-use super::metrics::MONGODB_OPS_COUNT;
-use super::metrics::MONGODB_OPS_DURATION;
-use super::metrics::MONGODB_OP_ERRORS_COUNT;
+use crate::config::Config;
+use crate::config::Sharding;
+use crate::error::ErrorKind;
+use crate::metrics::MONGODB_OPS_COUNT;
+use crate::metrics::MONGODB_OPS_DURATION;
+use crate::metrics::MONGODB_OP_ERRORS_COUNT;
 
 mod common;
 mod v3_0;
@@ -45,22 +43,26 @@ pub struct MongoDBFactory {
 
 impl MongoDBFactory {
     pub fn with_config(config: Config, context: AgentContext) -> Result<MongoDBFactory> {
-        let mut options = ClientOptions::default();
-        options.server_selection_timeout_ms = config.mongo.timeout;
-
-        // Create a MongoDB client out of a URI but explicitly setting the topology
-        // to single server to ensure the requested node is used.
-        let uri = ::mongodb::connstring::parse(&config.mongo.uri)
+        let mut options = ClientOptions::parse(&config.mongo.uri)
             .with_context(|_| ErrorKind::ConfigOption("mongo.uri"))?;
-        let mut description = TopologyDescription::new(options.stream_connector.clone());
-        description.topology_type = TopologyType::Single;
-        let client = Client::with_config(uri, Some(options), Some(description))
+        options.app_name = "repliagent-mongodb".to_string().into();
+        options.server_selection_timeout =
+            Duration::from_millis(config.mongo.host_select_timeout).into();
+
+        // Ensure the client connects to the configured server and does not discover
+        // a remote node to connect to.
+        options.direct_connection = true.into();
+
+        // Prevent the agent from opening too many connections to mongo.
+        options.max_pool_size = 10.into();
+
+        let client = Client::with_options(options)
             .with_context(|_| ErrorKind::Connection("mongodb", config.mongo.uri.clone()))?;
         debug!(
             context.logger,
             "MongoDB client created";
             "uri" => &config.mongo.uri,
-            "timeout" => &config.mongo.timeout,
+            "host_select_timeout" => &config.mongo.host_select_timeout,
         );
 
         let sharding = config.mongo.sharding;
@@ -94,22 +96,27 @@ impl MongoDBFactory {
 
     /// Fetch the currently running version of MongoDB.
     fn mongo_version(&self) -> Result<Version> {
-        MONGODB_OPS_COUNT.with_label_values(&["version"]).inc();
+        MONGODB_OPS_COUNT.with_label_values(&["buildInfo"]).inc();
         let timer = MONGODB_OPS_DURATION
-            .with_label_values(&["version"])
+            .with_label_values(&["buildInfo"])
             .start_timer();
         let version = self
             .client
-            .db("test")
-            .version()
+            .database("test")
+            .run_command(doc! { "buildInfo": 1 }, None)
             .map_err(|error| {
                 MONGODB_OP_ERRORS_COUNT
-                    .with_label_values(&["version"])
+                    .with_label_values(&["buildInfo"])
                     .inc();
                 error
             })
-            .with_context(|_| ErrorKind::StoreOpFailed("version"))?;
+            .with_context(|_| ErrorKind::StoreOpFailed("buildInfo"))?;
         timer.observe_duration();
+        let version = version
+            .get_str("version")
+            .with_context(|_| ErrorKind::BsonDecode("buildInfo"))?;
+        let version =
+            Version::parse(version).with_context(|_| ErrorKind::BsonDecode("buildInfo"))?;
         Ok(version)
     }
 

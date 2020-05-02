@@ -346,22 +346,16 @@ impl ActionValidityError {
     }
 }
 
-impl ActionValidityError {
-    fn http_status(&self) -> StatusCode {
+impl ResponseError for ActionValidityError {
+    fn status_code(&self) -> StatusCode {
         StatusCode::BAD_REQUEST
     }
-}
 
-impl ResponseError for ActionValidityError {
     fn error_response(&self) -> HttpResponse {
-        let status = self.http_status();
+        let status = self.status_code();
         HttpResponse::build(status).json(json!({
             "error": self.to_string(),
             "kind": self.kind(),
         }))
-    }
-
-    fn render_response(&self) -> HttpResponse {
-        self.error_response()
     }
 }

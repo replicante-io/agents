@@ -6,7 +6,6 @@ use actix_web::web;
 use actix_web::App;
 use actix_web::HttpServer;
 use failure::ResultExt;
-use futures::future::Future;
 use humthreads::Builder;
 use openssl::ssl::SslAcceptor;
 use openssl::ssl::SslFiletype;
@@ -65,7 +64,7 @@ impl<T> Default for ApiAddons<T> {
 }
 
 /// Mount all API endpoints.
-fn configure_app(agent: Arc<dyn Agent>, context: AgentContext) -> impl Fn(&mut web::ServiceConfig) {
+fn configure_app(context: AgentContext) -> impl Fn(&mut web::ServiceConfig) {
     move |app| {
         // Create the index root for each API root.
         let flags = context.config.api.trees.clone().into();
@@ -78,13 +77,13 @@ fn configure_app(agent: Arc<dyn Agent>, context: AgentContext) -> impl Fn(&mut w
 
         // Mount other roots.
         actions::configure_app(&flags, app, &context);
-        agent::configure_app(&flags, app, Arc::clone(&agent), &context);
+        agent::configure_app(&flags, app, &context);
         introspect::configure_app(&context, &flags, app);
         context.api_addons.configure_app(app, &context);
     }
 }
 
-/// Start an Iron HTTP server.
+/// Start the HTTP server.
 ///
 /// # Panics
 ///
@@ -112,7 +111,7 @@ where
 
             // Initialise and configure HTTP server and App factory.
             let mut server = HttpServer::new(move || {
-                let config = configure_app(Arc::clone(&agent), context.clone());
+                let config = configure_app(context.clone());
                 // Give every mounted route access to the global context.
                 let app = App::new().data(Arc::clone(&agent)).data(context.clone());
                 // Register application middlewares.
@@ -166,7 +165,7 @@ where
                             .set_verify(SslVerifyMode::PEER | SslVerifyMode::FAIL_IF_NO_PEER_CERT);
                     }
                     server
-                        .bind_ssl(&config.bind, builder)
+                        .bind_openssl(&config.bind, builder)
                         .expect("unable to bind API server")
                 }
             };
@@ -174,21 +173,20 @@ where
             // Start HTTP server and block until shutdown.
             info!(logger, "Starting API server"; "bind" => &config.bind);
             scope.activity("running https://actix.rs/ HTTP(S) server");
-            let runner = actix_rt::System::new("replicante:base:api");
-            let system = actix_rt::System::current();
+            let mut runner = actix_rt::System::new("replicante:base:api");
+            let server = server.run();
             send_server
-                .send((server.start(), system))
+                .send(server.clone())
                 .expect("unable to send back server handle");
-            runner.run().expect("unable to run API server");
+            runner.block_on(server).expect("unable to run API server");
         })
         .with_context(|_| ErrorKind::ThreadSpawn("api server"))?;
     upkeep.register_thread(thread);
-    let (server, system) = receive_server
+    let server = receive_server
         .recv()
         .with_context(|_| ErrorKind::Initialisation("failed to spawn API server".into()))?;
     upkeep.on_shutdown(move || {
-        let _ = server.stop(true).wait();
-        system.stop();
+        futures::executor::block_on(server.stop(true));
     });
     Ok(())
 }

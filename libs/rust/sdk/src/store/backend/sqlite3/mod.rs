@@ -3,9 +3,6 @@ use failure::SyncFailure;
 use migrant_lib::Config;
 use migrant_lib::Migrator;
 use migrant_lib::Settings;
-use r2d2::Pool;
-use r2d2::PooledConnection;
-use r2d2_sqlite::SqliteConnectionManager;
 use slog::debug;
 use slog::info;
 use slog::Logger;
@@ -31,8 +28,20 @@ mod action;
 mod actions;
 
 struct Connection {
-    connection: PooledConnection<SqliteConnectionManager>,
+    connection: rusqlite::Connection,
     tracer: MaybeTracer,
+}
+
+impl Connection {
+    fn new(path: &str, tracer: MaybeTracer) -> Result<Connection> {
+        let connection = rusqlite::Connection::open_with_flags(path, Default::default())
+            .with_context(|_| ErrorKind::PersistentPool)?;
+        // Ensure foreign keys are checked.
+        connection
+            .execute_batch("PRAGMA foreign_keys=1;")
+            .with_context(|_| ErrorKind::PersistentPool)?;
+        Ok(Connection { connection, tracer })
+    }
 }
 
 impl ConnectionInterface for Connection {
@@ -60,22 +69,14 @@ impl ConnectionInterface for Connection {
 pub struct Store {
     logger: Logger,
     path: String,
-    pool: Pool<SqliteConnectionManager>,
     tracer: MaybeTracer,
 }
 
 impl Store {
     pub fn new(logger: Logger, path: String, tracer: MaybeTracer) -> Result<Store> {
-        // Create a connection manager and ensure foreign keys are checked.
-        let manager = SqliteConnectionManager::file(&path)
-            .with_init(|c| c.execute_batch("PRAGMA foreign_keys=1;"));
-        let pool = Pool::builder()
-            .build(manager)
-            .with_context(|_| ErrorKind::PersistentPool)?;
         Ok(Store {
             logger,
             path,
-            pool,
             tracer,
         })
     }
@@ -83,16 +84,12 @@ impl Store {
 
 impl StoreInterface for Store {
     fn connection(&self) -> Result<ConnectionImpl> {
-        let connection = self
-            .pool
-            .get()
-            .with_context(|_| ErrorKind::PersistentNoConnection)
-            .map_err(|error| {
-                SQLITE_CONNECTION_ERRORS.inc();
-                error
-            })?;
         let tracer = self.tracer.clone();
-        Ok(ConnectionImpl::new(Connection { connection, tracer }))
+        let connection = Connection::new(&self.path, tracer).map_err(|error| {
+            SQLITE_CONNECTION_ERRORS.inc();
+            error
+        })?;
+        Ok(ConnectionImpl::new(connection))
     }
 
     fn migrate(&self) -> Result<()> {

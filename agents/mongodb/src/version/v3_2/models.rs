@@ -4,7 +4,7 @@ use serde_derive::Deserialize;
 use replicante_agent::Result;
 use replicante_models_agent::info::ShardRole;
 
-use super::super::super::error::ErrorKind;
+use crate::error::ErrorKind;
 
 /// Section of the buildInfo command that we care about.
 #[derive(Deserialize)]
@@ -94,7 +94,6 @@ pub struct RepliSetOptime {
 
 #[cfg(test)]
 mod tests {
-    use bson::bson;
     use bson::doc;
     use bson::Bson;
     use lazy_static::lazy_static;

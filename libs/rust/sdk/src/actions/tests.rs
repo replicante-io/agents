@@ -1,5 +1,4 @@
 use actix_web::dev::Body;
-use actix_web::dev::Service;
 use actix_web::test;
 use actix_web::test::TestRequest;
 use actix_web::web;
@@ -93,18 +92,12 @@ fn enabled_explicitly_without_tls() {
     };
 }
 
-#[test]
-fn validation_fails() {
-    let mut app = test::init_service(App::new().route(
-        "/",
-        web::get().to(|| -> actix_web::Result<HttpResponse> {
-            let action = TestAction {};
-            action.validate_args(&json!({}))?;
-            Ok(HttpResponse::Ok().json(json!({})))
-        }),
-    ));
+#[actix_rt::test]
+async fn validation_fails() {
+    let mut app =
+        test::init_service(App::new().route("/", web::get().to(validation_fails_hanler))).await;
     let req = TestRequest::get().uri("/").to_request();
-    let mut resp = test::block_on(app.call(req)).unwrap();
+    let mut resp = test::call_service(&mut app, req).await;
     assert_eq!(resp.status().as_u16(), 400);
     let body = match resp.take_body().as_ref().unwrap() {
         Body::Bytes(body) => String::from_utf8(body.to_vec()).unwrap(),
@@ -114,4 +107,10 @@ fn validation_fails() {
         body,
         r#"{"error":"invalid action arguments: test","kind":"InvalidArgs"}"#
     );
+}
+
+async fn validation_fails_hanler() -> actix_web::Result<HttpResponse> {
+    let action = TestAction {};
+    action.validate_args(&json!({}))?;
+    Ok(HttpResponse::Ok().json(json!({})))
 }

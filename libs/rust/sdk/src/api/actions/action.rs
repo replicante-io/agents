@@ -35,7 +35,7 @@ lazy_static::lazy_static! {
 }
 
 /// Fetch an action details.
-pub fn info(id: web::Path<String>, request: HttpRequest) -> Result<impl Responder> {
+pub async fn info(id: web::Path<String>, request: HttpRequest) -> Result<impl Responder> {
     let context = request
         .app_data::<AgentContext>()
         .expect("AgentContext must be available as App::data");
@@ -66,7 +66,7 @@ pub fn info(id: web::Path<String>, request: HttpRequest) -> Result<impl Responde
 }
 
 /// Attempt to schedule an action.
-pub fn schedule(
+pub async fn schedule(
     kind: web::Path<String>,
     params: web::Json<ActionScheduleRequest>,
     request: HttpRequest,

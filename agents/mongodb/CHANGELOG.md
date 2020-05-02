@@ -6,6 +6,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 ### Changed
+- **BREAKING**: Rename `timeout` config to `host_select_timeout`.
 - **BREAKING**: Rework action kinds format.
 
 ## [0.4.1] - 2020-03-07

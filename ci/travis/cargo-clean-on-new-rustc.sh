@@ -13,7 +13,7 @@ function cargo_clean {
 
 
 # Change this to force a clean build on CI
-manual_stamp=2020-04-29-0
+manual_stamp=2020-05-02-0
 manual_stamp_file=target/ci_manual_stamp
 
 if [ -f $manual_stamp_file ]; then

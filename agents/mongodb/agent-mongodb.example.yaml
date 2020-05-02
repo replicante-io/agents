@@ -5,11 +5,11 @@ agent: {}
 
 # MongoDB specific configuration.
 mongo:
+  # Timeout (in milliseconds) for selecting an appropriate server for operations.
+  host_select_timeout: 1000
+
   # MongoDB connection URI.
   uri: "mongodb://localhost:27017"
-
-  # Timeout (in milliseconds) for selecting an appropriate server for operations.
-  timeout: 30000
 
   # Configure the agent to operate in sharded cluster mode.
   #

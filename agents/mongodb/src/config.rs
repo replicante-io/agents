@@ -71,6 +71,10 @@ impl Config {
 /// MongoDB related options.
 #[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
 pub struct MongoDB {
+    /// Timeout (in milliseconds) for selecting an appropriate server for operations.
+    #[serde(default = "MongoDB::default_host_select_timeout")]
+    pub host_select_timeout: u64,
+
     /// MongoDB connection URI.
     #[serde(default = "MongoDB::default_uri")]
     pub uri: String,
@@ -78,18 +82,14 @@ pub struct MongoDB {
     /// Configure MongoDB sharding mode.
     #[serde(default)]
     pub sharding: Option<Sharding>,
-
-    /// Timeout (in milliseconds) for selecting an appropriate server for operations.
-    #[serde(default = "MongoDB::default_timeout")]
-    pub timeout: i64,
 }
 
 impl Default for MongoDB {
     fn default() -> Self {
         MongoDB {
+            host_select_timeout: Self::default_host_select_timeout(),
             uri: Self::default_uri(),
             sharding: None,
-            timeout: Self::default_timeout(),
         }
     }
 }
@@ -100,8 +100,8 @@ impl MongoDB {
         String::from("mongodb://localhost:27017")
     }
 
-    /// Default value for `timeout` used by serde.
-    fn default_timeout() -> i64 {
+    /// Default value for `host_select_timeout` used by serde.
+    fn default_host_select_timeout() -> u64 {
         1000
     }
 }

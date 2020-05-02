@@ -47,14 +47,14 @@ impl From<ErrorKind> for Error {
 }
 
 impl ResponseError for Error {
-    fn error_response(&self) -> HttpResponse {
-        let info = SerializableFail::from(self);
-        let status = self.kind().http_status();
-        HttpResponse::build(status).json(info)
+    fn status_code(&self) -> StatusCode {
+        self.kind().http_status()
     }
 
-    fn render_response(&self) -> HttpResponse {
-        self.error_response()
+    fn error_response(&self) -> HttpResponse {
+        let info = SerializableFail::from(self);
+        let status = self.status_code();
+        HttpResponse::build(status).json(info)
     }
 }
 

@@ -1,12 +1,8 @@
-use bson::bson;
 use bson::doc;
 use bson::Bson;
 use failure::ResultExt;
 
-use mongodb::db::ThreadedDatabase;
 use mongodb::Client;
-use mongodb::CommandType;
-use mongodb::ThreadedClient;
 use opentracingrust::utils::FailSpan;
 use opentracingrust::Log;
 use opentracingrust::Span;
@@ -22,12 +18,12 @@ use replicante_models_agent::info::ShardRole;
 use replicante_models_agent::info::Shards;
 use replicante_util_failure::failure_info;
 
-use super::super::super::error::ErrorKind;
-use super::super::super::metrics::MONGODB_OPS_COUNT;
-use super::super::super::metrics::MONGODB_OPS_DURATION;
-use super::super::super::metrics::MONGODB_OP_ERRORS_COUNT;
-use super::super::common::AGENT_VERSION;
+use crate::error::ErrorKind;
+use crate::metrics::MONGODB_OPS_COUNT;
+use crate::metrics::MONGODB_OPS_DURATION;
+use crate::metrics::MONGODB_OP_ERRORS_COUNT;
 
+use super::super::common::AGENT_VERSION;
 use super::BuildInfo;
 use super::ReplSetStatus;
 
@@ -59,8 +55,8 @@ impl CommonLogic {
             .start_timer();
         let info = self
             .client
-            .db("test")
-            .command(doc! {"buildInfo" => 1}, CommandType::BuildInfo, None)
+            .database("test")
+            .run_command(doc! {"buildInfo" => 1}, None)
             .fail_span(&mut span)
             .map_err(|error| {
                 MONGODB_OP_ERRORS_COUNT
@@ -94,8 +90,8 @@ impl CommonLogic {
             .start_timer();
         let status = self
             .client
-            .db("admin")
-            .command(doc! {"replSetGetStatus" => 1}, CommandType::IsMaster, None)
+            .database("admin")
+            .run_command(doc! {"replSetGetStatus" => 1}, None)
             .fail_span(&mut span)
             .map_err(|error| {
                 MONGODB_OP_ERRORS_COUNT

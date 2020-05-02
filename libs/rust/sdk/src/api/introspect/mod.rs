@@ -15,7 +15,7 @@ pub fn configure_app(context: &AgentContext, flags: &APIFlags, app: &mut web::Se
         let registry = context.metrics.clone();
         app.service(
             root.resource("/metrics")
-                .route(web::get().to(move || MetricsExporter::new(registry.clone()))),
+                .route(web::get().to(MetricsExporter::factory(registry))),
         );
         app.service(
             root.resource("/threads")

@@ -18,7 +18,7 @@ mod versioned;
 pub mod config;
 pub mod process;
 
-#[cfg(debug_assertions)]
+#[cfg(any(test, feature = "with_test_support"))]
 pub mod testing;
 
 pub use self::context::AgentContext;

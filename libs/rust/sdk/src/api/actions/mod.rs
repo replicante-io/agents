@@ -19,7 +19,7 @@ mod action;
 mod list;
 
 /// Return a list of available agent actions.
-fn available() -> impl Responder {
+async fn available() -> impl Responder {
     let mut actions: Vec<ActionDescriptor> =
         ACTIONS::iter().map(|action| action.describe()).collect();
     actions.sort_by_key(|action| action.kind.clone());
@@ -27,12 +27,12 @@ fn available() -> impl Responder {
 }
 
 /// Static 2xx response to confirm the actions API is NOT enabled.
-fn index_disabled() -> impl Responder {
+async fn index_disabled() -> impl Responder {
     HttpResponse::Ok().json(json!({"actions": false}))
 }
 
 /// Static 2xx response to confirm the actions API is enabled.
-fn index_enabled() -> impl Responder {
+async fn index_enabled() -> impl Responder {
     HttpResponse::Ok().json(json!({"actions": true}))
 }
 

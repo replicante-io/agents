@@ -9,7 +9,7 @@ use replicante_util_tracing::fail_span;
 use crate::AgentContext;
 
 /// List finished actions.
-pub fn finished(request: HttpRequest) -> Result<impl Responder> {
+pub async fn finished(request: HttpRequest) -> Result<impl Responder> {
     let context = request
         .app_data::<AgentContext>()
         .expect("AgentContext must be available as App::data");
@@ -30,7 +30,7 @@ pub fn finished(request: HttpRequest) -> Result<impl Responder> {
 }
 
 /// List running and pending actions.
-pub fn queue(request: HttpRequest) -> Result<impl Responder> {
+pub async fn queue(request: HttpRequest) -> Result<impl Responder> {
     let context = request
         .app_data::<AgentContext>()
         .expect("AgentContext must be available as App::data");

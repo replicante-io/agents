@@ -226,8 +226,20 @@ pub fn update_checker(current: Version, url: &'static str, context: &AgentContex
         .full_name("replicante:base:update_checker")
         .spawn(move |scope| {
             let _activity = scope.scoped_activity("checking for updates");
-            let response =
-                reqwest::get(url).and_then(|mut response| response.json::<VersionMeta>());
+            let response = futures::executor::block_on(reqwest::get(url));
+            let response = match response {
+                Ok(response) => response,
+                Err(error) => {
+                    capture_fail!(
+                        &error,
+                        logger,
+                        "Failed to fetch latest version information";
+                        failure_info(&error)
+                    );
+                    return;
+                }
+            };
+            let response = futures::executor::block_on(response.json::<VersionMeta>());
             let response = match response {
                 Ok(response) => response,
                 Err(error) => {
