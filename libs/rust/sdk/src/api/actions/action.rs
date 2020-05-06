@@ -35,10 +35,11 @@ lazy_static::lazy_static! {
 }
 
 /// Fetch an action details.
-pub async fn info(id: web::Path<String>, request: HttpRequest) -> Result<impl Responder> {
-    let context = request
-        .app_data::<AgentContext>()
-        .expect("AgentContext must be available as App::data");
+pub async fn info(
+    request: HttpRequest,
+    context: web::Data<AgentContext>,
+    id: web::Path<String>,
+) -> Result<impl Responder> {
     let id = id.into_inner();
     let mut exts = request.extensions_mut();
     let span = request_span(&mut exts);
@@ -67,13 +68,11 @@ pub async fn info(id: web::Path<String>, request: HttpRequest) -> Result<impl Re
 
 /// Attempt to schedule an action.
 pub async fn schedule(
+    request: HttpRequest,
+    context: web::Data<AgentContext>,
     kind: web::Path<String>,
     params: web::Json<ActionScheduleRequest>,
-    request: HttpRequest,
 ) -> Result<impl Responder> {
-    let context = request
-        .app_data::<AgentContext>()
-        .expect("AgentContext must be available as App::data");
     let mut exts = request.extensions_mut();
     let span = request_span(&mut exts);
     let kind = kind.into_inner();

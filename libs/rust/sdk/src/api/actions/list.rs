@@ -1,3 +1,4 @@
+use actix_web::web::Data;
 use actix_web::HttpRequest;
 use actix_web::HttpResponse;
 use actix_web::Responder;
@@ -9,10 +10,7 @@ use replicante_util_tracing::fail_span;
 use crate::AgentContext;
 
 /// List finished actions.
-pub async fn finished(request: HttpRequest) -> Result<impl Responder> {
-    let context = request
-        .app_data::<AgentContext>()
-        .expect("AgentContext must be available as App::data");
+pub async fn finished(request: HttpRequest, context: Data<AgentContext>) -> Result<impl Responder> {
     let mut exts = request.extensions_mut();
     let span = request_span(&mut exts);
     let actions = context
@@ -30,10 +28,7 @@ pub async fn finished(request: HttpRequest) -> Result<impl Responder> {
 }
 
 /// List running and pending actions.
-pub async fn queue(request: HttpRequest) -> Result<impl Responder> {
-    let context = request
-        .app_data::<AgentContext>()
-        .expect("AgentContext must be available as App::data");
+pub async fn queue(request: HttpRequest, context: Data<AgentContext>) -> Result<impl Responder> {
     let mut exts = request.extensions_mut();
     let span = request_span(&mut exts);
     let actions = context

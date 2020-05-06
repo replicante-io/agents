@@ -226,8 +226,7 @@ pub fn update_checker(current: Version, url: &'static str, context: &AgentContex
         .full_name("replicante:base:update_checker")
         .spawn(move |scope| {
             let _activity = scope.scoped_activity("checking for updates");
-            let response = futures::executor::block_on(reqwest::get(url));
-            let response = match response {
+            let response = match reqwest::blocking::get(url) {
                 Ok(response) => response,
                 Err(error) => {
                     capture_fail!(
@@ -239,8 +238,7 @@ pub fn update_checker(current: Version, url: &'static str, context: &AgentContex
                     return;
                 }
             };
-            let response = futures::executor::block_on(response.json::<VersionMeta>());
-            let response = match response {
+            let response = match response.json::<VersionMeta>() {
                 Ok(response) => response,
                 Err(error) => {
                     capture_fail!(

@@ -2,6 +2,7 @@
 **/*.rs.bk
 **/target
 
+devtools/*.db
 devtools/data/
 devtools/pki/
 
