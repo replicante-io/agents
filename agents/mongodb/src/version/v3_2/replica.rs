@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use mongodb::Client;
+use mongodb::sync::Client;
 use opentracingrust::Span;
 
 use replicante_agent::actions::Action;

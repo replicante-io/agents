@@ -9,9 +9,10 @@ use slog::o;
 use slog::Discard;
 use slog::Logger;
 
+use replicante_util_actixweb::AppConfig;
 use replicante_util_tracing::MaybeTracer;
 
-use crate::api::ApiAddons;
+use crate::api::APIContext;
 use crate::config::Agent as AgentConfig;
 use crate::store::backend_factory;
 use crate::store::Store;
@@ -25,7 +26,7 @@ use crate::Result;
 // Any new field must be added to the implementation of Debug.
 #[derive(Clone)]
 pub struct AgentContext {
-    pub api_addons: ApiAddons<AgentContext>,
+    pub api_conf: AppConfig<APIContext>,
     pub config: AgentConfig,
     pub logger: Logger,
 
@@ -69,7 +70,7 @@ impl AgentContext {
             MaybeTracer::new(Arc::clone(&tracer)),
         )?;
         Ok(AgentContext {
-            api_addons: ApiAddons::default(),
+            api_conf: AppConfig::default(),
             config,
             logger,
             metrics,
@@ -95,7 +96,7 @@ impl AgentContext {
                 .unwrap();
         let tracer = Arc::new(tracer);
         AgentContext {
-            api_addons: ApiAddons::default(),
+            api_conf: AppConfig::default(),
             config,
             logger,
             metrics,

@@ -6,7 +6,8 @@ use humthreads::registered_threads;
 use humthreads::ThreadStatus;
 
 /// Expose a snaphot view of traked threads states.
-pub async fn handler() -> impl Responder {
+#[actix_web::get("/threads")]
+pub async fn responder() -> impl Responder {
     let mut threads = registered_threads();
     threads.sort_unstable_by_key(|t| t.name.clone());
     let threads = ThreadsResponse::new(threads);

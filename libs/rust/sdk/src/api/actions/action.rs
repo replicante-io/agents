@@ -1,5 +1,7 @@
 use std::collections::HashSet;
+use std::sync::Arc;
 
+use actix_web::dev::HttpServiceFactory;
 use actix_web::web;
 use actix_web::HttpRequest;
 use actix_web::HttpResponse;
@@ -10,7 +12,8 @@ use serde_json::json;
 
 use replicante_models_agent::actions::api::ActionInfoResponse;
 use replicante_models_agent::actions::api::ActionScheduleRequest;
-use replicante_util_actixweb::request_span;
+use replicante_util_actixweb::with_request_span;
+use replicante_util_actixweb::TracingMiddleware;
 use replicante_util_tracing::fail_span;
 
 use crate::actions::ActionRecord;
@@ -35,31 +38,42 @@ lazy_static::lazy_static! {
 }
 
 /// Fetch an action details.
-pub async fn info(
-    request: HttpRequest,
+pub fn info(context: &AgentContext) -> impl HttpServiceFactory {
+    let logger = context.logger.clone();
+    let tracer = Arc::clone(&context.tracer);
+    let tracer = TracingMiddleware::with_name(logger, tracer, "/actions/info/{id}");
+    web::resource("/info/{id}")
+        .wrap(tracer)
+        .route(web::get().to(info_responder))
+}
+
+async fn info_responder(
     context: web::Data<AgentContext>,
     id: web::Path<String>,
+    request: HttpRequest,
 ) -> Result<impl Responder> {
+    let mut request = request;
     let id = id.into_inner();
-    let mut exts = request.extensions_mut();
-    let span = request_span(&mut exts);
-    let info = context
-        .store
-        .with_transaction(|tx| {
-            let action = tx.action().get(&id, span.context().clone())?;
-            let action = match action {
-                None => return Ok(None),
-                Some(action) => action.into(),
-            };
-            let iter = tx.action().history(&id, span.context().clone())?;
-            let mut history = Vec::new();
-            for item in iter {
-                history.push(item?);
-            }
-            let info = ActionInfoResponse { action, history };
-            Ok(Some(info))
-        })
-        .map_err(|error| fail_span(error, span))?;
+    let info = with_request_span(&mut request, |span| {
+        let span_context = span.as_ref().map(|span| span.context().clone());
+        context
+            .store
+            .with_transaction(|tx| {
+                let action = tx.action().get(&id, span_context.clone())?;
+                let action = match action {
+                    None => return Ok(None),
+                    Some(action) => action.into(),
+                };
+                let iter = tx.action().history(&id, span_context)?;
+                let mut history = Vec::new();
+                for item in iter {
+                    history.push(item?);
+                }
+                let info = ActionInfoResponse { action, history };
+                Ok(Some(info))
+            })
+            .map_err(|error| fail_span(error, span))
+    })?;
     match info {
         None => Ok(HttpResponse::NotFound().finish()),
         Some(info) => Ok(HttpResponse::Ok().json(info)),
@@ -67,52 +81,78 @@ pub async fn info(
 }
 
 /// Attempt to schedule an action.
-pub async fn schedule(
-    request: HttpRequest,
+pub fn schedule(context: &AgentContext) -> impl HttpServiceFactory {
+    let logger = context.logger.clone();
+    let tracer = Arc::clone(&context.tracer);
+    let tracer = TracingMiddleware::with_name(logger, tracer, "/actions/schedule/{kind}");
+    web::resource("/schedule/{kind:.*}")
+        .wrap(tracer)
+        .route(web::post().to(schedule_responder))
+}
+
+async fn schedule_responder(
     context: web::Data<AgentContext>,
     kind: web::Path<String>,
     params: web::Json<ActionScheduleRequest>,
+    request: HttpRequest,
 ) -> Result<impl Responder> {
-    let mut exts = request.extensions_mut();
-    let span = request_span(&mut exts);
+    let mut request = request;
     let kind = kind.into_inner();
-    let action = ACTIONS::get(&kind)
-        .ok_or_else(|| ErrorKind::ActionNotAvailable(kind.clone()))
-        .map_err(Error::from)
-        .map_err(|error| fail_span(error, &mut *span))?;
+    let action = with_request_span(&mut request, |span| {
+        ACTIONS::get(&kind)
+            .ok_or_else(|| ErrorKind::ActionNotAvailable(kind.clone()))
+            .map_err(Error::from)
+            .map_err(|error| fail_span(error, span))
+    })?;
 
     let params = params.into_inner();
     let args = params.args;
     let created_ts = params.created_ts;
     let action_id = params.action_id;
-    action
-        .validate_args(&args)
-        .map_err(|error| fail_span(error, &mut *span))?;
+    with_request_span(&mut request, |span| {
+        action
+            .validate_args(&args)
+            .map_err(|error| fail_span(error, span))
+    })?;
 
     let requester = params.requester.unwrap_or(ActionRequester::AgentApi);
     let mut record = ActionRecord::new(kind, action_id, created_ts, args, requester);
-    for (name, value) in request.headers() {
+    let headers = request.headers().clone();
+    for (name, value) in headers.into_iter() {
         let name = name.as_str();
         if HTTP_HEADER_IGNORE.contains(name) {
             continue;
         }
         let name = name.to_string();
-        let value = value
-            .to_str()
-            .with_context(|_| ErrorKind::ActionEncode)
-            .map_err(Error::from)
-            .map_err(|error| fail_span(error, &mut *span))?
-            .to_string();
+        let value = with_request_span(&mut request, |span| -> Result<_> {
+            let value = value
+                .to_str()
+                .with_context(|_| ErrorKind::ActionEncode)
+                .map_err(Error::from)
+                .map_err(|error| fail_span(error, span))?
+                .to_string();
+            Ok(value)
+        })?;
         record.headers.insert(name, value);
     }
-    record
-        .trace_set(span.context(), &context.tracer)
-        .map_err(Error::from)
-        .map_err(|error| fail_span(error, &mut *span))?;
+    with_request_span(&mut request, |span| -> Result<_> {
+        let span_context = span.as_ref().map(|span| span.context().clone());
+        if let Some(span_context) = span_context.as_ref() {
+            record
+                .trace_set(span_context, &context.tracer)
+                .map_err(Error::from)
+                .map_err(|error| fail_span(error, span))?;
+        }
+        Ok(())
+    })?;
     let id = record.id;
-    context
-        .store
-        .with_transaction(|tx| tx.action().insert(record, span.context().clone()))
-        .map_err(|error| fail_span(error, span))?;
+    with_request_span(&mut request, |span| -> Result<_> {
+        let span_context = span.as_ref().map(|span| span.context().clone());
+        context
+            .store
+            .with_transaction(|tx| tx.action().insert(record, span_context))
+            .map_err(|error| fail_span(error, span))?;
+        Ok(())
+    })?;
     Ok(HttpResponse::Ok().json(json!({ "id": id })))
 }

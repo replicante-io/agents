@@ -2,7 +2,6 @@ use std::sync::mpsc::sync_channel;
 use std::sync::Arc;
 
 use actix_web::middleware;
-use actix_web::web;
 use actix_web::App;
 use actix_web::HttpServer;
 use failure::ResultExt;
@@ -13,6 +12,7 @@ use openssl::ssl::SslMethod;
 use openssl::ssl::SslVerifyMode;
 use slog::info;
 
+use replicante_util_actixweb::APIFlags;
 use replicante_util_actixweb::LoggingMiddleware;
 use replicante_util_actixweb::MetricsMiddleware;
 use replicante_util_actixweb::RootDescriptor;
@@ -25,6 +25,7 @@ mod index;
 mod introspect;
 mod roots;
 
+use crate::actions::actions_enabled;
 use crate::config::SentryCaptureApi;
 use crate::metrics::REQUESTS;
 use crate::Agent;
@@ -34,52 +35,24 @@ use crate::Result;
 
 pub use self::roots::APIRoot;
 
-/// Additional API server configuration handlers.
+/// Context for `AppConfig` configuration callbacks.
+pub type AppConfigContext<'a> = replicante_util_actixweb::AppConfigContext<'a, APIContext>;
+
+/// Context for `AppConfig` configuration callbacks.
 #[derive(Clone)]
-pub struct ApiAddons<T> {
-    addons: Vec<Arc<dyn Fn(&mut web::ServiceConfig, &T) + Send + Sync>>,
+pub struct APIContext {
+    pub agent: AgentContext,
+    pub flags: APIFlags,
 }
 
-impl<T> ApiAddons<T> {
-    /// Run all the register handles to configure the given app.
-    pub fn configure_app(&self, app: &mut web::ServiceConfig, context: &T) {
-        for addon in &self.addons {
-            addon(app, context);
-        }
-    }
-
-    /// Register an app configuration function to be run later.
-    pub fn register<F>(&mut self, addon: F)
-    where
-        F: Fn(&mut web::ServiceConfig, &T) + 'static + Send + Sync,
-    {
-        self.addons.push(Arc::new(addon));
-    }
-}
-
-impl<T> Default for ApiAddons<T> {
-    fn default() -> Self {
-        ApiAddons { addons: Vec::new() }
-    }
-}
-
-/// Mount all API endpoints.
-fn configure_app(context: AgentContext) -> impl Fn(&mut web::ServiceConfig) {
-    move |app| {
-        // Create the index root for each API root.
-        let flags = context.config.api.trees.clone().into();
-        let roots = [APIRoot::UnstableAPI];
-        for root in roots.iter() {
-            root.and_then(&flags, |root| {
-                app.service(root.resource("/").route(web::get().to(index::index)));
-            });
-        }
-
-        // Mount other roots.
-        actions::configure_app(&flags, app, &context);
-        agent::configure_app(&flags, app, &context);
-        introspect::configure_app(&context, &flags, app);
-        context.api_addons.configure_app(app, &context);
+/// Mount API index endpoints.
+fn configure(conf: &mut AppConfigContext) {
+    // Create the index root for each API root.
+    let roots = [APIRoot::UnstableAPI];
+    for root in roots.iter() {
+        root.and_then(&conf.context.flags, |root| {
+            conf.scoped_service(root.prefix(), index::index);
+        });
     }
 }
 
@@ -109,11 +82,31 @@ where
                 .map(|sentry| sentry.capture_api_errors.clone())
                 .unwrap_or_default();
 
+            // Extend the API server configuration with routes.
+            // Only `app_config` will then move into the closure, with all the dependencies
+            // tucked away into the `AppConfig::register`ed closures.
+            let api_conf = {
+                let mut api_conf = context.api_conf.clone();
+                api_conf.register(configure);
+                if actions_enabled(&context.config).unwrap_or(false) {
+                    api_conf.register(actions::configure_enabled);
+                } else {
+                    api_conf.register(actions::configure_disabled);
+                }
+                api_conf.register(agent::configure);
+                api_conf.register(introspect::configure);
+                api_conf
+            };
+            let api_context = APIContext {
+                agent: context.clone(),
+                flags: context.config.api.trees.clone().into(),
+            };
+
             // Initialise and configure HTTP server and App factory.
             let mut server = HttpServer::new(move || {
-                let config = configure_app(context.clone());
                 // Give every mounted route access to the global context.
                 let app = App::new().data(Arc::clone(&agent)).data(context.clone());
+
                 // Register application middlewares.
                 // Remember that middlewares are executed in reverse registration order.
                 let app = app
@@ -129,8 +122,10 @@ where
                     // to configure it or we can't return a consisten type from this match.
                     SentryCaptureApi::No => app.wrap(SentryMiddleware::new(600)),
                 };
+
                 // Configure and return the ActixWeb App
-                app.configure(config)
+                let mut api_conf = api_conf.clone();
+                app.configure(|app| api_conf.configure(app, &api_context))
             })
             .keep_alive(config.timeouts.keep_alive);
             if let Some(read) = config.timeouts.read {

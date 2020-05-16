@@ -1,8 +1,8 @@
-use actix_web::HttpResponse;
 use actix_web::Responder;
 
+#[actix_web::get("/")]
 pub async fn index() -> impl Responder {
-    HttpResponse::Ok().body("Replicante Agent API endpoints")
+    "Replicante Agent API endpoints".to_string()
 }
 
 #[cfg(test)]
@@ -12,12 +12,11 @@ mod tests {
     use actix_web::test::init_service;
     use actix_web::test::read_body;
     use actix_web::test::TestRequest;
-    use actix_web::web;
     use actix_web::App;
 
     #[actix_rt::test]
     async fn index_points_to_api() {
-        let app = init_service(App::new().route("/", web::get().to(super::index)));
+        let app = init_service(App::new().service(super::index));
         let mut app = app.await;
         let request = TestRequest::default().to_request();
         let response = call_service(&mut app, request).await;

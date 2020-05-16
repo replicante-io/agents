@@ -1,5 +1,5 @@
 use bson::doc;
-use mongodb::Client;
+use mongodb::sync::Client;
 use opentracingrust::Span;
 use serde_json::json;
 use serde_json::Value as Json;
