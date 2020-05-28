@@ -1,40 +1,29 @@
-Releasing agents
-================
-Agents release steps:
+# Releasing Replicante Agents
+All replicante projects must be released using the `replidev release` commands.
+These commands will guide the you through release tasks,
+automating the repetitive parts and performing checks along the way.
 
-- [ ] Release `common` crates:
-  - [ ] Bump version numbers as needed
-  - [ ] Commit changes if needed
-  - [ ] Release crates below
-  - [ ] Update subrepo and versions in agents
-- [ ] Ensure dependences are up to date:
-  - [ ] For the main workspace
-  - [ ] For the Kafka workspace
-- [ ] Ensure tests and CI checks pass
-- [ ] Bump the version number of all crates that need it
-- [ ] Update changelog with version and date
-- [ ] Update cargo lock file
-- [ ] Ensure docker image builds correctly:
-  - [ ] For the main workspace
-  - [ ] For the Kafka workspace
-- [ ] Git commit release
-- [ ] Validate replicante_agent create (cargo package)
-- [ ] Git tag release
-- [ ] Build and push docker images:
-  - [ ] For the main workspace
-  - [ ] For the Kafka workspace
-- [ ] Publish base cargo crate
-- [ ] Release pre-built binaries
+```bash
+# Prepare the repository for release.
+# This command will guide you to update changelogs and versions.
+$ replidev release prep
 
+# Commit any changes done during the prep phase.
+$ git commit .
 
-Publishing the base agent crate
-===============================
-In order for the `replicante_agent` crate to be published the following,
-otherwise internal, crates need to be publised as well:
+# Run checks to ensure the release is ready.
+$ replidev release check
 
-- [ ] replicante_logging
-- [ ] replicante_models_agent
-- [ ] replicante_util_failure
-- [ ] replicante_util_upkeep
-- [ ] replicante_util_tracing
-- [ ] replicante_util_actixweb
+# Make sure you are logged into docker hub so the push can suceed:
+$ podman login registry-1.docker.io
+
+# Once all changes are committed and the checks pass publish the release.
+# This will also publish any crate/docker image in the project and tag the current commit.
+$ replidev release publish
+
+# Push the release commit (if needed) and the release tag.
+$ git push
+$ git push --tags
+
+# Create the new release in GitHub and attach the collected binaries to it.
+```

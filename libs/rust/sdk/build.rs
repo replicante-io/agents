@@ -1,4 +1,4 @@
-extern crate git2;
+// NOTE: this file MUST be in the sdk crate or it will fail to package.
 
 use git2::Repository;
 use git2::Status;

@@ -1,10 +1,18 @@
 *.swp
 **/*.rs.bk
-**/target
 
+# buildah requires targets path to be explicitly listed.
+agents/kafka/target/
+agents/mongodb/target/
+agents/zookeeper/target/
+libs/rust/sdk/target/
+
+
+# Local testing and development tools.
 devtools/*.db
+devtools/data/
 devtools/pki/
 
-agents/kafka/agent.yaml
-agents/mongodb/agent.yaml
-agents/zookeeper/agent.yaml
+agents/kafka/agent-kafka.yaml
+agents/mongodb/agent-mongodb.yaml
+agents/zookeeper/agent-zookeeper.yaml

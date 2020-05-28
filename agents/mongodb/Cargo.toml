@@ -3,7 +3,7 @@ name = "replicante_agent_mongodb"
 version = "0.5.0"
 authors = ["Stefano Pogliani <stefano@spogliani.net>"]
 edition = "2018"
-build = "../../libs/rust/build.rs"
+build = "../../libs/rust/sdk/build.rs"
 
 description = "Replicante agent for MongoDB"
 documentation = "https://www.replicante.io/docs/"
@@ -27,10 +27,9 @@ journald = ["replicante_agent/journald"]
 bson = "^0.14.0" # Limited by MongoDB crate.
 failure = "^0.1.5"
 lazy_static = "^1.0.1"
-mongodb = { version = "^0.10.0", default-features = false, features = ["sync"] }
 opentracingrust = "^0.4.0"
-prometheus = "^0.8.0"
-semver = "^0.9.0"
+prometheus = "^0.9.0"
+semver = "^0.10.0"
 serde = "^1.0.25"
 serde_derive = "^1.0.25"
 serde_json = "^1.0.8"
@@ -45,6 +44,11 @@ replicante_agent = { path = "../../libs/rust/sdk" }
 replicante_models_agent = { path = "../../libs/rust/common/models/agent" }
 replicante_util_failure = { path = "../../libs/rust/common/util/failure" }
 replicante_util_tracing = { path = "../../libs/rust/common/util/tracing" }
+
+[dependencies.mongodb]
+default-features = false
+features = ["sync"]
+version = "^0.10.0"
 
 
 [build-dependencies]

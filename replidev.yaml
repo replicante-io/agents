@@ -1,1 +1,52 @@
 project: agents
+
+crates:
+  publish:
+    - path: 'libs/rust/sdk/Cargo.toml'
+
+  workspaces:
+    - 'agents/kafka/Cargo.toml'
+    - 'agents/mongodb/Cargo.toml'
+    - 'agents/zookeeper/Cargo.toml'
+    - 'libs/rust/sdk/Cargo.toml'
+
+extract_binaries:
+  - extract: directory
+    path: '/opt/replicante/bin'
+    target_name: replicante-agent-kafka
+    repo: agent-kafka
+    version:
+      from: cargo
+      path: 'libs/rust/sdk/Cargo.toml'
+
+  - extract: file
+    path: '/opt/replicante/bin/replicante-agent-mongodb'
+    repo: agents
+    version:
+      from: cargo
+      path: 'libs/rust/sdk/Cargo.toml'
+
+  - extract: file
+    path: '/opt/replicante/bin/replicante-agent-zookeeper'
+    repo: agents
+    version:
+      from: cargo
+      path: 'libs/rust/sdk/Cargo.toml'
+
+images:
+  - name: most-agents
+    repo: agents
+    version:
+      from: cargo
+      path: 'libs/rust/sdk/Cargo.toml'
+
+  - name: kafka
+    dockerfile: 'agents/kafka/Dockerfile'
+    repo: agent-kafka
+    version:
+      from: cargo
+      path: 'libs/rust/sdk/Cargo.toml'
+
+release_tag:
+  from: cargo
+  path: 'libs/rust/sdk/Cargo.toml'
