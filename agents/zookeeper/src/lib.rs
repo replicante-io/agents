@@ -1,17 +1,3 @@
-extern crate failure;
-extern crate lazy_static;
-extern crate opentracingrust;
-extern crate prometheus;
-extern crate serde;
-extern crate serde_derive;
-extern crate serde_yaml;
-extern crate slog;
-extern crate zk_4lw;
-
-extern crate replicante_agent;
-extern crate replicante_models_agent;
-extern crate replicante_util_tracing;
-
 use lazy_static::lazy_static;
 
 use replicante_agent::Result;

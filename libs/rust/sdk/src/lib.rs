@@ -1,7 +1,7 @@
 //! This crate provides interfaces and structs to build Replicante agents.
 //!
 //! The crate provides a base `Agent` trait defining a common interface.
-#![doc(html_root_url = "https://docs.rs/replicante_agent/0.5.0")]
+#![doc(html_root_url = "https://docs.rs/replicante_agent/0.6.0")]
 pub use semver::Version as SemVersion;
 
 pub use replicante_util_tracing::fail_span;

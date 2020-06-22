@@ -1,6 +1,6 @@
 [package]
-name = "replicante_agent_mongodb"
-version = "0.5.0"
+name = "repliagent_mongodb"
+version = "0.6.0"
 authors = ["Stefano Pogliani <stefano@spogliani.net>"]
 edition = "2018"
 build = "../../libs/rust/sdk/build.rs"
@@ -15,7 +15,7 @@ license = "MIT"
 
 
 [[bin]]
-name = "replicante-agent-mongodb"
+name = "repliagent-mongodb"
 path = "src/main.rs"
 
 

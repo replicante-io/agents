@@ -1,7 +1,7 @@
 ###################
 # Build the agent #
 ###################
-ARG RUST_VERSION=1.43.0
+ARG RUST_VERSION=1.44.0
 FROM rust:$RUST_VERSION as builder
 
 # Install Java and build kafka agent.
@@ -40,7 +40,7 @@ RUN addgroup --gid $REPLI_GID $REPLI_GNAME \
 # Copy binaries from builder to smaller image.
 COPY --from=builder /code/agents/kafka/target/release/deps-slim /opt/replicante/bin/deps
 COPY --from=builder /code/agents/kafka/target/release/jassets /opt/replicante/bin/jassets
-COPY --from=builder /code/agents/kafka/target/release/replicante-agent-kafka /opt/replicante/bin/
+COPY --from=builder /code/agents/kafka/target/release/repliagent-kafka /opt/replicante/bin/
 
 # Set up runtime environment as needed.
 #  Add libjvm for the kafka agent.
@@ -48,7 +48,7 @@ ENV LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/usr/local/openjdk-8/lib/amd64/server
 ENV PATH=/opt/replicante/bin:$PATH
 USER $REPLI_UNAME
 WORKDIR /home/replicante
-CMD ["/opt/replicante/bin/replicante-agent-kafka"]
+CMD ["/opt/replicante/bin/repliagent-kafka"]
 
 # Validate binaries
-RUN /opt/replicante/bin/replicante-agent-kafka --version
+RUN /opt/replicante/bin/repliagent-kafka --version

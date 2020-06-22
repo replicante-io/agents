@@ -1,7 +1,7 @@
 ####################
 # Build the agents #
 ####################
-ARG RUST_VERSION=1.43.0
+ARG RUST_VERSION=1.44.0
 FROM rust:$RUST_VERSION as builder
 
 # Add the code.
@@ -31,8 +31,8 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update \
     && apt-get clean all
 
 # Copy binaries from builder to smaller image.
-COPY --from=builder /code/agents/mongodb/target/release/replicante-agent-mongodb /opt/replicante/bin/
-COPY --from=builder /code/agents/zookeeper/target/release/replicante-agent-zookeeper /opt/replicante/bin/
+COPY --from=builder /code/agents/mongodb/target/release/repliagent-mongodb /opt/replicante/bin/
+COPY --from=builder /code/agents/zookeeper/target/release/repliagent-zookeeper /opt/replicante/bin/
 
 # Set up runtime environment as needed.
 ENV PATH=/opt/replicante/bin:$PATH
@@ -40,5 +40,5 @@ USER $REPLI_UNAME
 WORKDIR /home/replicante
 
 # Validate binaries.
-RUN /opt/replicante/bin/replicante-agent-mongodb --version \
-    && /opt/replicante/bin/replicante-agent-zookeeper --version
+RUN /opt/replicante/bin/repliagent-mongodb --version \
+    && /opt/replicante/bin/repliagent-zookeeper --version

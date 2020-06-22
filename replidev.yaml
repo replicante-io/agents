@@ -13,21 +13,21 @@ crates:
 extract_binaries:
   - extract: directory
     path: '/opt/replicante/bin'
-    target_name: replicante-agent-kafka
+    target_name: repliagent-kafka
     repo: agent-kafka
     version:
       from: cargo
       path: 'libs/rust/sdk/Cargo.toml'
 
   - extract: file
-    path: '/opt/replicante/bin/replicante-agent-mongodb'
+    path: '/opt/replicante/bin/repliagent-mongodb'
     repo: agents
     version:
       from: cargo
       path: 'libs/rust/sdk/Cargo.toml'
 
   - extract: file
-    path: '/opt/replicante/bin/replicante-agent-zookeeper'
+    path: '/opt/replicante/bin/repliagent-zookeeper'
     repo: agents
     version:
       from: cargo
