@@ -12,7 +12,7 @@ use agent::KafkaAgent;
 use config::Config;
 
 const UPDATE_META: &str =
-    "https://github.com/replicante-io/metadata/raw/master/replicante/agent/kafka/latest.json";
+    "https://github.com/replicante-io/metadata/raw/main/replicante/agent/kafka/latest.json";
 
 lazy_static! {
     static ref CURRENT_VERSION: SemVersion = SemVersion::parse(env!("CARGO_PKG_VERSION")).unwrap();

@@ -14,7 +14,7 @@ use config::Config;
 use version::MongoDBFactory;
 
 const UPDATE_META: &str =
-    "https://github.com/replicante-io/metadata/raw/master/replicante/agent/mongodb/latest.json";
+    "https://github.com/replicante-io/metadata/raw/main/replicante/agent/mongodb/latest.json";
 
 lazy_static! {
     static ref CURRENT_VERSION: SemVersion = SemVersion::parse(env!("CARGO_PKG_VERSION")).unwrap();

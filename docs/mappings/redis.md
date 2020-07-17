@@ -29,7 +29,7 @@ Replicante support for redis with redis sentinel is limited to the following con
 
   * Each redis process has a sentinel process.
   * The sentinel process runs on the same server as the redis process.
-  * The sentinel is responsible for one master set only.
+  * The sentinel is responsible for one primary only.
 
 This is [example 2](https://redis.io/topics/sentinel#example-2-basic-setup-with-three-boxes)
 from the redis sentinel documentation.

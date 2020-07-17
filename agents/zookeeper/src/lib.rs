@@ -13,7 +13,7 @@ use agent::ZookeeperAgent;
 use config::Config;
 
 const UPDATE_META: &str =
-    "https://github.com/replicante-io/metadata/raw/master/replicante/agent/zookeeper/latest.json";
+    "https://github.com/replicante-io/metadata/raw/main/replicante/agent/zookeeper/latest.json";
 
 lazy_static! {
     static ref CURRENT_VERSION: SemVersion = SemVersion::parse(env!("CARGO_PKG_VERSION")).unwrap();

@@ -2,7 +2,7 @@
 Systemd helper scripts and example unit.
 
 For details on systemd extertnal actions see
-https://replicante.io/docs/agent/master/info/external-actions/#managing-actions-with-systemd
+https://replicante.io/docs/agent/main/info/external-actions/#managing-actions-with-systemd
 
 
 ## Local example
