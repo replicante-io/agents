@@ -3,8 +3,8 @@ use std::io::Read;
 use std::path::Path;
 
 use failure::ResultExt;
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 
 use replicante_agent::config::APIConfig;
 use replicante_agent::config::Agent;

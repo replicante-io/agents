@@ -20,15 +20,14 @@ path = "src/main.rs"
 
 
 [dependencies]
-failure = "^0.1.5"
-lazy_static = "^1.0.1"
-opentracingrust = "^0.4.0"
-prometheus = "^0.9.0"
-serde = "^1.0.25"
-serde_derive = "^1.0.25"
-serde_yaml = "^0.8.0"
-slog = "^2.2.3"
-zk-4lw = "^0.1.0"
+failure = "^0.1"
+lazy_static = "^1.0"
+opentracingrust = "^0.4"
+prometheus = "^0.13"
+serde = { version = "^1.0", features = ["derive"] }
+serde_yaml = "^0.9"
+slog = "^2.2"
+zk-4lw = "^0.1"
 
 replicante_agent = { path = "../../libs/rust/sdk" }
 replicante_models_agent = { path = "../../libs/rust/common/models/agent" }
@@ -37,7 +36,7 @@ replicante_util_tracing = { path = "../../libs/rust/common/util/tracing" }
 
 
 [build-dependencies]
-git2 = "^0.13.0"
+git2 = "^0.15"
 
 
 [features]

@@ -1,5 +1,5 @@
-use bson::TimeStamp;
-use serde_derive::Deserialize;
+use mongodb::bson::Timestamp;
+use serde::Deserialize;
 
 use replicante_agent::Result;
 use replicante_models_agent::info::ShardRole;
@@ -20,7 +20,7 @@ impl ReplSetStatus {
     pub fn last_op(&self) -> Result<i64> {
         for member in &self.members {
             if member.is_self {
-                return Ok(i64::from(member.optime.t));
+                return Ok(i64::from(member.optime.time));
             }
         }
         Err(ErrorKind::MembersNoSelf.into())
@@ -40,7 +40,7 @@ impl ReplSetStatus {
     pub fn primary_optime(&self) -> Result<i64> {
         for member in &self.members {
             if member.state == 1 {
-                return Ok(i64::from(member.optime.t));
+                return Ok(i64::from(member.optime.time));
             }
         }
         Err(ErrorKind::MembersNoPrimary.into())
@@ -70,7 +70,7 @@ pub struct ReplSetStatusMember {
     #[serde(rename = "self", default = "ReplSetStatusMember::default_self")]
     pub is_self: bool,
     pub name: String,
-    pub optime: TimeStamp,
+    pub optime: Timestamp,
     pub state: i32,
 }
 
@@ -82,9 +82,11 @@ impl ReplSetStatusMember {
 
 #[cfg(test)]
 mod tests {
-    use bson::doc;
-    use bson::Bson;
     use lazy_static::lazy_static;
+    use mongodb::bson;
+    use mongodb::bson::doc;
+    use mongodb::bson::Bson;
+    use mongodb::bson::Timestamp;
 
     use replicante_agent::ErrorKind;
     use replicante_models_agent::info::ShardRole;
@@ -93,12 +95,14 @@ mod tests {
 
     lazy_static! {
         static ref MONGO_TIMESTAMP_ONE: Bson = {
-            let ts = 1514677701_u32.to_le();
-            Bson::TimeStamp((ts as i64) << 32)
+            let time = 1514677701_u32.to_le();
+            let ts = Timestamp { time, increment: 0 };
+            Bson::Timestamp(ts)
         };
         static ref MONGO_TIMESTAMP_TWO: Bson = {
-            let ts = 1514677698_u32.to_le();
-            Bson::TimeStamp((ts as i64) << 32)
+            let time = 1514677698_u32.to_le();
+            let ts = Timestamp { time, increment: 0 };
+            Bson::Timestamp(ts)
         };
     }
 

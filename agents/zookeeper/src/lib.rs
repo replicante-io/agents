@@ -12,28 +12,29 @@ mod zk4lw;
 use agent::ZookeeperAgent;
 use config::Config;
 
+const DEFAULT_CONFIG_FILE: &str = "agent-zookeeper.yaml";
 const UPDATE_META: &str =
     "https://github.com/replicante-io/metadata/raw/main/replicante/agent/zookeeper/latest.json";
+const VERSION: &str = concat!(
+    env!("CARGO_PKG_VERSION"),
+    " [",
+    env!("GIT_BUILD_HASH"),
+    "; ",
+    env!("GIT_BUILD_TAINT"),
+    "]",
+);
 
 lazy_static! {
     static ref CURRENT_VERSION: SemVersion = SemVersion::parse(env!("CARGO_PKG_VERSION")).unwrap();
     static ref RELEASE: String = format!("repliagent-officials@{}", env!("GIT_BUILD_HASH"));
-    static ref VERSION: String = format!(
-        "{} [{}; {}]",
-        env!("CARGO_PKG_VERSION"),
-        env!("GIT_BUILD_HASH"),
-        env!("GIT_BUILD_TAINT")
-    );
 }
-
-const DEFAULT_CONFIG_FILE: &str = "agent-zookeeper.yaml";
 
 /// Configure and start the agent.
 pub fn run() -> Result<bool> {
     // Command line parsing.
     let cli_args = ::replicante_agent::process::clap(
         "Zookeeper Replicante Agent",
-        VERSION.as_ref(),
+        VERSION,
         env!("CARGO_PKG_DESCRIPTION"),
         DEFAULT_CONFIG_FILE,
     )
@@ -41,7 +42,9 @@ pub fn run() -> Result<bool> {
 
     // Load configuration.
     Config::override_defaults();
-    let config_location = cli_args.value_of("config").unwrap();
+    let config_location: &String = cli_args
+        .get_one("config")
+        .expect("CLI arguments to have a config value");
     let config = Config::from_file(config_location)?;
     let config = config.transform();
 

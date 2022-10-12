@@ -1,4 +1,4 @@
-use bson::doc;
+use mongodb::bson::doc;
 use mongodb::sync::Client;
 use opentracingrust::Span;
 use serde_json::json;

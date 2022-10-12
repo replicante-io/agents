@@ -1,8 +1,8 @@
 use std::sync::Arc;
 
-use bson::doc;
-use bson::Bson;
 use failure::ResultExt;
+use mongodb::bson::doc;
+use mongodb::bson::Bson;
 use mongodb::sync::Client;
 use opentracingrust::utils::FailSpan;
 use opentracingrust::Log;
@@ -55,7 +55,7 @@ impl ReplicaSet {
         let info = self
             .client
             .database("test")
-            .run_command(doc! {"buildInfo": 1}, None)
+            .run_command(doc! { "buildInfo": 1 }, None)
             .fail_span(&mut span)
             .map_err(|error| {
                 MONGODB_OP_ERRORS_COUNT
@@ -66,7 +66,7 @@ impl ReplicaSet {
             .with_context(|_| ErrorKind::StoreOpFailed("buildInfo"))?;
         timer.observe_duration();
         span.log(Log::new().log("span.kind", "client-receive"));
-        let info = bson::from_bson(Bson::Document(info))
+        let info = mongodb::bson::from_bson(Bson::Document(info))
             .with_context(|_| ErrorKind::BsonDecode("buildInfo"))?;
         Ok(info)
     }
@@ -85,7 +85,7 @@ impl ReplicaSet {
         let status = self
             .client
             .database("admin")
-            .run_command(doc! {"replSetGetStatus" => 1}, None)
+            .run_command(doc! { "replSetGetStatus": 1 }, None)
             .fail_span(&mut span)
             .map_err(|error| {
                 MONGODB_OP_ERRORS_COUNT
@@ -96,7 +96,7 @@ impl ReplicaSet {
             .with_context(|_| ErrorKind::StoreOpFailed("replSetGetStatus"))?;
         timer.observe_duration();
         span.log(Log::new().log("span.kind", "client-receive"));
-        let status = bson::from_bson(Bson::Document(status))
+        let status = mongodb::bson::from_bson(Bson::Document(status))
             .with_context(|_| ErrorKind::BsonDecode("replSetGetStatus"))?;
         Ok(status)
     }

@@ -2070,7 +2070,6 @@ dependencies = [
  "sentry 0.27.0",
  "sentry-actix",
  "serde",
- "serde_derive",
  "serde_json",
  "serde_yaml",
  "slog",

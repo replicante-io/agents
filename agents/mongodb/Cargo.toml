@@ -24,21 +24,15 @@ journald = ["replicante_agent/journald"]
 
 
 [dependencies]
-bson = "^0.14.0" # Limited by MongoDB crate.
-failure = "^0.1.5"
-lazy_static = "^1.0.1"
-opentracingrust = "^0.4.0"
-prometheus = "^0.9.0"
-semver = "^0.10.0"
-serde = "^1.0.25"
-serde_derive = "^1.0.25"
-serde_json = "^1.0.8"
-serde_yaml = "^0.8.0"
-slog = "^2.2.3"
-
-# We want one async call with mongodb's sync API.
-# Untill we fully move to async agents, we need this to block on.
-async-std = "^1.5.0"
+failure = "^0.1"
+lazy_static = "^1.0"
+opentracingrust = "^0.4"
+prometheus = "^0.13"
+semver = "^1.0"
+serde = { version = "^1.0", features = ["derive"] }
+serde_json = "^1.0"
+serde_yaml = "^0.9"
+slog = "^2.2"
 
 replicante_agent = { path = "../../libs/rust/sdk" }
 replicante_models_agent = { path = "../../libs/rust/common/models/agent" }
@@ -48,9 +42,12 @@ replicante_util_tracing = { path = "../../libs/rust/common/util/tracing" }
 [dependencies.mongodb]
 default-features = false
 features = ["sync"]
-version = "^0.10.0"
+version = "^2.0"
 
 
 [build-dependencies]
-git2 = "^0.13.0"
+git2 = "^0.15"
+
+
+[dev-dependencies]
 replicante_agent = { path = "../../libs/rust/sdk", features = ["with_test_support"] }

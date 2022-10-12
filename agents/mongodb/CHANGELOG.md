@@ -1,3 +1,4 @@
+<!-- markdownlint-disable MD022 MD024 MD032 -->
 # Changelog
 All notable changes to this project will be documented in this file.
 
@@ -7,6 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [Unreleased]
 ### Changed
 - **BREAKING**: Rename binary from `replicante-agent-mongodb` to `repliagent-mongodb`.
+- Update dependencies.
 
 ## [0.5.0] - 2020-05-28
 ### Changed
@@ -48,7 +50,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Agent metrics
 - Basic info and sharding data for MongoDB 3.2+
 - OpenTracing integration
-
 
 [Unreleased]: https://github.com/replicante-io/agents/compare/v0.5.0...HEAD
 [0.5.0]: https://github.com/replicante-io/agents/compare/v0.4.1...v0.5.0
