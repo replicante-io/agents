@@ -1,0 +1,65 @@
+name: Rust Checks
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  # Stable rust is the version we aim to use for builds.
+  check-stable:
+    runs-on: ubuntu-latest
+    continue-on-error: false
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: recursive
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+          components: rustfmt, clippy
+
+      # Legacy SDK
+      - name: Legacy SDK
+        run: ci/check-workspace.sh --full "Legacy SDK" libs/rust/sdk/Cargo.toml
+
+      # Agents
+      - name: Kafka
+        run: ci/check-workspace.sh --full Kafka agents/kafka/Cargo.toml
+      - name: MongoDB
+        run: ci/check-workspace.sh --full MongoDB agents/mongodb/Cargo.toml
+      - name: Zookeeper
+        run: ci/check-workspace.sh --full Zookeeper agents/zookeeper/Cargo.toml
+
+  # Earliest version of rust supported.
+  check-min-rust:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: recursive
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: 1.60.0
+          override: true
+          components: rustfmt, clippy
+
+      # Legacy SDK
+      - name: Legacy SDK
+        run: ci/check-workspace.sh "Legacy SDK" libs/rust/sdk/Cargo.toml
+
+      # Agents
+      - name: Kafka
+        run: ci/check-workspace.sh Kafka agents/kafka/Cargo.toml
+      - name: MongoDB
+        run: ci/check-workspace.sh MongoDB agents/mongodb/Cargo.toml
+      - name: Zookeeper
+        run: ci/check-workspace.sh Zookeeper agents/zookeeper/Cargo.toml
