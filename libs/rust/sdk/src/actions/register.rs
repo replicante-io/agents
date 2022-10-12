@@ -88,7 +88,7 @@ impl ACTIONS {
     ///   * If called while still in the actions registration phase.
     pub fn get(kind: &str) -> Option<Arc<dyn Action>> {
         ACTIVE_REG.with(|register| {
-            ensure_thread_register(&register);
+            ensure_thread_register(register);
             register.borrow().as_ref().unwrap().get(kind)
         })
     }
@@ -101,7 +101,7 @@ impl ACTIONS {
     ///   * If called while still in the actions registration phase.
     pub fn iter() -> Iter {
         ACTIVE_REG.with(|register| {
-            ensure_thread_register(&register);
+            ensure_thread_register(register);
             register.borrow().as_ref().unwrap().iter()
         })
     }
@@ -247,7 +247,7 @@ impl<'a> ActionKind<'a> {
 }
 
 /// Actions register to store all known actions.
-#[derive(Clone)]
+#[derive(Clone, Default)]
 pub struct ActionsRegister {
     actions: BTreeMap<String, Arc<dyn Action>>,
 }
@@ -308,14 +308,6 @@ impl ActionsRegister {
                 panic!("action with kind {} is already registered", entry.key())
             }
         };
-    }
-}
-
-impl Default for ActionsRegister {
-    fn default() -> Self {
-        ActionsRegister {
-            actions: BTreeMap::new(),
-        }
     }
 }
 

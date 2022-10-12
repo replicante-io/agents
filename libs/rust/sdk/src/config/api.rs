@@ -2,8 +2,8 @@ use std::collections::HashMap;
 use std::sync::RwLock;
 
 use lazy_static::lazy_static;
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 
 // Define some globals to hold the default overrides.
 lazy_static! {
@@ -119,7 +119,7 @@ impl From<APITrees> for HashMap<&'static str, bool> {
 pub struct Timeouts {
     /// Control the timeout, in seconds, for keep alive connections.
     #[serde(default = "Timeouts::default_keep_alive")]
-    pub keep_alive: Option<usize>,
+    pub keep_alive: Option<u64>,
 
     /// Control the timeout, in seconds, for reads on existing connections.
     #[serde(default = "Timeouts::default_read")]
@@ -141,7 +141,7 @@ impl Default for Timeouts {
 }
 
 impl Timeouts {
-    fn default_keep_alive() -> Option<usize> {
+    fn default_keep_alive() -> Option<u64> {
         Some(5)
     }
 

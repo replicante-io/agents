@@ -7,6 +7,7 @@ pub use semver::Version as SemVersion;
 pub use replicante_util_tracing::fail_span;
 
 pub mod actions;
+mod anywrap;
 mod api;
 mod context;
 mod error;
@@ -21,6 +22,7 @@ pub mod process;
 #[cfg(any(test, feature = "with_test_support"))]
 pub mod testing;
 
+pub use self::anywrap::AnyWrap;
 pub use self::context::AgentContext;
 pub use self::error::Error;
 pub use self::error::ErrorKind;

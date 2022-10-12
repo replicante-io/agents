@@ -46,7 +46,7 @@ impl Action for ServiceStart {
         span: Option<&mut Span>,
     ) -> Result<()> {
         let mut progress: ServiceActionState =
-            ActionRecordView::structured_state_payload(record)?.unwrap_or_default();
+            <dyn ActionRecordView>::structured_state_payload(record)?.unwrap_or_default();
 
         // If the action is new attempt to start the service.
         if *record.state() == ActionState::New {

@@ -5,7 +5,6 @@ use opentracingrust::SpanContext;
 use opentracingrust::StartOptions;
 use rusqlite::params;
 use rusqlite::Statement;
-use rusqlite::NO_PARAMS;
 use uuid::Uuid;
 
 use replicante_util_tracing::MaybeTracer;
@@ -79,7 +78,7 @@ macro_rules! decode_or_continue {
 fn parse_actions_list(statement: &mut Statement, op: &'static str) -> Result<Iter<ActionListItem>> {
     let mut results = Vec::new();
     let mut rows = statement
-        .query(NO_PARAMS)
+        .query([])
         .with_context(|_| ErrorKind::PersistentRead(op))?;
     let mut maybe_row = rows
         .next()

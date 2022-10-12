@@ -128,7 +128,7 @@ fn commands_pid(cmd: Vec<String>) -> CmdFn<Option<String>> {
         }
         let stdout =
             String::from_utf8(show.stdout).with_context(|_| ErrorKind::ServiceOpFailed("pid"))?;
-        if stdout == "" {
+        if stdout.is_empty() {
             return Ok(None);
         }
         Ok(Some(stdout))

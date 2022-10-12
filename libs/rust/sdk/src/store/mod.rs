@@ -87,7 +87,7 @@ impl<'a> Action<'a> {
     {
         let (transition_to, payload) = record.map_transition(transition_to, payload.into())?;
         let record = record.inner();
-        let state = ActionRecordView::raw_state(record);
+        let state = <dyn ActionRecordView>::raw_state(record);
         ensure_transition_allowed(state, &transition_to);
         self.inner
             .transition(record, transition_to, payload, span.into())

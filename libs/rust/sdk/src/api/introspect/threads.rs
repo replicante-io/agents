@@ -1,4 +1,4 @@
-use serde_derive::Serialize;
+use serde::Serialize;
 
 use actix_web::HttpResponse;
 use actix_web::Responder;

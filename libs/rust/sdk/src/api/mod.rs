@@ -1,7 +1,9 @@
 use std::sync::mpsc::sync_channel;
 use std::sync::Arc;
+use std::time::Duration;
 
 use actix_web::middleware;
+use actix_web::web::Data;
 use actix_web::App;
 use actix_web::HttpServer;
 use failure::ResultExt;
@@ -16,7 +18,6 @@ use replicante_util_actixweb::APIFlags;
 use replicante_util_actixweb::LoggingMiddleware;
 use replicante_util_actixweb::MetricsMiddleware;
 use replicante_util_actixweb::RootDescriptor;
-use replicante_util_actixweb::SentryMiddleware;
 use replicante_util_upkeep::Upkeep;
 
 mod actions;
@@ -26,7 +27,6 @@ mod introspect;
 mod roots;
 
 use crate::actions::actions_enabled;
-use crate::config::SentryCaptureApi;
 use crate::metrics::REQUESTS;
 use crate::Agent;
 use crate::AgentContext;
@@ -79,8 +79,8 @@ where
                 .config
                 .sentry
                 .as_ref()
-                .map(|sentry| sentry.capture_api_errors.clone())
-                .unwrap_or_default();
+                .map(|sentry| sentry.capture_api_errors)
+                .unwrap_or(true);
 
             // Extend the API server configuration with routes.
             // Only `app_config` will then move into the closure, with all the dependencies
@@ -105,34 +105,39 @@ where
             // Initialise and configure HTTP server and App factory.
             let mut server = HttpServer::new(move || {
                 // Give every mounted route access to the global context.
-                let app = App::new().data(Arc::clone(&agent)).data(context.clone());
+                let app = App::new()
+                    .app_data(Data::new(Arc::clone(&agent)))
+                    .app_data(Data::new(context.clone()));
 
-                // Register application middlewares.
-                // Remember that middlewares are executed in reverse registration order.
+                // Register application middleware.
+                // Remember that middleware are executed in reverse registration order.
                 let app = app
                     .wrap(LoggingMiddleware::new(context.logger.clone()))
                     .wrap(MetricsMiddleware::new(REQUESTS.clone()))
                     .wrap(middleware::Compress::default());
+
                 // Add the sentry middleware if configured.
-                let app = match sentry_capture_api {
-                    SentryCaptureApi::Client => app.wrap(SentryMiddleware::new(400)),
-                    SentryCaptureApi::Server => app.wrap(SentryMiddleware::new(500)),
-                    // acitx-web is so type safe that apps wrapped in middlewares change type.
-                    // This means that even if we do not want to use the sentry middleware we need
-                    // to configure it or we can't return a consisten type from this match.
-                    SentryCaptureApi::No => app.wrap(SentryMiddleware::new(600)),
-                };
+                let sentry_capture = sentry_actix::Sentry::builder()
+                    .capture_server_errors(sentry_capture_api)
+                    .emit_header(true)
+                    .finish();
+                let app = app.wrap(sentry_capture);
 
                 // Configure and return the ActixWeb App
                 let mut api_conf = api_conf.clone();
                 app.configure(|app| api_conf.configure(app, &api_context))
-            })
-            .keep_alive(config.timeouts.keep_alive);
+            });
+            if let Some(keep_alive) = config.timeouts.keep_alive {
+                let keep_alive = Duration::from_secs(keep_alive);
+                server = server.keep_alive(keep_alive);
+            }
             if let Some(read) = config.timeouts.read {
-                server = server.client_timeout(read * 1000);
+                let read = Duration::from_secs(read);
+                server = server.client_request_timeout(read);
             }
             if let Some(write) = config.timeouts.write {
-                server = server.client_shutdown(write * 1000);
+                let write = Duration::from_secs(write);
+                server = server.client_disconnect_timeout(write);
             }
             if let Some(threads_count) = config.threads_count {
                 server = server.workers(threads_count);
@@ -145,13 +150,13 @@ where
                     .expect("unable to bind API server"),
                 Some(tls) => {
                     let mut builder = SslAcceptor::mozilla_modern(SslMethod::tls())
-                        .expect("unable to initialse TLS acceptor for API server");
+                        .expect("unable to initialise TLS acceptor for API server");
                     builder
                         .set_certificate_file(&tls.server_cert, SslFiletype::PEM)
                         .expect("unable to set TLS server public certificate");
                     builder
                         .set_private_key_file(&tls.server_key, SslFiletype::PEM)
-                        .expect("unable to set TLS server privte key");
+                        .expect("unable to set TLS server private key");
                     if let Some(bundle) = tls.clients_ca_bundle {
                         builder
                             .set_ca_file(&bundle)
@@ -168,10 +173,10 @@ where
             // Start HTTP server and block until shutdown.
             info!(logger, "Starting API server"; "bind" => &config.bind);
             scope.activity("running https://actix.rs/ HTTP(S) server");
-            let mut runner = actix_rt::System::new("replicante:base:api");
+            let runner = actix_web::rt::System::new();
             let server = server.run();
             send_server
-                .send(server.clone())
+                .send(server.handle())
                 .expect("unable to send back server handle");
             runner.block_on(server).expect("unable to run API server");
         })
