@@ -3,16 +3,15 @@ use std::collections::BTreeMap;
 use std::env;
 use std::process::exit;
 
-use clap::App;
 use clap::Arg;
+use clap::Command;
 use failure::ResultExt;
 use humthreads::Builder;
 use prometheus::process_collector::ProcessCollector;
 use semver::Version;
-use sentry::integrations::failure::capture_fail;
-use sentry::internals::ClientInitGuard;
-use sentry::internals::IntoDsn;
-use serde_derive::Deserialize;
+use sentry::ClientInitGuard;
+use sentry::IntoDsn;
+use serde::Deserialize;
 use slog::debug;
 use slog::info;
 use slog::warn;
@@ -39,25 +38,27 @@ use crate::Result;
 ///
 /// The parser is configure with all the arguments every agent is required to implement.
 /// Additional arguments can be added by each agent if needed.
-pub fn clap<'a, 'b, S1, S2, S3>(
+pub fn clap<S1, S2, S3, S4>(
     name: S1,
     version: S2,
     description: S3,
-    default_config_location: &'a str,
-) -> App<'a, 'b>
+    default_config_location: S4,
+) -> Command
 where
-    S1: Into<String>,
-    S2: Into<&'b str>,
-    S3: Into<&'b str>,
+    S1: Into<clap::builder::Str>,
+    S2: Into<clap::builder::Str>,
+    S3: Into<clap::builder::StyledStr>,
+    S4: Into<clap::builder::OsStr>,
 {
-    App::new(name).version(version).about(description).arg(
-        Arg::with_name("config")
-            .short("c")
+    Command::new(name).version(version).about(description).arg(
+        Arg::new("config")
+            .short('c')
             .long("config")
             .value_name("FILE")
+            .num_args(1)
             .default_value(default_config_location)
-            .help("Specifies the configuration file to use")
-            .takes_value(true),
+            .value_parser(clap::value_parser!(String))
+            .help("Specifies the configuration file to use"),
     )
 }
 
@@ -83,6 +84,7 @@ where
 
     let tracer_opts = replicante_util_tracing::Opts::new(service, logger.clone(), &mut upkeep);
     let tracer = tracer(config.tracing.clone(), tracer_opts)
+        .map_err(crate::AnyWrap::from)
         .with_context(|_| ErrorKind::Initialisation("tracer configuration failed".into()))?;
 
     let mut context = AgentContext::new(config, logger.clone(), tracer)?;
@@ -166,7 +168,9 @@ where
     let (logger, _scope_guard) = logger(&config);
     let _sentry = sentry(config.sentry.clone(), &logger, release.into())?;
     initialise_and_run(config, logger, service, initialise).map_err(|error| {
-        capture_fail(&error);
+        // TODO: Fix error capturing after failure crate is removed.
+        let hack = anyhow::anyhow!(error.to_string());
+        sentry::integrations::anyhow::capture_anyhow(&hack);
         error
     })
 }
@@ -191,16 +195,14 @@ pub fn sentry(
         .dsn
         .into_dsn()
         .with_context(|_| ErrorKind::Initialisation("invalid sentry configuration".into()))?;
-    let client = sentry::init(sentry::ClientOptions {
+    let options = sentry::ClientOptions {
         attach_stacktrace: true,
         dsn,
-        in_app_include: vec!["replicante", "replicante_agent"],
+        in_app_include: vec!["replicante", "replicante_agent", "repliagent", "replisdk"],
         release: Some(release),
         ..Default::default()
-    });
-    if client.is_enabled() {
-        sentry::integrations::panic::register_panic_handler();
-    }
+    };
+    let client = sentry::init(options);
     Ok(client)
 }
 

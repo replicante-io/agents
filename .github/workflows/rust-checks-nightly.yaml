@@ -1,0 +1,36 @@
+name: Rust Checks (nightly)
+
+on:
+  pull_request:
+    branches: [main]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  # Prepare for the future!
+  check-nightly:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: recursive
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: nightly
+          override: true
+          components: rustfmt, clippy
+
+      # Legacy SDK
+      - name: Legacy SDK
+        run: ci/check-workspace.sh "Legacy SDK" libs/rust/sdk/Cargo.toml
+
+      # Agents
+      - name: Kafka
+        run: ci/check-workspace.sh Kafka agents/kafka/Cargo.toml
+      - name: MongoDB
+        run: ci/check-workspace.sh MongoDB agents/mongodb/Cargo.toml
+      - name: Zookeeper
+        run: ci/check-workspace.sh Zookeeper agents/zookeeper/Cargo.toml

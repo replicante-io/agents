@@ -17,7 +17,7 @@ where
 
 #[cfg(test)]
 mod tests {
-    use serde_derive::Deserialize;
+    use serde::Deserialize;
     use serde_json::json;
 
     use crate::actions::ActionValidity;

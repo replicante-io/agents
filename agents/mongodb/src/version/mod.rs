@@ -1,8 +1,8 @@
 use std::sync::Arc;
 use std::time::Duration;
 
-use bson::doc;
 use failure::ResultExt;
+use mongodb::bson::doc;
 use mongodb::options::ClientOptions;
 use mongodb::sync::Client;
 use semver::Version;
@@ -43,11 +43,8 @@ pub struct MongoDBFactory {
 
 impl MongoDBFactory {
     pub fn with_config(config: Config, context: AgentContext) -> Result<MongoDBFactory> {
-        // We want to parse a URI config AND set options.
-        // This is only possible with the async API so we block on a runtime
-        // just like it happens internally (except we can't access the mongodb runtime inside).
-        let options = ClientOptions::parse(&config.mongo.uri);
-        let mut options = async_std::task::block_on(options)
+        // Parse a URI config and set options after.
+        let mut options = ClientOptions::parse(&config.mongo.uri)
             .with_context(|_| ErrorKind::ConfigOption("mongo.uri"))?;
         options.app_name = "repliagent-mongodb".to_string().into();
         options.server_selection_timeout =

@@ -19,21 +19,11 @@ use self::start::ServiceStart;
 use self::stop::ServiceStop;
 
 /// Persisted progress of service start/stop actions.
-#[derive(Serialize, Deserialize)]
+#[derive(Default, Serialize, Deserialize)]
 struct ServiceActionState {
     attempt: u8,
     message: Option<String>,
     pid: Option<String>,
-}
-
-impl Default for ServiceActionState {
-    fn default() -> Self {
-        ServiceActionState {
-            attempt: 0,
-            message: None,
-            pid: None,
-        }
-    }
 }
 
 /// Register all service related actions.

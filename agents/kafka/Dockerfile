@@ -1,7 +1,7 @@
 ###################
 # Build the agent #
 ###################
-ARG RUST_VERSION=1.44.0
+ARG RUST_VERSION=1.60.0
 FROM rust:$RUST_VERSION as builder
 
 # Install Java and build kafka agent.

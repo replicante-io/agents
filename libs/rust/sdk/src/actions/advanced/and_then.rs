@@ -112,7 +112,7 @@ impl Action for AndThen {
         // Fetch the current action stage and stage, or start anew.
         // If the current stage is finished, start the next.
         let mut state: AndThenState =
-            ActionRecordView::structured_state_payload(record)?.unwrap_or_default();
+            <dyn ActionRecordView>::structured_state_payload(record)?.unwrap_or_default();
         if state.state == ActionState::Done {
             let stage = state.stage + 1;
             state = AndThenState::default();

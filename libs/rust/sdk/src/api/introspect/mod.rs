@@ -22,6 +22,6 @@ pub fn configure(conf: &mut AppConfigContext) {
 
 fn metrics(context: &AgentContext) -> impl HttpServiceFactory {
     let registry = context.metrics.clone();
-    let metrics = MetricsExporter::factory(registry);
+    let metrics = MetricsExporter::with_registry(registry);
     web::resource("/metrics").route(web::get().to(metrics))
 }

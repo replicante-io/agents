@@ -1,0 +1,39 @@
+name: Rust Dependencies Audit
+
+on:
+  pull_request:
+    branches: [main]
+    paths: 
+      - '**/Cargo.toml'
+      - '**/Cargo.lock'
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  # Keep an eye on security vulnerabilities in the system
+  cargo-audit:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: recursive
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+
+      - name: Install Cargo Audit
+        run: cargo install cargo-audit
+
+      - name: Check Legacy SDK dependencies
+        run: cargo audit --file libs/rust/sdk/Cargo.lock
+      
+      - name: Check Kafka dependencies
+        run: cargo audit --file agents/kafka/Cargo.lock
+      - name: Check MongoDB dependencies
+        run: cargo audit --file agents/mongodb/Cargo.lock
+      - name: Check Zookeeper dependencies
+        run: cargo audit --file agents/zookeeper/Cargo.lock

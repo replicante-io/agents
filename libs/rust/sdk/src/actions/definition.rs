@@ -13,8 +13,8 @@ use opentracingrust::Span;
 use opentracingrust::SpanContext;
 use opentracingrust::Tracer;
 use serde::de::DeserializeOwned;
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 use serde_json::json;
 use serde_json::Value as Json;
 use uuid::Uuid;
@@ -100,7 +100,7 @@ impl ActionHook {
 }
 
 /// Action state and metadata information.
-#[derive(Clone, PartialEq, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub struct ActionRecord {
     /// Version of the agent that last validated the action.
     pub agent_version: String,

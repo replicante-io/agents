@@ -1,7 +1,7 @@
 use std::collections::BTreeMap;
 
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 
 use replicante_logging::Config as LoggingConfig;
 use replicante_logging::LoggingLevel;
@@ -16,7 +16,6 @@ pub use self::actions::ActionsConfig;
 pub use self::actions::ExternalActionConfig;
 pub use self::api::APIConfig;
 pub use self::api::TlsConfig;
-pub use self::sentry::SentryCaptureApi;
 pub use self::sentry::SentryConfig;
 pub use self::service::ServiceConfig;
 

@@ -6,8 +6,8 @@ use std::process::Stdio;
 
 use failure::ResultExt;
 use opentracingrust::Span;
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::Deserialize;
+use serde::Serialize;
 use serde_json::Value as Json;
 use slog::debug;
 use slog::Logger;
@@ -73,7 +73,7 @@ impl ExternalAction {
         span: Option<&mut Span>,
     ) -> Result<()> {
         let output = self.exec(record, &self.config.check, ErrorKind::ExternalActionCheck)?;
-        let action_id = ActionRecordView::id(record);
+        let action_id = <dyn ActionRecordView>::id(record);
         let stdout =
             String::from_utf8(output.stdout).unwrap_or_else(|_| "{binary blob}".to_string());
         if !output.status.success() {
@@ -110,10 +110,10 @@ impl ExternalAction {
     where
         F: Fn(String, Uuid) -> ErrorKind,
     {
-        let action_id = ActionRecordView::id(record);
+        let action_id = <dyn ActionRecordView>::id(record);
         let info = ExternalActionInfo {
             args: record.args().clone(),
-            headers: ActionRecordView::headers(record).clone(),
+            headers: <dyn ActionRecordView>::headers(record).clone(),
             id: action_id,
             kind: self.kind.clone(),
         };
@@ -149,7 +149,7 @@ impl ExternalAction {
         let output = self.exec(record, &self.config.action, ErrorKind::ExternalActionStart)?;
         let stdout =
             String::from_utf8(output.stdout).unwrap_or_else(|_| "{binary blob}".to_string());
-        let action_id = ActionRecordView::id(record);
+        let action_id = <dyn ActionRecordView>::id(record);
         debug!(
             self.logger,
             "External action started";

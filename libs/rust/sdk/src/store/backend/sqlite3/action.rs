@@ -8,7 +8,6 @@ use opentracingrust::SpanContext;
 use opentracingrust::StartOptions;
 use rusqlite::params;
 use rusqlite::Row;
-use rusqlite::NO_PARAMS;
 use serde_json::Value as Json;
 use uuid::Uuid;
 
@@ -441,7 +440,7 @@ impl<'a, 'b: 'a> ActionInterface for Action<'a, 'b> {
                 error
             })?;
         let mut rows = statement
-            .query(NO_PARAMS)
+            .query([])
             .with_context(|_| ErrorKind::PersistentRead(ACTION_NEXT))
             .map_err(|error| {
                 SQLITE_OP_ERRORS_COUNT.with_label_values(&["SELECT"]).inc();

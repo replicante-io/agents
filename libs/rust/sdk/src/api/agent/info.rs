@@ -48,7 +48,7 @@ pub fn datastore(context: &AgentContext) -> impl HttpServiceFactory {
     let tracer = Arc::clone(&context.tracer);
     let tracer = TracingMiddleware::new(logger, tracer);
     web::resource("/datastore")
-        .data(cluster_display_name_override)
+        .app_data(web::Data::new(cluster_display_name_override))
         .wrap(tracer)
         .route(web::get().to(datastore_responder))
 }
