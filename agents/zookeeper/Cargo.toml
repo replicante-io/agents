@@ -36,7 +36,7 @@ replicante_util_tracing = { path = "../../libs/rust/common/util/tracing" }
 
 
 [build-dependencies]
-git2 = "^0.15"
+git2 = "^0.16"
 
 
 [features]
