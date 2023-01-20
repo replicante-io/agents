@@ -1259,6 +1259,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "git2"
+version = "0.16.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ccf7f68c2995f392c49fffb4f95ae2c873297830eb25c6bc4c114ce8f4562acc"
+dependencies = [
+ "bitflags",
+ "libc",
+ "libgit2-sys",
+ "log",
+ "openssl-probe",
+ "openssl-sys",
+ "url",
+]
+
+[[package]]
 name = "gloo-timers"
 version = "0.2.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1706,9 +1721,9 @@ checksum = "68783febc7782c6c5cb401fbda4de5a9898be1762314da0bb2c10ced61f18b0c"
 
 [[package]]
 name = "libgit2-sys"
-version = "0.14.0+1.5.0"
+version = "0.14.2+1.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "47a00859c70c8a4f7218e6d1cc32875c4b55f6799445b842b0d8ed5e4c3d959b"
+checksum = "7f3d95f6b51075fe9810a7ae22c7095f12b98005ab364d8544797a825ce946a4"
 dependencies = [
  "cc",
  "libc",
@@ -2528,7 +2543,7 @@ name = "repliagent_mongodb"
 version = "0.6.0"
 dependencies = [
  "failure",
- "git2",
+ "git2 0.16.1",
  "lazy_static",
  "mongodb",
  "opentracingrust",
@@ -2555,7 +2570,7 @@ dependencies = [
  "failure",
  "failure_derive",
  "futures",
- "git2",
+ "git2 0.15.0",
  "humthreads",
  "lazy_static",
  "migrant_lib",
