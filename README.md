@@ -1,5 +1,10 @@
 # Replicante Agents
 
+> :warning:
+>
+> This repository is deprecated.
+> Replacement agents implemented with the new Agent SDK have their own dedicated repositories.
+
 Replicante uses agents to interface with datastores.
 This repository stores the core rust agent framework as well official agents.
 
